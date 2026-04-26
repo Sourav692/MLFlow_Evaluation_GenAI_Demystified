@@ -82,7 +82,7 @@ def chat_agent(question: str, client_request_id: str) -> str:
     mlflow.update_current_trace(tags={"client_request_id": client_request_id})
 
     resp = oai.chat.completions.create(
-        model="databricks-claude-sonnet-4",
+        model="databricks-claude-opus-4-6",
         messages=[
             {"role": "system", "content": "You are a Databricks expert. Answer concisely."},
             {"role": "user",   "content": question},

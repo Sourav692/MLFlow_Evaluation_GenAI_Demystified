@@ -537,7 +537,7 @@ main { max-width: 1140px; margin: 0 auto; padding: 48px 48px 100px; }
             <div class="t-pt">Install packages in a Databricks notebook: <code>%pip install "mlflow[databricks]>=3.1" databricks-openai</code></div>
             <div class="t-pt">Configure Unity Catalog: create catalog, schema for all tutorial assets</div>
             <div class="t-pt">Set up MLflow experiment via <code>mlflow.set_experiment("/Users/you/genai-eval-tutorial")</code></div>
-            <div class="t-pt">Verify Foundation Model API access: call <code>databricks-claude-sonnet-4</code> via DatabricksOpenAI client</div>
+            <div class="t-pt">Verify Foundation Model API access: call <code>databricks-claude-opus-4-6</code> via DatabricksOpenAI client</div>
             <div class="t-pt">Run a sanity-check trace with <code>mlflow.openai.autolog()</code> and verify it appears in the UI</div>
           </div>
           <div class="code-block"><span class="cm"># Notebook Cell 1 — Install</span>
@@ -555,7 +555,7 @@ client = <span class="fn">DatabricksOpenAI</span>()  <span class="cm"># uses wor
 
 <span class="cm"># Sanity check — should produce a trace in the UI</span>
 resp = client.chat.completions.<span class="fn">create</span>(
-    model=<span class="st">"databricks-claude-sonnet-4"</span>,
+    model=<span class="st">"databricks-claude-opus-4-6"</span>,
     messages=[{<span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: <span class="st">"What is Delta Lake in one sentence?"</span>}]
 )
 <span class="fn">print</span>(resp.choices[<span class="nu">0</span>].message.content)</div>
@@ -794,7 +794,7 @@ client = <span class="fn">DatabricksOpenAI</span>()
 <span class="nm">@mlflow.trace</span>
 <span class="kw">def</span> <span class="fn">my_agent</span>(question: str) -> str:
     resp = client.chat.completions.<span class="fn">create</span>(
-        model=<span class="st">"databricks-claude-sonnet-4"</span>,
+        model=<span class="st">"databricks-claude-opus-4-6"</span>,
         messages=[
             {<span class="st">"role"</span>: <span class="st">"system"</span>, <span class="st">"content"</span>: <span class="st">"You are a Databricks expert."</span>},
             {<span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: question}
@@ -867,7 +867,7 @@ model = mlflow.pyfunc.<span class="fn">load_model</span>(<span class="st">"model
 <span class="cm"># Pattern: Async predict_fn</span>
 <span class="kw">async def</span> <span class="fn">async_predict_fn</span>(question: str) -> str:
     resp = <span class="kw">await</span> async_client.chat.completions.<span class="fn">create</span>(
-        model=<span class="st">"databricks-claude-sonnet-4"</span>,
+        model=<span class="st">"databricks-claude-opus-4-6"</span>,
         messages=[{<span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: question}]
     )
     <span class="kw">return</span> resp.choices[<span class="nu">0</span>].message.content
@@ -998,7 +998,7 @@ model = mlflow.pyfunc.<span class="fn">load_model</span>(<span class="st">"model
           <p class="t-desc">Build a domain-specific "Databricks Technical Accuracy" judge using a Databricks-hosted model as the judge LLM.</p>
           <div class="t-points">
             <div class="t-pt">Write judge instructions with <code>&#123;&#123; inputs &#125;&#125;</code>, <code>&#123;&#123; outputs &#125;&#125;</code> template variables and a clear 1–5 rubric</div>
-            <div class="t-pt">Set judge model to Databricks endpoint: <code>model="databricks:/databricks-claude-sonnet-4"</code></div>
+            <div class="t-pt">Set judge model to Databricks endpoint: <code>model="databricks:/databricks-claude-opus-4-6"</code></div>
             <div class="t-pt">Run on tutorial dataset and inspect per-row rationales</div>
             <div class="t-pt">Iterate on rubric based on results — calibration loop</div>
           </div>
@@ -1017,7 +1017,7 @@ tech_accuracy = <span class="fn">make_judge</span>(
       1 = Fundamentally wrong or misleading
     Reason step-by-step before scoring.
     """</span>,
-    model=<span class="st">"databricks:/databricks-claude-sonnet-4"</span>
+    model=<span class="st">"databricks:/databricks-claude-opus-4-6"</span>
 )</div>
         </div>
       </div>

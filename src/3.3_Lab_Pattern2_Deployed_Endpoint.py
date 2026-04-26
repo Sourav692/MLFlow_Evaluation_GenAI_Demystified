@@ -45,7 +45,7 @@ mlflow.set_experiment(EXPERIMENT_PATH)
 
 # Pick the endpoint to evaluate. The Foundation Model API endpoints are
 # pre-deployed in every workspace, so we can use one as a stand-in.
-ENDPOINT_NAME = "databricks-claude-sonnet-4"  # any chat-style serving endpoint works
+ENDPOINT_NAME = "databricks-claude-opus-4-6"  # any chat-style serving endpoint works
 
 print(f"Endpoint: {ENDPOINT_NAME}")
 print(f"Eval data: {DATASET_FQN}")
@@ -195,7 +195,7 @@ async def async_agent(question: str) -> str:
     # (e.g. httpx.AsyncClient) for higher throughput.
     def _call():
         return client.chat.completions.create(
-            model="databricks-claude-sonnet-4",
+            model="databricks-claude-opus-4-6",
             messages=[
                 {"role": "system", "content": "You are a Databricks expert. Be concise."},
                 {"role": "user",   "content": question},

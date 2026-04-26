@@ -8,7 +8,7 @@
 # MAGIC 1. Installed `mlflow[databricks]>=3.1` and `databricks-openai` in this notebook
 # MAGIC 2. Created a Unity Catalog **catalog + schema** to hold all tutorial assets
 # MAGIC 3. Pointed MLflow at a workspace experiment for this tutorial
-# MAGIC 4. Verified Foundation Model API access by calling `databricks-claude-sonnet-4`
+# MAGIC 4. Verified Foundation Model API access by calling `databricks-claude-opus-4-6`
 # MAGIC 5. Captured a sanity-check trace via `mlflow.openai.autolog()` visible in the MLflow UI
 # MAGIC
 # MAGIC > **Cluster requirement:** DBR 15.4 ML LTS (or newer) on a Serverless or classic compute cluster with internet egress to the Foundation Model API endpoint.
@@ -52,7 +52,7 @@
 # MAGIC 1. **Packages** — `mlflow[databricks]>=3.1` + `databricks-openai` installed
 # MAGIC 2. **UC namespace** — `genai_eval_tutorial.module_01` catalog/schema + a managed volume for unstructured assets
 # MAGIC 3. **Experiment** — `/Users/<you>/genai-eval-tutorial`, the home for every trace and eval run that follows
-# MAGIC 4. **Foundation Model API access** — verified call to `databricks-claude-sonnet-4` (the model we'll use as both agent and judge)
+# MAGIC 4. **Foundation Model API access** — verified call to `databricks-claude-opus-4-6` (the model we'll use as both agent and judge)
 # MAGIC 5. **Tracing verified end-to-end** — `mlflow.openai.autolog()` confirmed to write a trace visible in the UI
 
 # COMMAND ----------
@@ -125,7 +125,7 @@ print(f"MLflow experiment set to: {EXPERIMENT_PATH}")
 # MAGIC %md
 # MAGIC ## Step 4 — Verify Foundation Model API Access
 # MAGIC
-# MAGIC `DatabricksOpenAI` is an OpenAI-compatible client that uses your workspace credentials automatically — no API key to manage. We use it to call `databricks-claude-sonnet-4`, a Foundation Model API endpoint that ships with every Databricks workspace.
+# MAGIC `DatabricksOpenAI` is an OpenAI-compatible client that uses your workspace credentials automatically — no API key to manage. We use it to call `databricks-claude-opus-4-6`, a Foundation Model API endpoint that ships with every Databricks workspace.
 # MAGIC
 # MAGIC If this call fails, check:
 # MAGIC - Foundation Model APIs are enabled in your workspace
@@ -140,7 +140,7 @@ w = WorkspaceClient()
 client = w.serving_endpoints.get_open_ai_client()
 
 resp = client.chat.completions.create(
-    model="databricks-claude-sonnet-4",
+    model="databricks-claude-opus-4-6",
     messages=[
         {"role": "user", "content": "What is Delta Lake in one sentence?"}
     ],
@@ -162,7 +162,7 @@ import mlflow
 mlflow.openai.autolog()
 
 resp = client.chat.completions.create(
-    model="databricks-claude-sonnet-4",
+    model="databricks-claude-opus-4-6",
     messages=[
         {"role": "system", "content": "You are a concise Databricks expert."},
         {"role": "user",   "content": "Name three benefits of MLflow Tracing for GenAI apps."},
@@ -184,7 +184,8 @@ print(resp.choices[0].message.content)
 
 # COMMAND ----------
 
-traces = mlflow.search_traces(experiment_names=[EXPERIMENT_PATH], max_results=1)
+experiment = mlflow.get_experiment_by_name(EXPERIMENT_PATH)
+traces = mlflow.search_traces(experiment_ids=[experiment.experiment_id], max_results=1)
 display(traces)
 
 # COMMAND ----------
@@ -199,7 +200,7 @@ display(traces)
 # MAGIC | **MLflow 3 evaluation landscape** | Landscape section above (3 paradigms, module map, why `mlflow.genai`) | ✅ |
 # MAGIC | **Working experiment** | Step 3 — `/Users/<you>/genai-eval-tutorial` registered | ✅ |
 # MAGIC | **UC schema** | Step 2 — `genai_eval_tutorial.module_01` catalog + schema + volume | ✅ |
-# MAGIC | **Foundation Model API access** | Step 4 — verified `databricks-claude-sonnet-4` call | ✅ |
+# MAGIC | **Foundation Model API access** | Step 4 — verified `databricks-claude-opus-4-6` call | ✅ |
 # MAGIC | **Tracing flowing end-to-end** | Step 5 — `mlflow.openai.autolog()` trace visible in UI | ✅ |
 # MAGIC | **Packages pinned** | Step 1 — `mlflow[databricks]>=3.1` + `databricks-openai` | ✅ |
 # MAGIC

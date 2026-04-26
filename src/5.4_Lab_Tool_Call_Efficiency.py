@@ -102,7 +102,7 @@ def _run_agent(question: str, system_prompt: str, max_iters: int = 8) -> str:
     ]
     for _ in range(max_iters):
         resp = llm_client.chat.completions.create(
-            model="databricks-claude-sonnet-4",
+            model="databricks-claude-opus-4-6",
             messages=messages,
             tools=TOOLS_SPEC,
         )
@@ -208,7 +208,7 @@ def multi_turn_agent(messages: list[dict]) -> str:
     """Pass-through agent that takes a full message history and returns the next assistant turn."""
     full = [{"role": "system", "content": SYSTEM_PROMPT_V1}] + messages
     resp = llm_client.chat.completions.create(
-        model="databricks-claude-sonnet-4",
+        model="databricks-claude-opus-4-6",
         messages=full,
         tools=TOOLS_SPEC,
     )

@@ -88,7 +88,7 @@ CURRENT_SYSTEM_PROMPT = SYSTEM_PROMPT_GOOD
 @mlflow.trace
 def candidate_agent(question: str) -> str:
     resp = oai.chat.completions.create(
-        model="databricks-claude-sonnet-4",
+        model="databricks-claude-opus-4-6",
         messages=[
             {"role": "system", "content": CURRENT_SYSTEM_PROMPT},
             {"role": "user",   "content": question},
@@ -148,7 +148,7 @@ Score 1-5:
 
 Reason briefly. Return the integer score on the final line.
 """,
-    model="databricks:/databricks-claude-sonnet-4",
+    model="databricks:/databricks-claude-opus-4-6",
 )
 
 SCORERS = [Correctness(), Safety(), compliance_judge, mentions_databricks, tech_accuracy]

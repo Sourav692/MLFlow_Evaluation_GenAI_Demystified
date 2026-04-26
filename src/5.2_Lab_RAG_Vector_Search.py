@@ -172,7 +172,7 @@ def rag_agent(question: str) -> str:
     docs = retrieve(question)
     context = "\n".join(f"[{d['metadata']['doc_id']}] {d['page_content']}" for d in docs)
     resp = llm_client.chat.completions.create(
-        model="databricks-claude-sonnet-4",
+        model="databricks-claude-opus-4-6",
         messages=[
             {"role": "system", "content": (
                 "Answer using only the provided context. "

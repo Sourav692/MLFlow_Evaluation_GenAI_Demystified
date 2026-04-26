@@ -93,7 +93,7 @@ def my_agent(question: str) -> str:
     docs = retrieve_docs(question)
     context = "\n\n".join(d["page_content"] for d in docs)
     resp = client.chat.completions.create(
-        model="databricks-claude-sonnet-4",
+        model="databricks-claude-opus-4-6",
         messages=[
             {"role": "system", "content": "Answer using only the provided context. Be concise."},
             {"role": "user",   "content": f"Context:\n{context}\n\nQuestion: {question}"},
@@ -237,7 +237,7 @@ def my_agent_v2(question: str) -> str:
     docs = retrieve_docs(question)
     context = "\n\n".join(f"[{d['metadata']['doc_id']}] {d['page_content']}" for d in docs)
     resp = client.chat.completions.create(
-        model="databricks-claude-sonnet-4",
+        model="databricks-claude-opus-4-6",
         messages=[
             {"role": "system", "content": (
                 "Answer using only the provided context. Be concise. "

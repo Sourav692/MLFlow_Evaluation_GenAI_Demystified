@@ -6,7 +6,7 @@
 # MAGIC
 # MAGIC By the end of this lab you will have:
 # MAGIC 1. Written judge instructions with `{{ inputs }}` and `{{ outputs }}` template variables and a clear 1–5 rubric
-# MAGIC 2. Set the judge model to a Databricks endpoint: `model="databricks:/databricks-claude-sonnet-4"`
+# MAGIC 2. Set the judge model to a Databricks endpoint: `model="databricks:/databricks-claude-opus-4-6"`
 # MAGIC 3. Run the judge on the tutorial dataset and inspected per-row rationales
 # MAGIC 4. Iterated on the rubric based on results — the **calibration loop**
 # MAGIC 5. (Stretch) Calibrated the judge against ground-truth labels and computed agreement
@@ -77,7 +77,7 @@ Score 1-5 using this rubric:
 Reason step-by-step before scoring. Cite the specific phrase that drove your score.
 Return the integer score on the final line.
 """,
-    model="databricks:/databricks-claude-sonnet-4",
+    model="databricks:/databricks-claude-opus-4-6",
 )
 
 print("Custom judge ready:", tech_accuracy.name)
@@ -98,7 +98,7 @@ client = WorkspaceClient().serving_endpoints.get_open_ai_client()
 @mlflow.trace
 def my_agent(question: str) -> str:
     resp = client.chat.completions.create(
-        model="databricks-claude-sonnet-4",
+        model="databricks-claude-opus-4-6",
         messages=[
             {"role": "system", "content": "You are a Databricks expert. Answer concisely."},
             {"role": "user",   "content": question},
@@ -182,7 +182,7 @@ Calibration rules:
 Reason step-by-step. Cite the specific phrase that drove your score.
 Return the integer score on the final line.
 """,
-    model="databricks:/databricks-claude-sonnet-4",
+    model="databricks:/databricks-claude-opus-4-6",
 )
 
 results_v2 = mlflow.genai.evaluate(
@@ -247,7 +247,7 @@ print("Calibration block left as a stretch goal — Module 6 covers human review
 # MAGIC | Check | Status |
 # MAGIC | --- | --- |
 # MAGIC | `make_judge()` called with `{{ inputs }}` / `{{ outputs }}` template | ✅ |
-# MAGIC | Judge model pinned to `databricks:/databricks-claude-sonnet-4` | ✅ |
+# MAGIC | Judge model pinned to `databricks:/databricks-claude-opus-4-6` | ✅ |
 # MAGIC | Judge ran on tutorial dataset; per-row rationales inspected | ✅ |
 # MAGIC | Rubric iterated (v1 → v2) based on observed failure modes | ✅ |
 # MAGIC | Score-distribution shift between judge versions visualised | ✅ |

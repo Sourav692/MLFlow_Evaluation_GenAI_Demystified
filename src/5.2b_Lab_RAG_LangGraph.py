@@ -75,7 +75,7 @@ retriever = DatabricksVectorSearch(
     columns=["doc_id", "content"],
 ).as_retriever(search_kwargs={"k": 3})
 
-llm = ChatDatabricks(endpoint="databricks-claude-sonnet-4", temperature=0)
+llm = ChatDatabricks(endpoint="databricks-claude-opus-4-6", temperature=0)
 
 # Quick sanity check
 sample = retriever.invoke("What is Z-ordering?")

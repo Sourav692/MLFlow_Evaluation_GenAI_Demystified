@@ -207,7 +207,7 @@ client = WorkspaceClient().serving_endpoints.get_open_ai_client()
 
 def my_agent(question: str) -> str:
     resp = client.chat.completions.create(
-        model="databricks-claude-sonnet-4",
+        model="databricks-claude-opus-4-6",
         messages=[{"role": "user", "content": question}],
     )
     return resp.choices[0].message.content

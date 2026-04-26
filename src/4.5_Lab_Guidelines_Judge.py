@@ -93,7 +93,7 @@ client = WorkspaceClient().serving_endpoints.get_open_ai_client()
 @mlflow.trace
 def my_agent(question: str) -> str:
     resp = client.chat.completions.create(
-        model="databricks-claude-sonnet-4",
+        model="databricks-claude-opus-4-6",
         messages=[
             {"role": "system", "content": (
                 "You are a Databricks expert. Answer concisely. "
@@ -219,7 +219,7 @@ Score 1-5: 5 = precise with caveats; 3 = partially correct; 1 = wrong/hallucinat
 Length must NOT influence the score. Reason step-by-step before scoring.
 Return the integer score on the final line.
 """,
-    model="databricks:/databricks-claude-sonnet-4",
+    model="databricks:/databricks-claude-opus-4-6",
 )
 
 results_capstone = mlflow.genai.evaluate(

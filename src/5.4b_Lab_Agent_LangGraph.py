@@ -89,7 +89,7 @@ from databricks_langchain import ChatDatabricks
 from langgraph.prebuilt import create_react_agent
 from langchain_core.messages import HumanMessage, AIMessage
 
-llm = ChatDatabricks(endpoint="databricks-claude-sonnet-4", temperature=0)
+llm = ChatDatabricks(endpoint="databricks-claude-opus-4-6", temperature=0)
 
 SYSTEM_PROMPT_V1 = (
     "You are a helpful assistant. Use tools when needed to answer the user."
