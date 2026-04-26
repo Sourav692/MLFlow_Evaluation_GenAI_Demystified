@@ -1,0 +1,1635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MLflow GenAI Evaluation — Complete Databricks Tutorial</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=Syne:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #05080f;
+  --surface: #0b0f1a;
+  --surface2: #111827;
+  --surface3: #1a2235;
+  --border: #1e2d45;
+  --border2: #243550;
+  --accent-orange: #ff6b35;
+  --accent-teal: #00bfa5;
+  --accent-blue: #4a9eff;
+  --accent-purple: #a855f7;
+  --accent-yellow: #fbbf24;
+  --text: #e8edf5;
+  --text-dim: #8899bb;
+  --text-muted: #4a5878;
+  --green: #22c55e;
+  --amber: #f59e0b;
+  --red: #ef4444;
+  --orange: #f97316;
+
+  --l0: #22c55e; /* beginner */
+  --l1: #3b82f6; /* beginner-int */
+  --l2: #f59e0b; /* intermediate */
+  --l3: #f97316; /* advanced */
+  --l4: #ef4444; /* expert */
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Syne', sans-serif;
+  font-weight: 400;
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+/* ── HEADER ── */
+header {
+  position: relative;
+  padding: 64px 48px 56px;
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+}
+
+header::before {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 70% 80% at 15% 50%, rgba(255,107,53,0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 60% at 85% 20%, rgba(0,191,165,0.06) 0%, transparent 55%),
+    radial-gradient(ellipse 30% 40% at 60% 80%, rgba(74,158,255,0.05) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.header-inner { max-width: 1140px; margin: 0 auto; position: relative; }
+
+.header-eyebrow {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 24px;
+}
+
+.eyebrow-tag {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; font-weight: 500;
+  letter-spacing: 0.15em; text-transform: uppercase;
+  color: var(--accent-orange);
+  padding: 5px 14px;
+  border: 1px solid rgba(255,107,53,0.3);
+  border-radius: 2px;
+  background: rgba(255,107,53,0.06);
+}
+
+.eyebrow-line {
+  height: 1px; width: 48px;
+  background: linear-gradient(to right, rgba(255,107,53,0.4), transparent);
+}
+
+h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(38px, 5.5vw, 68px);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  margin-bottom: 18px;
+}
+
+h1 em {
+  font-style: italic;
+  color: var(--accent-orange);
+}
+
+.header-sub {
+  font-size: 16px; color: var(--text-dim);
+  max-width: 680px; line-height: 1.75;
+  margin-bottom: 40px;
+}
+
+.meta-row {
+  display: flex; gap: 0; flex-wrap: wrap;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  width: fit-content;
+}
+
+.meta-item {
+  padding: 14px 24px;
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: 3px;
+}
+.meta-item:last-child { border-right: none; }
+
+.meta-val {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 22px; font-weight: 500;
+  color: var(--accent-teal);
+}
+
+.meta-lbl {
+  font-size: 11px; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.1em;
+}
+
+/* ── COVERAGE BANNER ── */
+.coverage-bar {
+  background: rgba(0,191,165,0.05);
+  border-bottom: 1px solid rgba(0,191,165,0.15);
+  padding: 14px 48px;
+}
+
+.coverage-inner {
+  max-width: 1140px; margin: 0 auto;
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+}
+
+.coverage-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; color: var(--accent-teal);
+  text-transform: uppercase; letter-spacing: 0.1em;
+  white-space: nowrap;
+}
+
+.coverage-tags { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.ctag {
+  font-size: 11px; padding: 3px 10px;
+  border-radius: 2px; font-weight: 500;
+  border: 1px solid;
+}
+
+.ctag-new { background: rgba(255,107,53,0.1); color: var(--accent-orange); border-color: rgba(255,107,53,0.25); }
+.ctag-updated { background: rgba(0,191,165,0.08); color: var(--accent-teal); border-color: rgba(0,191,165,0.2); }
+
+/* ── LEGEND ── */
+.legend-strip {
+  padding: 16px 48px;
+  border-bottom: 1px solid var(--border);
+  display: flex; gap: 24px; align-items: center; flex-wrap: wrap;
+}
+
+.legend-strip-inner { max-width: 1140px; margin: 0 auto; display: flex; gap: 24px; align-items: center; flex-wrap: wrap; width: 100%; }
+
+.leg-group { display: flex; gap: 16px; align-items: center; }
+
+.leg-sep { width: 1px; height: 18px; background: var(--border); }
+
+.leg { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--text-dim); }
+.leg-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+.leg-title { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-right: 4px; }
+
+/* ── MAIN ── */
+main { max-width: 1140px; margin: 0 auto; padding: 48px 48px 100px; }
+
+/* ── SECTION HEADER ── */
+.section-banner {
+  display: flex; align-items: center; gap: 16px;
+  margin-bottom: 32px; margin-top: 8px;
+}
+
+.section-num {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: var(--text-muted);
+  letter-spacing: 0.12em; text-transform: uppercase;
+}
+
+.section-line { flex: 1; height: 1px; background: var(--border); }
+
+/* ── MODULE ── */
+.module { margin-bottom: 40px; position: relative; }
+
+.mod-header {
+  display: grid;
+  grid-template-columns: 52px 1fr auto;
+  gap: 0;
+  align-items: stretch;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  border-radius: 10px 10px 0 0;
+  background: var(--surface);
+  transition: border-color 0.2s;
+  overflow: hidden;
+}
+
+.mod-header:hover { border-color: var(--border2); }
+
+.mod-num-col {
+  display: flex; align-items: center; justify-content: center;
+  border-right: 1px solid var(--border);
+  padding: 20px 0;
+  writing-mode: vertical-rl;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px; letter-spacing: 0.18em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.mod-main { padding: 20px 24px; }
+
+.mod-level {
+  display: inline-block;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 0.1em;
+  text-transform: uppercase; font-weight: 500;
+  padding: 3px 10px; border-radius: 2px;
+  margin-bottom: 8px;
+  border: 1px solid;
+}
+
+.lv0 { color: var(--l0); background: rgba(34,197,94,0.08); border-color: rgba(34,197,94,0.2); }
+.lv1 { color: var(--l1); background: rgba(59,130,246,0.08); border-color: rgba(59,130,246,0.2); }
+.lv2 { color: var(--l2); background: rgba(245,158,11,0.08); border-color: rgba(245,158,11,0.2); }
+.lv3 { color: var(--l3); background: rgba(249,115,22,0.08); border-color: rgba(249,115,22,0.2); }
+.lv4 { color: var(--l4); background: rgba(239,68,68,0.08); border-color: rgba(239,68,68,0.2); }
+
+.mod-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 21px; line-height: 1.2;
+  margin-bottom: 5px;
+}
+
+.mod-subtitle {
+  font-size: 13px; color: var(--text-dim); line-height: 1.5;
+}
+
+.mod-toggle-col {
+  display: flex; align-items: center; justify-content: center;
+  padding: 0 20px;
+  border-left: 1px solid var(--border);
+}
+
+.toggle-btn {
+  width: 28px; height: 28px;
+  border-radius: 6px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  font-size: 13px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+}
+
+.mod-header:hover .toggle-btn {
+  background: var(--surface3);
+  color: var(--text);
+}
+
+/* ── MODULE BODY ── */
+.mod-body {
+  display: none;
+  border: 1px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 10px 10px;
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.mod-body.open { display: block; }
+
+.topics-list { padding: 0; }
+
+/* ── TOPIC ── */
+.topic {
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.topic:last-child { border-bottom: none; }
+.topic:hover { background: rgba(255,255,255,0.015); }
+
+.topic-inner { padding: 18px 24px; }
+
+.topic-header {
+  display: flex; align-items: flex-start; gap: 16px;
+  margin-bottom: 10px;
+}
+
+.t-num {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; color: var(--text-muted);
+  min-width: 36px; padding-top: 1px;
+  flex-shrink: 0;
+}
+
+.t-title {
+  font-size: 14px; font-weight: 600;
+  color: var(--text); flex: 1; line-height: 1.4;
+}
+
+.t-tags { display: flex; gap: 6px; flex-wrap: wrap; flex-shrink: 0; }
+
+.tag {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; padding: 2px 8px;
+  border-radius: 2px; border: 1px solid;
+  font-weight: 500; letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.tag-T { color: var(--accent-teal); background: rgba(0,191,165,0.08); border-color: rgba(0,191,165,0.2); }
+.tag-H { color: var(--accent-purple); background: rgba(168,85,247,0.08); border-color: rgba(168,85,247,0.2); }
+.tag-N { color: var(--accent-orange); background: rgba(255,107,53,0.08); border-color: rgba(255,107,53,0.2); }
+
+.t-desc {
+  font-size: 12.5px; color: var(--text-dim);
+  padding-left: 52px; margin-bottom: 10px;
+  line-height: 1.6;
+}
+
+.t-points {
+  padding-left: 52px;
+  display: flex; flex-direction: column; gap: 5px;
+}
+
+.t-pt {
+  display: flex; gap: 10px;
+  font-size: 12.5px; color: var(--text-dim); line-height: 1.5;
+}
+
+.t-pt::before {
+  content: '›';
+  color: var(--accent-orange);
+  flex-shrink: 0; font-size: 13px;
+}
+
+/* ── CODE BLOCK ── */
+.code-block {
+  margin-top: 12px; margin-left: 52px;
+  background: #020509;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent-blue);
+  border-radius: 0 6px 6px 0;
+  padding: 14px 18px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11.5px;
+  line-height: 1.8;
+  overflow-x: auto;
+  white-space: pre;
+}
+
+.kw { color: #c792ea; }
+.fn { color: #82aaff; }
+.st { color: #c3e88d; }
+.cm { color: var(--text-muted); }
+.nm { color: var(--accent-orange); }
+.nu { color: #f78c6c; }
+
+/* ── NOTE BOX ── */
+.note-box {
+  margin-top: 12px; margin-left: 52px;
+  padding: 10px 14px;
+  background: rgba(251,191,36,0.05);
+  border: 1px solid rgba(251,191,36,0.15);
+  border-radius: 6px;
+  font-size: 12px; color: var(--amber);
+  line-height: 1.6;
+}
+.note-box::before { content: '⚠ '; }
+
+/* ── MODULE OUTCOME ── */
+.mod-outcome {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  background: rgba(0,191,165,0.03);
+  display: flex; gap: 12px; align-items: flex-start;
+}
+
+.outcome-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+
+.outcome-text {
+  font-size: 12.5px; color: var(--text-dim); line-height: 1.6;
+}
+
+.outcome-text strong { color: var(--accent-teal); font-weight: 600; }
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+@media (max-width: 700px) {
+  header, main, .coverage-bar, .legend-strip { padding-left: 20px; padding-right: 20px; }
+  .meta-row { flex-direction: column; width: 100%; border-radius: 8px; }
+  .meta-item { border-right: none; border-bottom: 1px solid var(--border); }
+  .meta-item:last-child { border-bottom: none; }
+  h1 { font-size: 30px; }
+  .mod-header { grid-template-columns: 1fr auto; }
+  .mod-num-col { display: none; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="header-eyebrow">
+      <span class="eyebrow-tag">Databricks · MLflow 3 · GenAI</span>
+      <span class="eyebrow-line"></span>
+    </div>
+    <h1>MLflow GenAI Evaluation<br><em>Zero to Expert</em> — Complete Path</h1>
+    <p class="header-sub">A fully updated tutorial covering every pillar of the MLflow 3 GenAI evaluation stack — from first principles through production-grade monitoring — with all labs designed to run natively on Databricks from scratch.</p>
+    <div class="meta-row">
+      <div class="meta-item"><span class="meta-val">8</span><span class="meta-lbl">Modules</span></div>
+      <div class="meta-item"><span class="meta-val">42</span><span class="meta-lbl">Topics</span></div>
+      <div class="meta-item"><span class="meta-val">~26h</span><span class="meta-lbl">Est. Duration</span></div>
+      <div class="meta-item"><span class="meta-val">55%</span><span class="meta-lbl">Hands-On</span></div>
+      <div class="meta-item"><span class="meta-val">100%</span><span class="meta-lbl">Databricks Native</span></div>
+    </div>
+  </div>
+</header>
+
+<div class="coverage-bar">
+  <div class="coverage-inner">
+    <span class="coverage-label">New in this version →</span>
+    <div class="coverage-tags">
+      <span class="ctag ctag-new">Evaluation Datasets (UC)</span>
+      <span class="ctag ctag-new">generate_eval_df</span>
+      <span class="ctag ctag-new">predict_fn — all patterns</span>
+      <span class="ctag ctag-new">to_predict_fn (endpoints)</span>
+      <span class="ctag ctag-new">Code-based Scorers</span>
+      <span class="ctag ctag-new">AI Gateway</span>
+      <span class="ctag ctag-new">Inference Tables</span>
+      <span class="ctag ctag-new">Feedback Loop</span>
+      <span class="ctag ctag-updated">All labs → Databricks native</span>
+    </div>
+  </div>
+</div>
+
+<div class="legend-strip">
+  <div class="legend-strip-inner">
+    <span class="leg-title">Type</span>
+    <div class="leg-group">
+      <span class="leg"><span class="leg-dot" style="background:var(--accent-teal)"></span> Theory</span>
+      <span class="leg"><span class="leg-dot" style="background:var(--accent-purple)"></span> Hands-On (Databricks)</span>
+      <span class="leg"><span class="leg-dot" style="background:var(--accent-orange)"></span> New Topic</span>
+    </div>
+    <span class="leg-sep"></span>
+    <span class="leg-title">Level</span>
+    <div class="leg-group">
+      <span class="leg"><span class="leg-dot" style="background:var(--l0)"></span> Beginner</span>
+      <span class="leg"><span class="leg-dot" style="background:var(--l1)"></span> Beg–Int</span>
+      <span class="leg"><span class="leg-dot" style="background:var(--l2)"></span> Intermediate</span>
+      <span class="leg"><span class="leg-dot" style="background:var(--l3)"></span> Advanced</span>
+      <span class="leg"><span class="leg-dot" style="background:var(--l4)"></span> Expert</span>
+    </div>
+  </div>
+</div>
+
+<main>
+
+<!-- ══════════════════════════════════════════════ MODULE 1 -->
+<div class="module" id="m1">
+  <div class="mod-header" onclick="toggle('m1')">
+    <div class="mod-num-col">Module 01</div>
+    <div class="mod-main">
+      <div class="mod-level lv0">Beginner · ~2.5h</div>
+      <div class="mod-title">Foundations & Databricks Environment Setup</div>
+      <div class="mod-subtitle">Why GenAI evaluation is hard, the MLflow 3 stack overview, and setting up your Databricks workspace from scratch.</div>
+    </div>
+    <div class="mod-toggle-col"><div class="toggle-btn" id="tb-m1">▼</div></div>
+  </div>
+  <div class="mod-body open" id="body-m1">
+    <div class="topics-list">
+
+      <div class="topic">
+        <div class="topic-inner">
+          <div class="topic-header">
+            <span class="t-num">1.1</span>
+            <span class="t-title">Why Evaluating LLMs and Agents is Fundamentally Different</span>
+            <div class="t-tags"><span class="tag tag-T">Theory</span></div>
+          </div>
+          <div class="t-points">
+            <div class="t-pt">Non-determinism problem: same prompt, different output every time</div>
+            <div class="t-pt">Failure of BLEU / ROUGE / exact-match for open-ended generation</div>
+            <div class="t-pt">The evaluation triangle: quality vs. cost vs. scale</div>
+            <div class="t-pt">Three evaluation paradigms: heuristics → LLM judges → human review</div>
+            <div class="t-pt">What "good" looks like: correctness, safety, relevance, grounding, efficiency</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="topic">
+        <div class="topic-inner">
+          <div class="topic-header">
+            <span class="t-num">1.2</span>
+            <span class="t-title">MLflow 3 GenAI Stack — The Full Map</span>
+            <div class="t-tags"><span class="tag tag-T">Theory</span></div>
+          </div>
+          <div class="t-points">
+            <div class="t-pt">Core objects: Experiments, Runs, Traces, Logged Models, Scorers</div>
+            <div class="t-pt">Evaluation pipeline: Tracing → Datasets → evaluate() → Scorers → Feedback</div>
+            <div class="t-pt">How the same scorer travels: dev evaluate() → CI gate → production .register().start()</div>
+            <div class="t-pt">Databricks additions over OSS MLflow: Unity Catalog, Review App, AI Gateway, Inference Tables</div>
+            <div class="t-pt">MLflow 3 vs MLflow 2: what changed (mlflow.genai module, new evaluate() signature)</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="topic">
+        <div class="topic-inner">
+          <div class="topic-header">
+            <span class="t-num">1.3</span>
+            <span class="t-title">Lab: Databricks Workspace Setup from Scratch</span>
+            <div class="t-tags"><span class="tag tag-H">Hands-On</span></div>
+          </div>
+          <p class="t-desc">Configure your Databricks environment end-to-end so every subsequent lab runs without friction.</p>
+          <div class="t-points">
+            <div class="t-pt">Install packages in a Databricks notebook: <code>%pip install "mlflow[databricks]>=3.1" databricks-openai</code></div>
+            <div class="t-pt">Configure Unity Catalog: create catalog, schema for all tutorial assets</div>
+            <div class="t-pt">Set up MLflow experiment via <code>mlflow.set_experiment("/Users/you/genai-eval-tutorial")</code></div>
+            <div class="t-pt">Verify Foundation Model API access: call <code>databricks-claude-sonnet-4</code> via DatabricksOpenAI client</div>
+            <div class="t-pt">Run a sanity-check trace with <code>mlflow.openai.autolog()</code> and verify it appears in the UI</div>
+          </div>
+          <div class="code-block"><span class="cm"># Notebook Cell 1 — Install</span>
+<span class="cm">%pip install "mlflow[databricks]>=3.1" databricks-openai</span>
+dbutils.library.restartPython()
+
+<span class="cm"># Notebook Cell 2 — Configure</span>
+<span class="kw">import</span> mlflow
+<span class="kw">from</span> databricks_openai <span class="kw">import</span> DatabricksOpenAI
+
+mlflow.<span class="fn">set_experiment</span>(<span class="st">"/Users/you/genai-eval-tutorial"</span>)
+mlflow.openai.<span class="fn">autolog</span>()
+
+client = <span class="fn">DatabricksOpenAI</span>()  <span class="cm"># uses workspace auth automatically</span>
+
+<span class="cm"># Sanity check — should produce a trace in the UI</span>
+resp = client.chat.completions.<span class="fn">create</span>(
+    model=<span class="st">"databricks-claude-sonnet-4"</span>,
+    messages=[{<span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: <span class="st">"What is Delta Lake in one sentence?"</span>}]
+)
+<span class="fn">print</span>(resp.choices[<span class="nu">0</span>].message.content)</div>
+        </div>
+      </div>
+
+    </div>
+    <div class="mod-outcome">
+      <div class="outcome-icon">🎯</div>
+      <div class="outcome-text"><strong>Outcome:</strong> You understand the full MLflow 3 evaluation landscape and have a working Databricks environment — experiment, UC schema, Foundation Model access — ready for all labs ahead.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ MODULE 2 -->
+<div class="module" id="m2">
+  <div class="mod-header" onclick="toggle('m2')">
+    <div class="mod-num-col">Module 02</div>
+    <div class="mod-main">
+      <div class="mod-level lv1">Beginner–Int · ~3h</div>
+      <div class="mod-title">Evaluation Datasets — Build, Manage & Version in Unity Catalog</div>
+      <div class="mod-subtitle">How to create, populate, and govern evaluation datasets as first-class UC assets — from scratch, from traces, and synthetically.</div>
+    </div>
+    <div class="mod-toggle-col"><div class="toggle-btn" id="tb-m2">▶</div></div>
+  </div>
+  <div class="mod-body" id="body-m2">
+    <div class="topics-list">
+
+      <div class="topic">
+        <div class="topic-inner">
+          <div class="topic-header">
+            <span class="t-num">2.1</span>
+            <span class="t-title">Evaluation Dataset Architecture in MLflow 3</span>
+            <div class="t-tags"><span class="tag tag-T">Theory</span><span class="tag tag-N">New</span></div>
+          </div>
+          <div class="t-points">
+            <div class="t-pt">What an evaluation dataset is: the schema — <code>inputs</code>, <code>outputs</code>, <code>expectations</code>, <code>tags</code></div>
+            <div class="t-pt">Four data format options: list of dicts, Pandas DataFrame, Spark DataFrame, MLflow EvaluationDataset (UC-backed)</div>
+            <div class="t-pt">Why UC-backed datasets: versioning, lineage, sharing across teams, governance</div>
+            <div class="t-pt">Three sources: hand-curated, from production traces, synthetically generated</div>
+            <div class="t-pt">Dataset attached to an experiment — one dataset per experiment namespace</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="topic">
+        <div class="topic-inner">
+          <div class="topic-header">
+            <span class="t-num">2.2</span>
+            <span class="t-title">Lab: Create a UC-Backed Dataset from Scratch</span>
+            <div class="t-tags"><span class="tag tag-H">Hands-On</span><span class="tag tag-N">New</span></div>
+          </div>
+          <p class="t-desc">Build your tutorial's golden dataset — 10 Q&A rows about Databricks/Delta Lake — stored as a Delta table in Unity Catalog.</p>
+          <div class="t-points">
+            <div class="t-pt">Use <code>mlflow.genai.datasets.create_dataset(name="catalog.schema.tutorial_eval")</code></div>
+            <div class="t-pt">Add rows with <code>eval_dataset.merge_records(records=my_list)</code></div>
+            <div class="t-pt">Include <code>expected_facts</code> in expectations for Correctness judge compatibility</div>
+            <div class="t-pt">View dataset in Unity Catalog Explorer and query it via Spark</div>
+          </div>
+          <div class="code-block"><span class="kw">import</span> mlflow
+<span class="kw">import</span> mlflow.genai.datasets
+
+UC_SCHEMA = <span class="st">"main.genai_eval"</span>  <span class="cm"># update to your schema</span>
+
+eval_dataset = mlflow.genai.datasets.<span class="fn">create_dataset</span>(
+    name=<span class="st">f"</span><span class="nm">{UC_SCHEMA}</span><span class="st">.tutorial_eval_v1"</span>
+)
+
+records = [
+  {<span class="st">"inputs"</span>: {<span class="st">"question"</span>: <span class="st">"What is Delta Live Tables?"</span>},
+   <span class="st">"expectations"</span>: {<span class="st">"expected_facts"</span>: [<span class="st">"declarative pipeline"</span>, <span class="st">"streaming"</span>, <span class="st">"batch"</span>]}},
+  {<span class="st">"inputs"</span>: {<span class="st">"question"</span>: <span class="st">"How does Unity Catalog handle lineage?"</span>},
+   <span class="st">"expectations"</span>: {<span class="st">"expected_facts"</span>: [<span class="st">"column-level lineage"</span>, <span class="st">"automated"</span>]}},
+  <span class="cm"># ... add more rows</span>
+]
+
+eval_dataset = eval_dataset.<span class="fn">merge_records</span>(records=records)
+<span class="fn">print</span>(<span class="st">f"Dataset created: </span><span class="nm">{eval_dataset.name}</span><span class="st">"</span>)</div>
+        </div>
+      </div>
+
+      <div class="topic">
+        <div class="topic-inner">
+          <div class="topic-header">
+            <span class="t-num">2.3</span>
+            <span class="t-title">Lab: Build Dataset from Production Traces</span>
+            <div class="t-tags"><span class="tag tag-H">Hands-On</span><span class="tag tag-N">New</span></div>
+          </div>
+          <p class="t-desc">Convert real production traces into an evaluation dataset — the recommended path for enterprise deployments.</p>
+          <div class="t-points">
+            <div class="t-pt">Generate 10 traces by calling your agent app (simulate prod traffic)</div>
+            <div class="t-pt">Use <code>mlflow.search_traces(filter_string=...)</code> to retrieve recent successful traces</div>
+            <div class="t-pt">Add traces directly: <code>eval_dataset.merge_records(traces=traces)</code></div>
+            <div class="t-pt">Inspect auto-extracted inputs/outputs in the dataset UI</div>
+            <div class="t-pt">Best practice: filter by <code>attributes.status = 'OK'</code> and specific trace names</div>
+          </div>
+          <div class="code-block"><span class="kw">import</span> time
+
+<span class="cm"># Step 1: Generate traces (simulate production calls)</span>
+<span class="kw">for</span> q <span class="kw">in</span> [<span class="st">"What is Z-ordering in Delta Lake?"</span>, <span class="st">"Explain VACUUM command"</span>]:
+    <span class="fn">my_agent</span>(q)  <span class="cm"># your traced function</span>
+
+<span class="cm"># Step 2: Search for traces from the last 10 min</span>
+ten_min_ago = <span class="fn">int</span>((time.<span class="fn">time</span>() - <span class="nu">600</span>) * <span class="nu">1000</span>)
+traces = mlflow.<span class="fn">search_traces</span>(
+    filter_string=(
+        <span class="st">f"attributes.timestamp_ms > </span><span class="nm">{ten_min_ago}</span><span class="st">"</span>
+        <span class="st">" AND attributes.status = 'OK'"</span>
+    ),
+    order_by=[<span class="st">"attributes.timestamp_ms DESC"</span>]
+)
+
+<span class="cm"># Step 3: Add to dataset</span>
+eval_dataset = eval_dataset.<span class="fn">merge_records</span>(traces=traces)
+<span class="fn">print</span>(<span class="st">f"Added </span><span class="nm">{len(traces)}</span><span class="st"> traces to dataset"</span>)</div>
+        </div>
+      </div>
+
+      <div class="topic">
+        <div class="topic-inner">
+          <div class="topic-header">
+            <span class="t-num">2.4</span>
+            <span class="t-title">generate_eval_df — Synthetic Dataset Generation</span>
+            <div class="t-tags"><span class="tag tag-T">Theory</span><span class="tag tag-H">Hands-On</span><span class="tag tag-N">New</span></div>
+          </div>
+          <p class="t-desc">Use Databricks AI to auto-generate representative eval questions from your documents — covers edge cases you'd miss manually.</p>
+          <div class="t-points">
+            <div class="t-pt">What <code>generate_eval_df</code> does: reads your docs, generates diverse Q&A pairs covering main topics and edge cases</div>
+            <div class="t-pt">Input: a list of document strings or a Unity Catalog volume path</div>
+            <div class="t-pt">Output: a Spark DataFrame in the MLflow evaluation schema, ready for <code>evaluate()</code></div>
+            <div class="t-pt">Configure <code>num_evals</code> for coverage vs. cost; recommended 50–100 for production use</div>
+            <div class="t-pt">Lab: generate 20 evals from Delta Lake documentation chunks, review diversity</div>
+          </div>
+          <div class="code-block"><span class="kw">from</span> databricks.agents.evals <span class="kw">import</span> generate_evals_df
+
+<span class="cm"># Your documentation chunks (from Delta Lake docs, UC docs, etc.)</span>
+docs = [
+    <span class="st">"Delta Lake is an open-source storage layer that provides ACID transactions..."</span>,
+    <span class="st">"VACUUM removes files no longer referenced by a Delta table..."</span>,
+    <span class="cm"># ... load from a Delta table or UC Volume</span>
+]
+
+<span class="cm"># Generate synthetic eval dataset</span>
+synthetic_eval_df = <span class="fn">generate_evals_df</span>(
+    docs=docs,
+    num_evals=<span class="nu">20</span>,          <span class="cm"># number of Q&A pairs to generate</span>
+    agent_description=<span class="st">"A Q&A assistant for Databricks and Delta Lake topics"</span>
+)
+
+synthetic_eval_df.<span class="fn">display</span>()  <span class="cm"># inspect in Databricks notebook</span>
+
+<span class="cm"># Use directly in evaluate() — it's already in the right schema</span>
+results = mlflow.genai.<span class="fn">evaluate</span>(
+    data=synthetic_eval_df,
+    predict_fn=my_agent,
+    scorers=[<span class="fn">Correctness</span>()]
+)</div>
+        </div>
+      </div>
+
+      <div class="topic">
+        <div class="topic-inner">
+          <div class="topic-header">
+            <span class="t-num">2.5</span>
+            <span class="t-title">Dataset Formats: List vs. Pandas vs. Spark vs. UC Dataset</span>
+            <div class="t-tags"><span class="tag tag-T">Theory</span></div>
+          </div>
+          <div class="t-points">
+            <div class="t-pt"><strong>List of dicts</strong> — fastest for prototyping, no persistence, ideal for notebooks</div>
+            <div class="t-pt"><strong>Pandas DataFrame</strong> — good for CSV/existing data workflows, still in-memory</div>
+            <div class="t-pt"><strong>Spark DataFrame</strong> — for large-scale eval from Delta Lake tables or UC Volumes</div>
+            <div class="t-pt"><strong>MLflow EvaluationDataset (UC-backed)</strong> — versioned, shared, governed; the enterprise standard</div>
+            <div class="t-pt">Loading UC dataset: <code>mlflow.genai.datasets.get_dataset("catalog.schema.name")</code></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <div class="mod-outcome">
+      <div class="outcome-icon">🎯</div>
+      <div class="outcome-text"><strong>Outcome:</strong> You can create, populate, and version evaluation datasets in Unity Catalog — from hand-curated examples, production traces, and synthetic generation with <code>generate_eval_df</code>. You understand when to use each data format.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ MODULE 3 -->
+<div class="module" id="m3">
+  <div class="mod-header" onclick="toggle('m3')">
+    <div class="mod-num-col">Module 03</div>
+    <div class="mod-main">
+      <div class="mod-level lv1">Beginner–Int · ~3h</div>
+      <div class="mod-title">predict_fn — All Patterns for Calling Your Agent</div>
+      <div class="mod-subtitle">The gateway between your application and the evaluation harness. Every way to wire up your agent — local, deployed, async, multi-turn.</div>
+    </div>
+    <div class="mod-toggle-col"><div class="toggle-btn" id="tb-m3">▶</div></div>
+  </div>
+  <div class="mod-body" id="body-m3">
+    <div class="topics-list">
+
+      <div class="topic">
+        <div class="topic-inner">
+          <div class="topic-header">
+            <span class="t-num">3.1</span>
+            <span class="t-title">How predict_fn Works Inside mlflow.genai.evaluate()</span>
+            <div class="t-tags"><span class="tag tag-T">Theory</span><span class="tag tag-N">New</span></div>
+          </div>
+          <div class="t-points">
+            <div class="t-pt">Three evaluate() modes: pre-generated outputs / live predict_fn / deployed endpoint</div>
+            <div class="t-pt">Key contract: function params must match the keys in <code>inputs</code> dict exactly</div>
+            <div class="t-pt">Requirements: must emit one trace per call, return JSON-serializable output, have MLflow tracing instrumented</div>
+            <div class="t-pt">Parallelism: MLflow runs predict_fn and scorers concurrently via thread pools</div>
+            <div class="t-pt">Concurrency env vars: <code>MLFLOW_GENAI_EVAL_MAX_WORKERS</code>, <code>MLFLOW_GENAI_EVAL_MAX_SCORER_WORKERS</code></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="topic">
+        <div class="topic-inner">
+          <div class="topic-header">
+            <span class="t-num">3.2</span>
+            <span class="t-title">Lab: Pattern 1 — Plain Python Function (Local Agent)</span>
+            <div class="t-tags"><span class="tag tag-H">Hands-On</span><span class="tag tag-N">New</span></div>
+          </div>
+          <p class="t-desc">Wire up a locally-defined agent function. The most common pattern during development.</p>
+          <div class="t-points">
+            <div class="t-pt">Build a simple Q&A agent using DatabricksOpenAI client in your notebook</div>
+            <div class="t-pt">Decorate with <code>@mlflow.trace</code> to satisfy the trace requirement</div>
+            <div class="t-pt">Define <code>predict_fn(question: str)</code> — key matches dataset <code>inputs.question</code></div>
+            <div class="t-pt">Run <code>mlflow.genai.evaluate(data=..., predict_fn=my_agent, scorers=[...])</code></div>
+            <div class="t-pt">Verify each row produced a trace in the MLflow UI linked to the evaluation run</div>
+          </div>
+          <div class="code-block"><span class="kw">from</span> databricks_openai <span class="kw">import</span> DatabricksOpenAI
+
+client = <span class="fn">DatabricksOpenAI</span>()
+
+<span class="nm">@mlflow.trace</span>
+<span class="kw">def</span> <span class="fn">my_agent</span>(question: str) -> str:
+    resp = client.chat.completions.<span class="fn">create</span>(
+        model=<span class="st">"databricks-claude-sonnet-4"</span>,
+        messages=[
+            {<span class="st">"role"</span>: <span class="st">"system"</span>, <span class="st">"content"</span>: <span class="st">"You are a Databricks expert."</span>},
+            {<span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: question}
+        ]
+    )
+    <span class="kw">return</span> resp.choices[<span class="nu">0</span>].message.content
+
+results = mlflow.genai.<span class="fn">evaluate</span>(
+    data=eval_dataset,   <span class="cm"># from Module 2</span>
+    predict_fn=my_agent,
+    scorers=[<span class="fn">Correctness</span>(), <span class="fn">RelevanceToQuery</span>()],
+    model_id=<span class="st">"models:/my-agent/1"</span>
+)</div>
+        </div>
+      </div>
+
+      <div class="topic">
+        <div class="topic-inner">
+          <div class="topic-header">
+            <span class="t-num">3.3</span>
+            <span class="t-title">Lab: Pattern 2 — to_predict_fn() for Deployed Endpoints</span>
+            <div class="t-tags"><span class="tag tag-H">Hands-On</span><span class="tag tag-N">New</span></div>
+          </div>
+          <p class="t-desc">Evaluate an agent already deployed to Databricks Model Serving — no code changes to the serving endpoint needed.</p>
+          <div class="t-points">
+            <div class="t-pt">How <code>to_predict_fn</code> works: translates inputs → endpoint payload, sets <code>return_trace=True</code>, copies trace to current experiment</div>
+            <div class="t-pt">Input format must match the endpoint schema: chat endpoints need <code>messages</code> key</div>
+            <div class="t-pt">Lab: wrap your tutorial endpoint and run evaluation against it</div>
+            <div class="t-pt">Compare scores between local agent (3.2) and deployed endpoint — should be identical if same model</div>
+          </div>
+          <div class="code-block"><span class="kw">import</span> mlflow
+<span class="kw">from</span> mlflow.genai.scorers <span class="kw">import</span> RelevanceToQuery, Correctness
+
+<span class="cm"># Wrap deployed endpoint — endpoint must have tracing enabled</span>
+predict_fn = mlflow.genai.<span class="fn">to_predict_fn</span>(<span class="st">"endpoints:/my-databricks-agent"</span>)
+
+<span class="cm"># Data must match endpoint input schema (chat endpoints need 'messages')</span>
+endpoint_eval_data = [
+    {<span class="st">"inputs"</span>: {<span class="st">"messages"</span>: [{<span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: <span class="st">"What is Z-ordering?"</span>]}},
+     <span class="st">"expectations"</span>: {<span class="st">"expected_facts"</span>: [<span class="st">"data skipping"</span>, <span class="st">"multi-dimensional clustering"</span>]}},
+]
+
+results = mlflow.genai.<span class="fn">evaluate</span>(
+    data=endpoint_eval_data,
+    predict_fn=predict_fn,
+    scorers=[<span class="fn">Correctness</span>(), <span class="fn">RelevanceToQuery</span>()]
+)</div>
+        </div>
+      </div>
+
+      <div class="topic">
+        <div class="topic-inner">
+          <div class="topic-header">
+            <span class="t-num">3.4</span>
+            <span class="t-title">Pattern 3 — Async predict_fn & MLflow Registered Models</span>
+            <div class="t-tags"><span class="tag tag-T">Theory</span><span class="tag tag-N">New</span></div>
+          </div>
+          <div class="t-points">
+            <div class="t-pt">Async functions: MLflow auto-detects and wraps them; default timeout 5min via <code>MLFLOW_GENAI_EVAL_ASYNC_TIMEOUT</code></div>
+            <div class="t-pt">MLflow registered model pattern: load model once outside <code>predict_fn</code> to avoid reloading per row</div>
+            <div class="t-pt">Rate limiting: wrap predict_fn with retry/backoff logic when hitting Foundation Model API limits</div>
+            <div class="t-pt">Concurrency tuning for Databricks serverless: start with <code>MAX_WORKERS=4</code>, tune based on endpoint throughput</div>
+          </div>
+          <div class="code-block"><span class="cm"># Pattern: Registered model (load ONCE outside predict_fn)</span>
+model = mlflow.pyfunc.<span class="fn">load_model</span>(<span class="st">"models:/my-agent/3"</span>)
+
+<span class="kw">def</span> <span class="fn">predict_fn</span>(question: str) -> str:
+    <span class="kw">return</span> model.<span class="fn">predict</span>({<span class="st">"question"</span>: question})
+
+<span class="cm"># Pattern: Async predict_fn</span>
+<span class="kw">async def</span> <span class="fn">async_predict_fn</span>(question: str) -> str:
+    resp = <span class="kw">await</span> async_client.chat.completions.<span class="fn">create</span>(
+        model=<span class="st">"databricks-claude-sonnet-4"</span>,
+        messages=[{<span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: question}]
+    )
+    <span class="kw">return</span> resp.choices[<span class="nu">0</span>].message.content
+<span class="cm"># MLflow auto-handles async — just pass it as predict_fn</span></div>
+        </div>
+      </div>
+
+      <div class="topic">
+        <div class="topic-inner">
+          <div class="topic-header">
+            <span class="t-num">3.5</span>
+            <span class="t-title">Pattern 4 — Multi-Turn Evaluation with ConversationSimulator</span>
+            <div class="t-tags"><span class="tag tag-T">Theory</span><span class="tag tag-N">New</span></div>
+          </div>
+          <div class="t-points">
+            <div class="t-pt">ConversationSimulator: simulates a user having a multi-turn conversation with your agent</div>
+            <div class="t-pt">predict_fn must follow OpenAI Responses API format — accepts <code>input: list[dict]</code> (conversation history)</div>
+            <div class="t-pt">Combine with multi-turn judges: <code>KnowledgeRetention</code>, <code>UserFrustration</code>, <code>TaskCompletion</code></div>
+            <div class="t-pt">Use case: evaluate context retention across a 5-turn customer support conversation</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <div class="mod-outcome">
+      <div class="outcome-icon">🎯</div>
+      <div class="outcome-text"><strong>Outcome:</strong> You can connect any agent — local function, deployed endpoint, registered model, or async — to the MLflow evaluation harness using the correct predict_fn pattern. You know when to use each.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ MODULE 4 -->
+<div class="module" id="m4">
+  <div class="mod-header" onclick="toggle('m4')">
+    <div class="mod-num-col">Module 04</div>
+    <div class="mod-main">
+      <div class="mod-level lv2">Intermediate · ~3.5h</div>
+      <div class="mod-title">Built-in Judges, Code-Based Scorers & Custom Judges</div>
+      <div class="mod-subtitle">The full scorer taxonomy — from built-in LLM judges to deterministic code scorers to custom make_judge() — with Databricks labs for each.</div>
+    </div>
+    <div class="mod-toggle-col"><div class="toggle-btn" id="tb-m4">▶</div></div>
+  </div>
+  <div class="mod-body" id="body-m4">
+    <div class="topics-list">
+
+      <div class="topic">
+        <div class="topic-inner">
+          <div class="topic-header">
+            <span class="t-num">4.1</span>
+            <span class="t-title">Scorer Taxonomy: Judges vs. Code-Based vs. Guidelines</span>
+            <div class="t-tags"><span class="tag tag-T">Theory</span></div>
+          </div>
+          <div class="t-points">
+            <div class="t-pt">The hierarchy: Scorers (interface) → LLM Judges (semantic) + Code-based (deterministic)</div>
+            <div class="t-pt">When to use each: LLM judges for subjective quality, code scorers for deterministic business rules</div>
+            <div class="t-pt">Critical constraint: code-based scorers work only in <code>evaluate()</code>; production monitoring requires LLM judges only</div>
+            <div class="t-pt">Return types: primitive (int/bool/str) vs. <code>Feedback</code> object (value + rationale + source metadata)</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="topic">
+        <div class="topic-inner">
+          <div class="topic-header">
+            <span class="t-num">4.2</span>
+            <span class="t-title">Lab: Built-in Judges — Run All on Tutorial Dataset</span>
+            <div class="t-tags"><span class="tag tag-H">Hands-On</span></div>
+          </div>
+          <p class="t-desc">Apply all built-in judges in a single evaluate() call and interpret the results dashboard.</p>
+          <div class="t-points">
+            <div class="t-pt">Judges: <code>Correctness</code>, <code>RelevanceToQuery</code>, <code>RetrievalGroundedness</code>, <code>Safety</code>, <code>Guidelines</code></div>
+            <div class="t-pt">Run all on the UC-backed dataset from Module 2</div>
+            <div class="t-pt">Interpret the results table: per-row scores, aggregate mean, rationale for each judge</div>
+            <div class="t-pt">Identify the worst-scoring rows and diagnose root cause from the trace</div>
+            <div class="t-pt">Compare two prompt versions using MLflow Experiments comparison view</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="topic">
+        <div class="topic-inner">
+          <div class="topic-header">
+            <span class="t-num">4.3</span>
+            <span class="t-title">Lab: Code-Based Scorers with @scorer Decorator</span>
+            <div class="t-tags"><span class="tag tag-H">Hands-On</span><span class="tag tag-N">New</span></div>
+          </div>
+          <p class="t-desc">Write deterministic scorers for business rules that LLMs can't reliably check — response format, latency SLAs, citation presence.</p>
+          <div class="t-points">
+            <div class="t-pt">Pattern 1 — primitive: <code>@scorer def response_length(outputs) -> int</code></div>
+            <div class="t-pt">Pattern 2 — Feedback object: include rationale and <code>AssessmentSource(source_type="CODE")</code></div>
+            <div class="t-pt">Pattern 3 — trace-based: use <code>trace.search_spans(span_type=SpanType.CHAT_MODEL)</code> to check response time</div>
+            <div class="t-pt">Lab: write a scorer that checks response is valid JSON, one that checks latency ≤ 5s, one that checks citation presence</div>
+          </div>
+          <div class="code-block"><span class="kw">from</span> mlflow.genai <span class="kw">import</span> scorer
+<span class="kw">from</span> mlflow.entities <span class="kw">import</span> Feedback, AssessmentSource, SpanType
+
+<span class="cm"># Pattern 1: Primitive return</span>
+<span class="nm">@scorer</span>
+<span class="kw">def</span> <span class="fn">word_count</span>(outputs: str) -> int:
+    <span class="kw">return</span> <span class="fn">len</span>(outputs.<span class="fn">split</span>())
+
+<span class="cm"># Pattern 2: Feedback with rationale</span>
+<span class="nm">@scorer</span>
+<span class="kw">def</span> <span class="fn">has_code_block</span>(outputs: str) -> Feedback:
+    passed = <span class="st">"```"</span> <span class="kw">in</span> outputs
+    <span class="kw">return</span> <span class="fn">Feedback</span>(
+        value=<span class="st">"yes"</span> <span class="kw">if</span> passed <span class="kw">else</span> <span class="st">"no"</span>,
+        rationale=<span class="st">"Response includes a code example"</span> <span class="kw">if</span> passed <span class="kw">else</span> <span class="st">"No code block found"</span>,
+        source=<span class="fn">AssessmentSource</span>(source_type=<span class="st">"CODE"</span>, source_id=<span class="st">"code_checker_v1"</span>)
+    )
+
+<span class="cm"># Pattern 3: Trace-based latency check</span>
+<span class="nm">@scorer</span>
+<span class="kw">def</span> <span class="fn">latency_ok</span>(trace) -> Feedback:
+    span = trace.<span class="fn">search_spans</span>(span_type=SpanType.CHAT_MODEL)[<span class="nu">0</span>]
+    ms = (span.end_time_ns - span.start_time_ns) / <span class="nu">1e6</span>
+    <span class="kw">return</span> <span class="fn">Feedback</span>(value=ms <= <span class="nu">5000</span>, rationale=<span class="st">f"</span><span class="nm">{ms:.0f}</span><span class="st">ms"</span>)</div>
+        </div>
+      </div>
+
+      <div class="topic">
+        <div class="topic-inner">
+          <div class="topic-header">
+            <span class="t-num">4.4</span>
+            <span class="t-title">Lab: Custom LLM Judge with make_judge() on Databricks</span>
+            <div class="t-tags"><span class="tag tag-H">Hands-On</span></div>
+          </div>
+          <p class="t-desc">Build a domain-specific "Databricks Technical Accuracy" judge using a Databricks-hosted model as the judge LLM.</p>
+          <div class="t-points">
+            <div class="t-pt">Write judge instructions with <code>&#123;&#123; inputs &#125;&#125;</code>, <code>&#123;&#123; outputs &#125;&#125;</code> template variables and a clear 1–5 rubric</div>
+            <div class="t-pt">Set judge model to Databricks endpoint: <code>model="databricks:/databricks-claude-sonnet-4"</code></div>
+            <div class="t-pt">Run on tutorial dataset and inspect per-row rationales</div>
+            <div class="t-pt">Iterate on rubric based on results — calibration loop</div>
+          </div>
+          <div class="code-block"><span class="kw">from</span> mlflow.genai.judges <span class="kw">import</span> make_judge
+
+tech_accuracy = <span class="fn">make_judge</span>(
+    name=<span class="st">"databricks_technical_accuracy"</span>,
+    instructions=<span class="st">"""
+    Evaluate if {{ outputs }} is technically accurate for the
+    Databricks/Delta Lake question in {{ inputs }}.
+    Score 1-5:
+      5 = Precise, correct, includes important caveats
+      4 = Mostly correct, minor omissions
+      3 = Partially correct, key concept present but incomplete
+      2 = Significant inaccuracy
+      1 = Fundamentally wrong or misleading
+    Reason step-by-step before scoring.
+    """</span>,
+    model=<span class="st">"databricks:/databricks-claude-sonnet-4"</span>
+)</div>
+        </div>
+      </div>
+
+      <div class="topic">
+        <div class="topic-inner">
+          <div class="topic-header">
+            <span class="t-num">4.5</span>
+            <span class="t-title">Lab: Guidelines Judge for Compliance & Style Rules</span>
+            <div class="t-tags"><span class="tag tag-H">Hands-On</span></div>
+          </div>
+          <p class="t-desc">Pass/fail compliance rules — the fastest way to enforce tone, format, and policy requirements.</p>
+          <div class="t-points">
+            <div class="t-pt">Write 3 compliance rules for the tutorial agent: "must not recommend deleting production tables", "response must be in English", "must cite a Databricks doc section"</div>
+            <div class="t-pt">Run <code>Guidelines(guidelines=[...])</code> on eval dataset</div>
+            <div class="t-pt">Use <code>ExpectationsGuidelines()</code> for per-row rules from domain experts</div>
+            <div class="t-pt">Combine Guidelines + Correctness + custom scorer in one evaluate() call</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <div class="mod-outcome">
+      <div class="outcome-icon">🎯</div>
+      <div class="outcome-text"><strong>Outcome:</strong> You can compose any combination of built-in judges, code-based scorers (with @scorer), and custom LLM judges in a single evaluate() call. You know which type to use for which problem, and how to calibrate custom judges.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ MODULE 5 -->
+<div class="module" id="m5">
+  <div class="mod-header" onclick="toggle('m5')">
+    <div class="mod-num-col">Module 05</div>
+    <div class="mod-main">
+      <div class="mod-level lv2">Intermediate · ~3h</div>
+      <div class="mod-title">RAG & Agent Evaluation with MLflow Tracing</div>
+      <div class="mod-subtitle">Evaluation patterns specific to retrieval pipelines and multi-step agentic systems — trace-based analysis on Databricks.</div>
+    </div>
+    <div class="mod-toggle-col"><div class="toggle-btn" id="tb-m5">▶</div></div>
+  </div>
+  <div class="mod-body" id="body-m5">
+    <div class="topics-list">
+
+      <div class="topic">
+        <div class="topic-inner">
+          <div class="topic-header">
+            <span class="t-num">5.1</span>
+            <span class="t-title">RAG Evaluation: The Three Quality Pillars</span>
+            <div class="t-tags"><span class="tag tag-T">Theory</span></div>
+          </div>
+          <div class="t-points">
+            <div class="t-pt">Retrieval quality: did we fetch the right documents? → <code>RetrievalRelevance</code></div>
+            <div class="t-pt">Generation faithfulness: is the answer grounded in retrieved context? → <code>RetrievalGroundedness</code></div>
+            <div class="t-pt">End-to-end quality: does the final answer address the question? → <code>Correctness</code> + <code>RelevanceToQuery</code></div>
+            <div class="t-pt">Failure mode diagnosis: retrieval miss vs. generation hallucination — two completely different fixes</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="topic">
+        <div class="topic-inner">
+          <div class="topic-header">
+            <span class="t-num">5.2</span>
+            <span class="t-title">Lab: Build & Evaluate a RAG Pipeline on Databricks Vector Search</span>
+            <div class="t-tags"><span class="tag tag-H">Hands-On</span></div>
+          </div>
+          <p class="t-desc">Build a minimal RAG agent using Databricks Vector Search + Foundation Model API, then evaluate all three quality pillars.</p>
+          <div class="t-points">
+            <div class="t-pt">Create a Vector Search index on Delta Lake docs chunks in Unity Catalog</div>
+            <div class="t-pt">Build a RAG agent: retrieval span → LLM generation span, both traced</div>
+            <div class="t-pt">Instrument with <code>mlflow.openai.autolog()</code> — retrieval and generation appear as separate spans</div>
+            <div class="t-pt">Run <code>RetrievalGroundedness</code> + <code>Correctness</code> + <code>retrieved_document_recall</code> (custom code scorer from Module 4)</div>
+            <div class="t-pt">Diagnose rows where Correctness=2 but Groundedness=5 (retrieval miss) vs. Groundedness=2 (hallucination)</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="topic">
+        <div class="topic-inner">
+          <div class="topic-header">
+            <span class="t-num">5.3</span>
+            <span class="t-title">Agent Tracing Deep Dive — Reading Spans</span>
+            <div class="t-tags"><span class="tag tag-T">Theory</span></div>
+          </div>
+          <div class="t-points">
+            <div class="t-pt">Span types: CHAIN, LLM, CHAT_MODEL, RETRIEVER, TOOL, EMBEDDING</div>
+            <div class="t-pt">What each span captures: inputs, outputs, start/end time, attributes</div>
+            <div class="t-pt"><code>trace.search_spans(span_type=...)</code> — the key API for trace-based scorers</div>
+            <div class="t-pt">Reading a full agent trace in the Databricks MLflow UI — timeline view, span details</div>
+            <div class="t-pt">LangGraph/LangChain autolog vs. manual <code>@mlflow.trace</code> decoration</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="topic">
+        <div class="topic-inner">
+          <div class="topic-header">
+            <span class="t-num">5.4</span>
+            <span class="t-title">Lab: Agent-Specific Judges — Tool Call Efficiency</span>
+            <div class="t-tags"><span class="tag tag-H">Hands-On</span></div>
+          </div>
+          <p class="t-desc">Evaluate agentic behavior — not just the final answer, but how efficiently the agent reached it.</p>
+          <div class="t-points">
+            <div class="t-pt">Apply <code>ToolCallEfficiency</code> to detect redundant tool calls</div>
+            <div class="t-pt">Write a trace-based scorer: count TOOL spans, flag if &gt; 3 calls for a simple query</div>
+            <div class="t-pt">Apply <code>KnowledgeRetention</code> for multi-turn conversation evaluation</div>
+            <div class="t-pt">Compare v1 vs. v2 of the agent after optimizing system prompt — use MLflow Experiments comparison</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <div class="mod-outcome">
+      <div class="outcome-icon">🎯</div>
+      <div class="outcome-text"><strong>Outcome:</strong> You can evaluate full RAG pipelines across all three quality dimensions and diagnose failure modes from traces. You can evaluate agent tool-use behavior and compare agent versions quantitatively.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ MODULE 6 -->
+<div class="module" id="m6">
+  <div class="mod-header" onclick="toggle('m6')">
+    <div class="mod-num-col">Module 06</div>
+    <div class="mod-main">
+      <div class="mod-level lv3">Advanced · ~3.5h</div>
+      <div class="mod-title">AI Gateway, Inference Tables & Production Monitoring</div>
+      <div class="mod-subtitle">The Databricks production stack: AI Gateway guardrails, Inference Tables as the audit trail, and continuous quality monitoring with registered scorers.</div>
+    </div>
+    <div class="mod-toggle-col"><div class="toggle-btn" id="tb-m6">▶</div></div>
+  </div>
+  <div class="mod-body" id="body-m6">
+    <div class="topics-list">
+
+      <div class="topic">
+        <div class="topic-inner">
+          <div class="topic-header">
+            <span class="t-num">6.1</span>
+            <span class="t-title">Databricks AI Gateway — Architecture & Role in Evaluation</span>
+            <div class="t-tags"><span class="tag tag-T">Theory</span><span class="tag tag-N">New</span></div>
+          </div>
+          <div class="t-points">
+            <div class="t-pt">What AI Gateway does: centralised control plane sitting in front of all LLM endpoints</div>
+            <div class="t-pt">Capabilities: rate limiting, cost tracking, model routing, guardrails (input/output safety filtering)</div>
+            <div class="t-pt">How guardrails relate to evaluation: AI Gateway catches policy violations before they enter your inference table; scorers catch quality degradation after</div>
+            <div class="t-pt">Layered defence model: Gateway guardrails (synchronous, blocking) → Inference Table scorers (async, analytical)</div>
+            <div class="t-pt">Configure PII detection, toxicity filtering, and topic restriction as Gateway policies</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="topic">
+        <div class="topic-inner">
+          <div class="topic-header">
+            <span class="t-num">6.2</span>
+            <span class="t-title">Lab: Enable AI Gateway on Your Tutorial Endpoint</span>
+            <div class="t-tags"><span class="tag tag-H">Hands-On</span><span class="tag tag-N">New</span></div>
+          </div>
+          <p class="t-desc">Configure AI Gateway guardrails on your serving endpoint and verify they fire on a test violation.</p>
+          <div class="t-points">
+            <div class="t-pt">Enable AI Gateway on the tutorial Model Serving endpoint via UI or REST API</div>
+            <div class="t-pt">Add an input guardrail: block queries that contain PII patterns</div>
+            <div class="t-pt">Add an output guardrail: block responses about off-topic domains</div>
+            <div class="t-pt">Test a violating query and inspect the blocked response + audit log</div>
+            <div class="t-pt">View Gateway usage metrics: request count, blocked count, cost per model, latency P95</div>
+          </div>
+          <div class="code-block"><span class="cm"># Enable AI Gateway via Databricks SDK</span>
+<span class="kw">from</span> databricks.sdk <span class="kw">import</span> WorkspaceClient
+<span class="kw">from</span> databricks.sdk.service.serving <span class="kw">import</span> AiGatewayConfig, GuardrailParameters
+
+w = <span class="fn">WorkspaceClient</span>()
+
+w.serving_endpoints.<span class="fn">put_ai_gateway</span>(
+    name=<span class="st">"my-databricks-agent"</span>,
+    guardrails=<span class="fn">AiGatewayConfig</span>(
+        input_guardrail=<span class="fn">GuardrailParameters</span>(
+            pii=<span class="st">"BLOCK"</span>,           <span class="cm"># block PII in inputs</span>
+        ),
+        output_guardrail=<span class="fn">GuardrailParameters</span>(
+            safety=<span class="st">"BLOCK"</span>        <span class="cm"># block unsafe outputs</span>
+        )
+    ),
+    inference_table_config={   <span class="cm"># enable inference table</span>
+        <span class="st">"enabled"</span>: <span class="kw">True</span>,
+        <span class="st">"catalog_name"</span>: <span class="st">"main"</span>,
+        <span class="st">"schema_name"</span>: <span class="st">"genai_eval"</span>,
+        <span class="st">"table_name_prefix"</span>: <span class="st">"tutorial_agent"</span>
+    }
+)</div>
+        </div>
+      </div>
+
+      <div class="topic">
+        <div class="topic-inner">
+          <div class="topic-header">
+            <span class="t-num">6.3</span>
+            <span class="t-title">Inference Tables — Architecture & Schema</span>
+            <div class="t-tags"><span class="tag tag-T">Theory</span><span class="tag tag-N">New</span></div>
+          </div>
+          <div class="t-points">
+            <div class="t-pt">What inference tables capture automatically: request payload, response, timestamp, latency, token count, <code>databricks_request_id</code></div>
+            <div class="t-pt">For AI agents with tracing enabled: also stores the full MLflow trace JSON per request</div>
+            <div class="t-pt">Storage: Unity Catalog Delta table — queryable with SQL, Spark, or notebooks</div>
+            <div class="t-pt">Three generated tables: <code>_request_response</code>, <code>_assessment_logs</code>, <code>_payload_request_logs</code></div>
+            <div class="t-pt">Enabling: <code>mlflow.deploy()</code> auto-enables it; or set <code>ENABLE_MLFLOW_TRACING=True</code> in endpoint config</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="topic">
+        <div class="topic-inner">
+          <div class="topic-header">
+            <span class="t-num">6.4</span>
+            <span class="t-title">Lab: Query Inference Tables & Build Eval Dataset from Production</span>
+            <div class="t-tags"><span class="tag tag-H">Hands-On</span><span class="tag tag-N">New</span></div>
+          </div>
+          <p class="t-desc">Treat your inference table as a source of truth — query it, inspect traces, and bootstrap a new eval dataset from real production traffic.</p>
+          <div class="t-points">
+            <div class="t-pt">Generate 20 test requests to your serving endpoint (simulate prod traffic)</div>
+            <div class="t-pt">Query the inference table with Spark: filter for successful requests, inspect trace JSON</div>
+            <div class="t-pt">Extract <code>databricks_request_id</code> → look up the full MLflow trace</div>
+            <div class="t-pt">Convert inference table rows to eval dataset: <code>eval_dataset.merge_records(traces=...)</code></div>
+            <div class="t-pt">Run scorers on this production-sourced dataset — the canonical quality baseline</div>
+          </div>
+          <div class="code-block"><span class="cm"># Query inference table (Delta table in UC)</span>
+inf_table = spark.<span class="fn">table</span>(<span class="st">"main.genai_eval.tutorial_agent_payload_request_logs"</span>)
+
+<span class="cm"># Filter: last 24h, successful, non-gateway-blocked</span>
+<span class="kw">from</span> pyspark.sql <span class="kw">import</span> functions <span class="kw">as</span> F
+
+recent_reqs = (
+    inf_table
+    .<span class="fn">filter</span>(F.<span class="fn">col</span>(<span class="st">"timestamp_ms"</span>) > (F.<span class="fn">unix_timestamp</span>() - <span class="nu">86400</span>) * <span class="nu">1000</span>)
+    .<span class="fn">filter</span>(F.<span class="fn">col</span>(<span class="st">"status_code"</span>) == <span class="nu">200</span>)
+    .<span class="fn">orderBy</span>(<span class="st">"timestamp_ms"</span>, ascending=<span class="kw">False</span>)
+    .<span class="fn">limit</span>(<span class="nu">50</span>)
+)
+
+<span class="cm"># Get request IDs → look up traces → add to eval dataset</span>
+req_ids = [r.databricks_request_id <span class="kw">for</span> r <span class="kw">in</span> recent_reqs.<span class="fn">collect</span>()]
+traces = mlflow.<span class="fn">search_traces</span>(
+    filter_string=<span class="st">f"tags.`mlflow.databricks.requestId` IN (</span><span class="nm">{','.join(repr(i) for i in req_ids)}</span><span class="st">)"</span>
+)
+eval_dataset.<span class="fn">merge_records</span>(traces=traces)</div>
+        </div>
+      </div>
+
+      <div class="topic">
+        <div class="topic-inner">
+          <div class="topic-header">
+            <span class="t-num">6.5</span>
+            <span class="t-title">Lab: Production Monitoring with register().start()</span>
+            <div class="t-tags"><span class="tag tag-H">Hands-On</span><span class="tag tag-N">New</span></div>
+          </div>
+          <p class="t-desc">Register your dev scorers for continuous background evaluation of production traces.</p>
+          <div class="t-points">
+            <div class="t-pt">Register Safety, Correctness, and your custom Guidelines judge with unique names</div>
+            <div class="t-pt">Configure <code>ScorerSamplingConfig(sample_rate=0.3, filter_string="tags.environment='prod'")</code></div>
+            <div class="t-pt">Verify scorer results appear as feedback on traces in the MLflow UI within minutes</div>
+            <div class="t-pt">Inspect aggregated scores in the Scorers tab — trend view over time</div>
+            <div class="t-pt">Stop a scorer: <code>registered_scorer.stop()</code>; max 20 scorers per experiment</div>
+          </div>
+          <div class="code-block"><span class="kw">from</span> mlflow.genai.scorers <span class="kw">import</span> Safety, Guidelines, Correctness, ScorerSamplingConfig
+
+<span class="cm"># Register each scorer with a unique name</span>
+safety_monitor = <span class="fn">Safety</span>().<span class="fn">register</span>(name=<span class="st">"prod_safety_v1"</span>)
+safety_monitor.<span class="fn">start</span>(sampling_config=<span class="fn">ScorerSamplingConfig</span>(sample_rate=<span class="nu">0.3</span>))
+
+correctness_monitor = <span class="fn">Correctness</span>().<span class="fn">register</span>(name=<span class="st">"prod_correctness_v1"</span>)
+correctness_monitor.<span class="fn">start</span>(sampling_config=<span class="fn">ScorerSamplingConfig</span>(sample_rate=<span class="nu">0.5</span>))
+
+<span class="cm"># Guidelines — compliance rules running 24/7</span>
+compliance_monitor = <span class="fn">Guidelines</span>(
+    name=<span class="st">"compliance"</span>,
+    guidelines=[
+        <span class="st">"Must not recommend dropping production tables"</span>,
+        <span class="st">"Response must be in English"</span>
+    ]
+).<span class="fn">register</span>(name=<span class="st">"prod_compliance_v1"</span>)
+compliance_monitor.<span class="fn">start</span>(sampling_config=<span class="fn">ScorerSamplingConfig</span>(sample_rate=<span class="nu">1.0</span>))</div>
+        </div>
+      </div>
+
+    </div>
+    <div class="mod-outcome">
+      <div class="outcome-icon">🎯</div>
+      <div class="outcome-text"><strong>Outcome:</strong> You can configure AI Gateway guardrails, enable and query inference tables, bootstrap eval datasets from production traffic, and run continuous monitoring with registered scorers — the full Databricks production quality stack.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ MODULE 7 -->
+<div class="module" id="m7">
+  <div class="mod-header" onclick="toggle('m7')">
+    <div class="mod-num-col">Module 07</div>
+    <div class="mod-main">
+      <div class="mod-level lv3">Advanced · ~3h</div>
+      <div class="mod-title">Human Feedback Loop, Judge Alignment & Pre-Deployment CI Gate</div>
+      <div class="mod-subtitle">Close the quality loop — collect expert feedback, align judges to human standards, and block deployments when scores drop.</div>
+    </div>
+    <div class="mod-toggle-col"><div class="toggle-btn" id="tb-m7">▶</div></div>
+  </div>
+  <div class="mod-body" id="body-m7">
+    <div class="topics-list">
+
+      <div class="topic">
+        <div class="topic-inner">
+          <div class="topic-header">
+            <span class="t-num">7.1</span>
+            <span class="t-title">Human Feedback in MLflow — Review App & log_feedback()</span>
+            <div class="t-tags"><span class="tag tag-T">Theory</span><span class="tag tag-N">New</span></div>
+          </div>
+          <div class="t-points">
+            <div class="t-pt">Two feedback collection paths: Review App UI (domain experts) vs. <code>mlflow.log_feedback()</code> API (end-user signals)</div>
+            <div class="t-pt">Review App: send traces for labelling, experts rate quality, labels stored as Feedback objects on the trace</div>
+            <div class="t-pt"><code>mlflow.log_feedback()</code>: lookup trace by <code>client_request_id</code>, attach thumbs-up/down + rationale</div>
+            <div class="t-pt">Feedback schema: <code>name</code>, <code>value</code>, <code>source</code> (HUMAN/CODE/LLM_JUDGE), <code>rationale</code>, <code>source_id</code> (user id)</div>
+            <div class="t-pt">Use case: customer clicks "👍 helpful" → log_feedback attaches it to the production trace</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="topic">
+        <div class="topic-inner">
+          <div class="topic-header">
+            <span class="t-num">7.2</span>
+            <span class="t-title">Lab: Collect & Store User Feedback via API</span>
+            <div class="t-tags"><span class="tag tag-H">Hands-On</span><span class="tag tag-N">New</span></div>
+          </div>
+          <p class="t-desc">Simulate a feedback endpoint — take a user rating on a request, find its trace, attach feedback.</p>
+          <div class="t-points">
+            <div class="t-pt">Generate 5 traced requests with unique <code>client_request_id</code> tags</div>
+            <div class="t-pt">Search for the trace: <code>mlflow.search_traces(filter_string="tags.client_request_id='abc'")</code></div>
+            <div class="t-pt">Log feedback: <code>mlflow.log_feedback(trace_id=..., name="user_helpful", value=True, source=AssessmentSource(source_type="HUMAN", source_id="user_123"))</code></div>
+            <div class="t-pt">View aggregated human feedback vs. automated judge scores in the MLflow UI</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="topic">
+        <div class="topic-inner">
+          <div class="topic-header">
+            <span class="t-num">7.3</span>
+            <span class="t-title">Judge Alignment — Calibrate Automated Scores to Human Judgment</span>
+            <div class="t-tags"><span class="tag tag-T">Theory</span><span class="tag tag-N">New</span></div>
+          </div>
+          <div class="t-points">
+            <div class="t-pt">Why alignment matters: uncalibrated judges can score 3.5 when humans rate 2.0 — gives false confidence</div>
+            <div class="t-pt">MLflow judge alignment: provide human-rated examples as few-shot anchors in the judge prompt</div>
+            <div class="t-pt">Measuring alignment: Pearson correlation + Cohen's kappa between judge scores and human scores</div>
+            <div class="t-pt">Target: ≥ 0.7 Pearson correlation before trusting automated scores for release decisions</div>
+            <div class="t-pt">Iterative loop: align → measure → iterate until threshold met</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="topic">
+        <div class="topic-inner">
+          <div class="topic-header">
+            <span class="t-num">7.4</span>
+            <span class="t-title">Lab: Pre-Deployment Quality Gate with Databricks Workflows</span>
+            <div class="t-tags"><span class="tag tag-H">Hands-On</span></div>
+          </div>
+          <p class="t-desc">Create a Databricks Workflow job that runs evaluation and blocks deployment on threshold violations.</p>
+          <div class="t-points">
+            <div class="t-pt">Write a notebook: load UC eval dataset → run evaluate() → extract aggregate metrics</div>
+            <div class="t-pt">Threshold logic: fail job if <code>correctness/mean &lt; 3.5</code> or <code>safety/ratio_pass &lt; 1.0</code></div>
+            <div class="t-pt">In Databricks Workflows: add this notebook as Task 1, add deploy task as Task 2 with dependency on Task 1 success</div>
+            <div class="t-pt">Test the gate: intentionally degrade the prompt, confirm Task 1 fails and deploy is blocked</div>
+            <div class="t-pt">Log all gate results to the shared MLflow experiment for audit trail</div>
+          </div>
+          <div class="code-block"><span class="cm"># Quality gate notebook — Task 1 in Databricks Workflow</span>
+<span class="kw">import</span> mlflow, sys
+<span class="kw">from</span> mlflow.genai.scorers <span class="kw">import</span> Correctness, Safety, Guidelines
+
+dataset = mlflow.genai.datasets.<span class="fn">get_dataset</span>(<span class="st">"main.genai_eval.tutorial_eval_v1"</span>)
+
+results = mlflow.genai.<span class="fn">evaluate</span>(
+    data=dataset,
+    predict_fn=my_agent,
+    scorers=[<span class="fn">Correctness</span>(), <span class="fn">Safety</span>(), tech_accuracy, compliance_judge],
+    model_id=<span class="st">"models:/my-agent/candidate"</span>
+)
+
+m = results.metrics
+print(m)
+
+<span class="cm"># Quality gate — fail job if thresholds not met</span>
+THRESHOLDS = {
+    <span class="st">"correctness/mean"</span>: <span class="nu">3.5</span>,
+    <span class="st">"safety/ratio_pass"</span>: <span class="nu">1.0</span>,   <span class="cm"># zero tolerance</span>
+    <span class="st">"databricks_technical_accuracy/mean"</span>: <span class="nu">3.0</span>,
+}
+
+failures = [f<span class="st">"</span><span class="nm">{k}</span><span class="st">: </span><span class="nm">{m[k]:.2f}</span><span class="st"> < </span><span class="nm">{v}</span><span class="st">"</span>
+            <span class="kw">for</span> k, v <span class="kw">in</span> THRESHOLDS.<span class="fn">items</span>() <span class="kw">if</span> m.<span class="fn">get</span>(k, <span class="nu">0</span>) < v]
+
+<span class="kw">if</span> failures:
+    <span class="fn">print</span>(<span class="st">f"❌ GATE FAILED:\n"</span> + <span class="st">"\n"</span>.<span class="fn">join</span>(failures))
+    dbutils.notebook.<span class="fn">exit</span>(<span class="st">"QUALITY_GATE_FAILED"</span>)  <span class="cm"># fails Workflow task</span>
+
+<span class="fn">print</span>(<span class="st">"✅ Quality gate passed — deployment approved"</span>)</div>
+        </div>
+      </div>
+
+    </div>
+    <div class="mod-outcome">
+      <div class="outcome-icon">🎯</div>
+      <div class="outcome-text"><strong>Outcome:</strong> You can collect and store human feedback via API, align judges to human standards, and enforce quality gates in Databricks Workflows — deployments are blocked automatically when scores drop below thresholds.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ MODULE 8 -->
+<div class="module" id="m8">
+  <div class="mod-header" onclick="toggle('m8')">
+    <div class="mod-num-col">Module 08</div>
+    <div class="mod-main">
+      <div class="mod-level lv4">Expert · ~4h</div>
+      <div class="mod-title">Expert Patterns, LLMOps & Capstone — End-to-End Enterprise Pipeline</div>
+      <div class="mod-subtitle">Cost optimisation, tiered evaluation strategies, expert anti-patterns, and a full capstone that wires every module together into a production-grade enterprise system.</div>
+    </div>
+    <div class="mod-toggle-col"><div class="toggle-btn" id="tb-m8">▶</div></div>
+  </div>
+  <div class="mod-body" id="body-m8">
+    <div class="topics-list">
+
+      <div class="topic">
+        <div class="topic-inner">
+          <div class="topic-header">
+            <span class="t-num">8.1</span>
+            <span class="t-title">Evaluation Cost Management at Scale</span>
+            <div class="t-tags"><span class="tag tag-T">Theory</span></div>
+          </div>
+          <div class="t-points">
+            <div class="t-pt">The cost multiplication trap: 5 judges × 10,000 prod traces/day = 50,000 LLM calls for evaluation alone</div>
+            <div class="t-pt">Tiered evaluation: cheap code scorers first → expensive LLM judges only on failures</div>
+            <div class="t-pt">Smart sampling: 100% safety + 30% quality + 10% full judge suite</div>
+            <div class="t-pt">Judge model selection for cost: use smaller models for high-volume monitoring, frontier models for pre-deployment gate</div>
+            <div class="t-pt">Databricks cost tracking: AI Gateway usage metrics + MLflow judge cost in assessment pane (requires LiteLLM)</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="topic">
+        <div class="topic-inner">
+          <div class="topic-header">
+            <span class="t-num">8.2</span>
+            <span class="t-title">Expert Anti-Patterns & How to Fix Them</span>
+            <div class="t-tags"><span class="tag tag-T">Theory</span></div>
+          </div>
+          <div class="t-points">
+            <div class="t-pt">❌ Self-evaluation bias: judging GPT-4o output with GPT-4o — use a different judge model</div>
+            <div class="t-pt">❌ One judge for everything: single Correctness judge missing safety, style, latency — decompose</div>
+            <div class="t-pt">❌ Vague rubrics: "score 1–5 based on quality" → judge scores are random — add concrete level descriptions</div>
+            <div class="t-pt">❌ Static eval dataset: not adding new failure modes as they're discovered — treat dataset as living artifact</div>
+            <div class="t-pt">❌ Skipping code scorers: using LLM judges for things regex can check — wastes budget and introduces variance</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="topic">
+        <div class="topic-inner">
+          <div class="topic-header">
+            <span class="t-num">8.3</span>
+            <span class="t-title">LLMOps — Versioning, Lineage & Governance on Databricks</span>
+            <div class="t-tags"><span class="tag tag-T">Theory</span></div>
+          </div>
+          <div class="t-points">
+            <div class="t-pt">Logged Models + <code>model_id</code> in evaluate(): links every evaluation run to a specific model version</div>
+            <div class="t-pt">Deployment Jobs in MLflow 3: managed lifecycle — evaluate → approve → deploy → monitor</div>
+            <div class="t-pt">Unity Catalog lineage: dataset → model → endpoint → inference table → evaluation — fully auditable</div>
+            <div class="t-pt">Prompt Registry: version and compare prompts alongside model versions in MLflow</div>
+            <div class="t-pt">Evaluation as a governance checkpoint: no model version moves to production without a passing eval run attached</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="topic">
+        <div class="topic-inner">
+          <div class="topic-header">
+            <span class="t-num">8.4</span>
+            <span class="t-title">CAPSTONE LAB: Full Enterprise Evaluation Pipeline from Scratch</span>
+            <div class="t-tags"><span class="tag tag-H">Hands-On</span></div>
+          </div>
+          <p class="t-desc">Build a complete, production-grade evaluation system end-to-end in a series of Databricks notebooks — wiring together every module.</p>
+          <div class="t-points">
+            <div class="t-pt"><strong>Notebook 1 — App:</strong> Build a RAG agent on Databricks Vector Search answering Unity Catalog governance questions. Trace with <code>mlflow.openai.autolog()</code>. Deploy to Model Serving with AI Gateway + inference table enabled.</div>
+            <div class="t-pt"><strong>Notebook 2 — Dataset:</strong> Generate 10 rows with <code>generate_eval_df</code>, add 10 from prod traces via inference table query, add 10 hand-curated edge cases. Save as UC-backed dataset.</div>
+            <div class="t-pt"><strong>Notebook 3 — Scorers:</strong> Build the scorer suite: <code>Correctness</code> + <code>RetrievalGroundedness</code> + <code>Safety</code> + custom <code>@scorer</code> latency check + custom <code>make_judge</code> UC-accuracy judge + <code>Guidelines</code> compliance rules.</div>
+            <div class="t-pt"><strong>Notebook 4 — CI Gate:</strong> Quality gate notebook using <code>to_predict_fn("endpoints:/...")</code> + full scorer suite + threshold logic + <code>dbutils.notebook.exit("FAILED")</code>. Wire into Databricks Workflow.</div>
+            <div class="t-pt"><strong>Notebook 5 — Monitoring:</strong> Register all LLM judges with <code>.register().start()</code> at configured sample rates. Simulate 50 prod requests. Verify feedback appears on traces. Query inference table to confirm data.</div>
+            <div class="t-pt"><strong>Notebook 6 — Feedback Loop:</strong> Simulate user feedback via <code>mlflow.log_feedback()</code>. Compare automated scores vs. human feedback. Iterate on judge prompt. Re-run gate with improved judges.</div>
+          </div>
+          <div class="note-box">Estimated time: 2.5h for the full capstone. Each notebook is self-contained and can be run independently once the app is deployed.</div>
+        </div>
+      </div>
+
+      <div class="topic">
+        <div class="topic-inner">
+          <div class="topic-header">
+            <span class="t-num">8.5</span>
+            <span class="t-title">The Complete Enterprise Eval Architecture — Reference Diagram</span>
+            <div class="t-tags"><span class="tag tag-T">Theory</span></div>
+          </div>
+          <p class="t-desc">How every piece connects in a mature Databricks GenAI evaluation system.</p>
+          <div class="t-points">
+            <div class="t-pt"><strong>Layer 1 — Dev:</strong> generate_eval_df + hand-curated → UC Dataset → predict_fn (local) → evaluate() → code scorers + LLM judges → MLflow Experiment</div>
+            <div class="t-pt"><strong>Layer 2 — CI:</strong> UC Dataset (versioned) → to_predict_fn (endpoint) → evaluate() → threshold gate → Databricks Workflow blocks or promotes</div>
+            <div class="t-pt"><strong>Layer 3 — Production:</strong> AI Gateway (guardrails) → Model Serving → Inference Table (Delta/UC) → registered scorers (.register().start()) → feedback on traces</div>
+            <div class="t-pt"><strong>Layer 4 — Feedback:</strong> Inference Table + end-user log_feedback() → Review App labelling → judge alignment → improved scorers flow back to Layer 1</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <div class="mod-outcome">
+      <div class="outcome-icon">🏆</div>
+      <div class="outcome-text"><strong>Final Outcome:</strong> You have built and can operate a complete enterprise-grade MLflow GenAI evaluation system on Databricks — covering dataset management, all scorer types, pre-deployment quality gates, AI Gateway guardrails, inference table monitoring, and a closed human feedback loop. Every layer is governed by Unity Catalog and auditable end-to-end.</div>
+    </div>
+  </div>
+</div>
+
+<!-- SUMMARY TABLE -->
+<div style="margin-top:60px; padding:32px; background:var(--surface); border:1px solid var(--border); border-radius:12px;">
+  <div style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:var(--text-muted); margin-bottom:20px;">Complete Module Summary</div>
+  <div style="overflow-x:auto;">
+    <table style="width:100%; border-collapse:collapse; font-size:12.5px;">
+      <thead>
+        <tr style="border-bottom:1px solid var(--border2);">
+          <th style="text-align:left; padding:10px 12px; color:var(--text-muted); font-weight:500; font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.08em; text-transform:uppercase;">Module</th>
+          <th style="text-align:left; padding:10px 12px; color:var(--text-muted); font-weight:500; font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.08em; text-transform:uppercase;">Focus</th>
+          <th style="text-align:center; padding:10px 12px; color:var(--text-muted); font-weight:500; font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.08em; text-transform:uppercase;">Level</th>
+          <th style="text-align:center; padding:10px 12px; color:var(--text-muted); font-weight:500; font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.08em; text-transform:uppercase;">Time</th>
+          <th style="text-align:center; padding:10px 12px; color:var(--text-muted); font-weight:500; font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.08em; text-transform:uppercase;">New?</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:10px 12px; font-family:'IBM Plex Mono',monospace; color:var(--accent-orange);">01</td>
+          <td style="padding:10px 12px; color:var(--text);">Foundations & Databricks Setup</td>
+          <td style="padding:10px 12px; text-align:center;"><span style="color:var(--l0); font-size:11px;">Beginner</span></td>
+          <td style="padding:10px 12px; text-align:center; color:var(--text-dim);">2.5h</td>
+          <td style="padding:10px 12px; text-align:center; color:var(--accent-teal); font-size:16px;">✦</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:10px 12px; font-family:'IBM Plex Mono',monospace; color:var(--accent-orange);">02</td>
+          <td style="padding:10px 12px; color:var(--text);">Evaluation Datasets — UC, Traces, generate_eval_df</td>
+          <td style="padding:10px 12px; text-align:center;"><span style="color:var(--l1); font-size:11px;">Beg–Int</span></td>
+          <td style="padding:10px 12px; text-align:center; color:var(--text-dim);">3h</td>
+          <td style="padding:10px 12px; text-align:center; color:var(--accent-orange); font-size:16px;">★</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:10px 12px; font-family:'IBM Plex Mono',monospace; color:var(--accent-orange);">03</td>
+          <td style="padding:10px 12px; color:var(--text);">predict_fn — All Patterns</td>
+          <td style="padding:10px 12px; text-align:center;"><span style="color:var(--l1); font-size:11px;">Beg–Int</span></td>
+          <td style="padding:10px 12px; text-align:center; color:var(--text-dim);">3h</td>
+          <td style="padding:10px 12px; text-align:center; color:var(--accent-orange); font-size:16px;">★</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:10px 12px; font-family:'IBM Plex Mono',monospace; color:var(--accent-orange);">04</td>
+          <td style="padding:10px 12px; color:var(--text);">Judges, Code Scorers & Custom Judges</td>
+          <td style="padding:10px 12px; text-align:center;"><span style="color:var(--l2); font-size:11px;">Intermediate</span></td>
+          <td style="padding:10px 12px; text-align:center; color:var(--text-dim);">3.5h</td>
+          <td style="padding:10px 12px; text-align:center; color:var(--accent-teal); font-size:16px;">✦</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:10px 12px; font-family:'IBM Plex Mono',monospace; color:var(--accent-orange);">05</td>
+          <td style="padding:10px 12px; color:var(--text);">RAG & Agent Evaluation</td>
+          <td style="padding:10px 12px; text-align:center;"><span style="color:var(--l2); font-size:11px;">Intermediate</span></td>
+          <td style="padding:10px 12px; text-align:center; color:var(--text-dim);">3h</td>
+          <td style="padding:10px 12px; text-align:center; color:var(--accent-teal); font-size:16px;">✦</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:10px 12px; font-family:'IBM Plex Mono',monospace; color:var(--accent-orange);">06</td>
+          <td style="padding:10px 12px; color:var(--text);">AI Gateway, Inference Tables & Prod Monitoring</td>
+          <td style="padding:10px 12px; text-align:center;"><span style="color:var(--l3); font-size:11px;">Advanced</span></td>
+          <td style="padding:10px 12px; text-align:center; color:var(--text-dim);">3.5h</td>
+          <td style="padding:10px 12px; text-align:center; color:var(--accent-orange); font-size:16px;">★</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:10px 12px; font-family:'IBM Plex Mono',monospace; color:var(--accent-orange);">07</td>
+          <td style="padding:10px 12px; color:var(--text);">Human Feedback, Judge Alignment & CI Gate</td>
+          <td style="padding:10px 12px; text-align:center;"><span style="color:var(--l3); font-size:11px;">Advanced</span></td>
+          <td style="padding:10px 12px; text-align:center; color:var(--text-dim);">3h</td>
+          <td style="padding:10px 12px; text-align:center; color:var(--accent-orange); font-size:16px;">★</td>
+        </tr>
+        <tr>
+          <td style="padding:10px 12px; font-family:'IBM Plex Mono',monospace; color:var(--accent-orange);">08</td>
+          <td style="padding:10px 12px; color:var(--text);">Expert Patterns, LLMOps & Full Capstone</td>
+          <td style="padding:10px 12px; text-align:center;"><span style="color:var(--l4); font-size:11px;">Expert</span></td>
+          <td style="padding:10px 12px; text-align:center; color:var(--text-dim);">4h</td>
+          <td style="padding:10px 12px; text-align:center; color:var(--accent-teal); font-size:16px;">✦</td>
+        </tr>
+      </tbody>
+    </table>
+    <div style="margin-top:12px; display:flex; gap:20px; font-size:11px; color:var(--text-muted);">
+      <span><span style="color:var(--accent-orange);">★</span> = Entirely new module</span>
+      <span><span style="color:var(--accent-teal);">✦</span> = Significantly updated</span>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<script>
+function toggle(id) {
+  const body = document.getElementById('body-' + id);
+  const btn = document.getElementById('tb-' + id);
+  const open = body.classList.contains('open');
+  body.classList.toggle('open', !open);
+  btn.textContent = open ? '▶' : '▼';
+}
+</script>
+</body>
+</html>

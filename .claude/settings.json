@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//Users/sourav.banerjee/.claude/skills/format-notebook/notebook/**)",
+      "Bash(python3 -c \"import json; nb=json.load\\(open\\('/Users/sourav.banerjee/.claude/skills/format-notebook/notebook/sample.ipynb'\\)\\); [print\\(f'--- CELL {i} [{c[\\\\\"cell_type\\\\\"]}] ---'\\); print\\(''.join\\(c['source']\\)[:400] if isinstance\\(c['source'],list\\) else c['source'][:400]\\) for i,c in enumerate\\(nb['cells'][:6]\\)]\")",
+      "Bash(python3)",
+      "Bash(python3 convert_notebooks.py)"
+    ],
+    "additionalDirectories": [
+      "/tmp",
+      "/private/tmp"
+    ]
+  }
+}
