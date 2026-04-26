@@ -153,7 +153,48 @@ spark.sql(f"DESCRIBE TABLE {DATASET_FQN}").display()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Step 6 — (Optional) Smoke-Test with `mlflow.genai.evaluate`
+# MAGIC ## Step 6 — Version the Dataset (Delta Time Travel)
+# MAGIC
+# MAGIC Every `merge_records` call appends a new Delta version. This is how MLflow's eval datasets get *versioning for free* — there is no parallel "dataset registry" service, just Delta. Use `DESCRIBE HISTORY` to inspect versions and `VERSION AS OF` to query an older snapshot.
+# MAGIC
+# MAGIC **Why versioning matters for evals:**
+# MAGIC - Reproduce an old eval run by pinning the dataset version it ran against
+# MAGIC - Audit when and why test cases were added or removed
+# MAGIC - A/B compare an agent's score on dataset v1 vs v2 to detect coverage drift
+
+# COMMAND ----------
+
+# DBTITLE 1,Inspect dataset history
+display(spark.sql(f"DESCRIBE HISTORY {DATASET_FQN}"))
+
+# COMMAND ----------
+
+# DBTITLE 1,Append two more rows — creates a new version
+extra_rows = [
+    {
+        "inputs": {"question": "What is Liquid Clustering in Delta Lake?"},
+        "expectations": {"expected_facts": ["incremental clustering", "no manual ZORDER", "improves selective queries"]},
+    },
+    {
+        "inputs": {"question": "How does Predictive Optimization work?"},
+        "expectations": {"expected_facts": ["automatic OPTIMIZE", "automatic VACUUM", "managed by Databricks"]},
+    },
+]
+eval_dataset.merge_records(records=extra_rows)
+display(spark.sql(f"DESCRIBE HISTORY {DATASET_FQN}").limit(5))
+
+# COMMAND ----------
+
+# DBTITLE 1,Time-travel back to v0 — original 10 rows
+v0 = spark.sql(f"SELECT * FROM {DATASET_FQN} VERSION AS OF 0")
+print(f"Version 0 row count: {v0.count()} (expect ~10)")
+current = spark.table(DATASET_FQN)
+print(f"Current row count:   {current.count()} (expect ~12)")
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## Step 7 — (Optional) Smoke-Test with `mlflow.genai.evaluate`
 # MAGIC
 # MAGIC The dataset is already in the right schema — passing it into `evaluate()` requires nothing extra. We run a tiny one-row check so you can confirm the round-trip works before Module 3.
 
@@ -201,6 +242,7 @@ display(results.tables["eval_results"])
 # MAGIC | UC dataset `tutorial_eval_v1` created | ✅ |
 # MAGIC | 10 rows inserted with `expected_facts` | ✅ |
 # MAGIC | Dataset visible in Catalog Explorer | ✅ |
+# MAGIC | Versioning verified via `DESCRIBE HISTORY` + `VERSION AS OF` | ✅ |
 # MAGIC | Smoke-test `evaluate()` returns Correctness scores | ✅ |
 # MAGIC
 # MAGIC Next: **Lab 2.3** — build a dataset from real production traces.

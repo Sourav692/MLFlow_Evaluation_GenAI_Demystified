@@ -238,5 +238,46 @@ display(results.tables["eval_results"])
 # MAGIC | Coverage spread across multiple source docs | ✅ |
 # MAGIC | Synthetic set persisted as `tutorial_eval_synthetic_v1` | ✅ |
 # MAGIC | `evaluate()` ran end-to-end with Correctness judge | ✅ |
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ---
+# MAGIC ## Module 2 Outcome — Decision Matrix
 # MAGIC
+# MAGIC > **Outcome:** *You can create, populate, and version evaluation datasets in Unity Catalog — from hand-curated examples, production traces, and synthetic generation with `generate_evals_df`. You understand when to use each data format.*
+# MAGIC
+# MAGIC ### When to Use Each Approach
+# MAGIC
+# MAGIC | Approach | Lab | Best for | Strengths | Watch out for |
+# MAGIC | --- | --- | --- | --- | --- |
+# MAGIC | **Hand-curated** | 2.2 | Bootstrapping, regression suites for known-tricky cases, golden ground truth | High control, every row reviewed, comes with `expected_facts` | Coverage limited to what you remembered to write; doesn't scale |
+# MAGIC | **From production traces** | 2.3 | Regression on shipped behaviour, real-distribution coverage | Matches actual user queries; updates organically as traffic evolves | Arrives without `expectations` — must annotate before using `Correctness` judge |
+# MAGIC | **Synthetic (`generate_evals_df`)** | 2.4 | Coverage breadth, edge cases, cold start when you have docs but no traffic | Scales to hundreds of rows cheaply; covers main topics + edge cases | Quality depends on the generator; needs a human review pass for production use |
+# MAGIC
+# MAGIC ### Production Recipe — Combine All Three
+# MAGIC
+# MAGIC Mature eval suites blend the three sources:
+# MAGIC
+# MAGIC 1. **Hand-curated (~10–30 rows)** — bug-derived regression cases, important customer scenarios, known failure modes.
+# MAGIC 2. **Trace-derived (~100–1000 rows)** — sample real prod traffic weekly, annotate, and append. This is your *distribution-realistic* base.
+# MAGIC 3. **Synthetic (~50–100 rows)** — fill coverage gaps the first two miss (rare topics, adversarial phrasings, edge cases from new docs).
+# MAGIC
+# MAGIC All three live as Delta tables in UC, share the same MLflow eval schema, and can be merged into a single dataset for `mlflow.genai.evaluate()`. Versioning comes from Delta — every `merge_records` call creates a new version, so you can pin an eval run to an exact dataset snapshot.
+# MAGIC
+# MAGIC ### Outcome Coverage Map
+# MAGIC
+# MAGIC | Outcome Component | Where Covered |
+# MAGIC | --- | --- |
+# MAGIC | **Create UC datasets** | Lab 2.2 (`create_dataset`), 2.3 (`create_dataset` + traces), 2.4 (`saveAsTable`) |
+# MAGIC | **Populate datasets** | Lab 2.2 (`merge_records(records=...)`), 2.3 (`merge_records(traces=...)`), 2.4 (`generate_evals_df`) |
+# MAGIC | **Version datasets** | Lab 2.2 Step 6 — `DESCRIBE HISTORY` + `VERSION AS OF` |
+# MAGIC | **Three data formats** | Hand-curated (2.2), production-trace (2.3), synthetic (2.4) |
+# MAGIC | **When to use each** | Decision matrix above |
+
+# COMMAND ----------
+
+# MAGIC %md
 # MAGIC **Module 2 done.** You now have three ways to build an eval dataset — hand-curated, trace-derived, and synthetic — and you know when to reach for each.
+# MAGIC
+# MAGIC Next: **Module 3 — Connecting Agents to the Eval Harness** — four `predict_fn` patterns covering local, deployed, registered, and async agents.
