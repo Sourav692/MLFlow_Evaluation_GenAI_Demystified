@@ -4,7 +4,13 @@
       "Read(//Users/sourav.banerjee/.claude/skills/format-notebook/notebook/**)",
       "Bash(python3 -c \"import json; nb=json.load\\(open\\('/Users/sourav.banerjee/.claude/skills/format-notebook/notebook/sample.ipynb'\\)\\); [print\\(f'--- CELL {i} [{c[\\\\\"cell_type\\\\\"]}] ---'\\); print\\(''.join\\(c['source']\\)[:400] if isinstance\\(c['source'],list\\) else c['source'][:400]\\) for i,c in enumerate\\(nb['cells'][:6]\\)]\")",
       "Bash(python3)",
-      "Bash(python3 convert_notebooks.py)"
+      "Bash(python3 convert_notebooks.py)",
+      "Bash(python3 -c ' *)",
+      "Bash(cp \"/Users/sourav.banerjee/Documents/2. Codebases/2. AI_Engineering/MLFlow_Evaluation_GenAI_Demystified/src/1.3_Lab_Databricks_Workspace_Setup.py\" \"/Users/sourav.banerjee/Documents/2. Codebases/2. AI_Engineering/MLFlow_Evaluation_GenAI_Demystified/Module_01/\")",
+      "Bash(cp \"/Users/sourav.banerjee/Documents/2. Codebases/2. AI_Engineering/MLFlow_Evaluation_GenAI_Demystified/src/2.2_Lab_UC_Backed_Dataset_From_Scratch.py\" \"/Users/sourav.banerjee/Documents/2. Codebases/2. AI_Engineering/MLFlow_Evaluation_GenAI_Demystified/src/2.3_Lab_Dataset_From_Production_Traces.py\" \"/Users/sourav.banerjee/Documents/2. Codebases/2. AI_Engineering/MLFlow_Evaluation_GenAI_Demystified/src/2.4_Lab_Synthetic_Dataset_Generation.py\" \"/Users/sourav.banerjee/Documents/2. Codebases/2. AI_Engineering/MLFlow_Evaluation_GenAI_Demystified/Module_02/\")",
+      "Bash(python /tmp/convert_notebooks.py)",
+      "Bash(python -c ' *)",
+      "Bash(python3 -c 'import json,sys; json.load\\(open\\('\\\\''__TRACKED_VAR__'\\\\''\\)\\); print\\('\\\\''OK '\\\\'', '\\\\''__TRACKED_VAR__'\\\\''\\)')"
     ],
     "additionalDirectories": [
       "/tmp",
