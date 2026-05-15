@@ -1613,6 +1613,485 @@ footer {
   </div>
 </section>
 
+<!-- ═══ SEE IT RUN — INTERACTIVE EVAL REPLAY ═══ -->
+<style>
+  .demo-section { padding: 100px 40px; border-bottom: 1px solid var(--border); position: relative; }
+  .demo-inner { max-width: 1240px; margin: 0 auto; }
+  .demo-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 32px; margin-bottom: 36px; flex-wrap: wrap; }
+  .demo-head-left { max-width: 720px; }
+  .demo-controls { display: flex; gap: 10px; align-items: center; }
+  .demo-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: transparent; color: var(--text-dim);
+    border: 1px solid var(--border); border-radius: 6px;
+    padding: 9px 14px; font: 500 12px/1 var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    letter-spacing: 0.04em; text-transform: uppercase; cursor: pointer;
+    transition: all .15s ease;
+  }
+  .demo-btn:hover { color: var(--text); border-color: var(--accent-line); background: var(--accent-soft); }
+  .demo-btn.primary { color: var(--accent); border-color: var(--accent-line); background: var(--accent-soft); }
+  .demo-btn .icon { width: 14px; height: 14px; }
+  .demo-status {
+    font: 500 11px/1 var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted);
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .demo-status .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-faint); transition: all .25s ease; }
+  .demo-status.running .dot { background: var(--accent); box-shadow: 0 0 8px var(--accent); animation: dot-pulse 1.2s infinite; }
+  .demo-status.done .dot { background: #4ade80; box-shadow: 0 0 8px rgba(74,222,128,.6); }
+
+  .demo-grid {
+    display: grid;
+    grid-template-columns: 1.25fr 1fr;
+    gap: 18px;
+    align-items: stretch;
+  }
+  .demo-panel {
+    background: var(--panel, #111);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 22px;
+    display: flex; flex-direction: column;
+    min-height: 360px;
+  }
+  .demo-panel-head {
+    display: flex; align-items: center; gap: 10px;
+    padding-bottom: 14px; margin-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .demo-panel-head .tile-dot { background: var(--accent); }
+  .demo-panel-title {
+    font: 600 13px/1 var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    color: var(--text); letter-spacing: 0.02em;
+  }
+  .demo-panel-meta {
+    margin-left: auto;
+    font: 500 10px/1 var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    color: var(--text-muted); letter-spacing: 0.08em; text-transform: uppercase;
+  }
+
+  /* Trace panel */
+  .demo-query {
+    font: 500 13px/1.5 var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    color: var(--text-dim);
+    padding: 10px 12px; margin-bottom: 14px;
+    background: rgba(255,255,255,.02);
+    border: 1px solid var(--border); border-radius: 6px;
+    min-height: 38px;
+  }
+  .demo-query .q-label { color: var(--text-muted); margin-right: 8px; }
+  .demo-query .caret { display:inline-block; width: 7px; height: 13px; background: var(--accent); vertical-align: -2px; margin-left: 2px; animation: caret 1s steps(1) infinite; }
+  @keyframes caret { 50% { opacity: 0; } }
+
+  .demo-trace { display: flex; flex-direction: column; gap: 6px; }
+  .d-row {
+    display: flex; align-items: center; gap: 10px;
+    font: 500 12px/1 var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    color: var(--text-dim);
+    padding: 7px 10px; border-radius: 5px;
+    background: rgba(255,255,255,.015);
+    border: 1px solid transparent;
+    opacity: 0; transform: translateY(4px);
+    transition: opacity .35s ease, transform .35s ease, border-color .35s ease, background .35s ease;
+  }
+  .d-row.visible { opacity: 1; transform: translateY(0); }
+  .d-row.active { border-color: var(--accent-line); background: var(--accent-soft); color: var(--text); }
+  .d-row.done { color: var(--text); }
+  .d-row .d-tree { color: var(--text-faint); width: 36px; flex-shrink: 0; }
+  .d-row.indent-1 .d-tree { padding-left: 14px; }
+  .d-row.indent-2 .d-tree { padding-left: 28px; }
+  .d-row .d-name { flex: 1; }
+  .d-row .d-dur { color: var(--accent); font-variant-numeric: tabular-nums; font-size: 11px; }
+  .d-row.pending .d-dur { color: var(--text-faint); }
+  .d-row .spinner {
+    width: 10px; height: 10px; border-radius: 50%;
+    border: 1.5px solid var(--accent-line); border-top-color: var(--accent);
+    animation: spin .7s linear infinite; flex-shrink: 0;
+  }
+  .d-row:not(.active) .spinner { display: none; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Scores panel */
+  .demo-scores { display: flex; flex-direction: column; gap: 14px; flex: 1; }
+  .d-score {
+    opacity: 0; transform: translateY(4px);
+    transition: opacity .4s ease, transform .4s ease;
+  }
+  .d-score.visible { opacity: 1; transform: translateY(0); }
+  .d-score-row { display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px; }
+  .d-score-name {
+    font: 500 12px/1 var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    color: var(--text); letter-spacing: 0.01em;
+  }
+  .d-score-judge { font: 400 10px/1 var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace); color: var(--text-muted); letter-spacing: 0.04em; }
+  .d-score-val {
+    margin-left: auto;
+    font: 600 13px/1 var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    color: var(--accent); font-variant-numeric: tabular-nums;
+  }
+  .d-score.pass .d-score-val { color: #4ade80; }
+  .d-score.fail .d-score-val { color: #f87171; }
+  .d-score-bar { height: 4px; background: rgba(255,255,255,.05); border-radius: 2px; overflow: hidden; }
+  .d-score-fill {
+    height: 100%; width: 0%;
+    background: linear-gradient(90deg, var(--accent), var(--accent-hover));
+    border-radius: 2px;
+    transition: width .8s cubic-bezier(.2,.7,.2,1);
+  }
+  .d-score.pass .d-score-fill { background: linear-gradient(90deg, #4ade80, #22c55e); }
+  .d-score.fail .d-score-fill { background: linear-gradient(90deg, #f87171, #ef4444); }
+
+  .demo-verdict {
+    margin-top: 18px; padding: 14px 16px;
+    border: 1px solid var(--border); border-radius: 8px;
+    background: rgba(255,255,255,.02);
+    display: flex; align-items: center; gap: 12px;
+    opacity: 0; transition: opacity .5s ease, border-color .5s ease, background .5s ease;
+  }
+  .demo-verdict.visible { opacity: 1; }
+  .demo-verdict.pass { border-color: rgba(74,222,128,.35); background: rgba(74,222,128,.06); }
+  .demo-verdict .v-icon { width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: rgba(74,222,128,.15); color: #4ade80; flex-shrink: 0; }
+  .demo-verdict .v-icon svg { width: 14px; height: 14px; }
+  .demo-verdict .v-text { font: 600 13px/1.3 var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace); color: var(--text); }
+  .demo-verdict .v-sub { font: 400 11px/1.3 var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace); color: var(--text-muted); margin-top: 3px; letter-spacing: 0.02em; }
+
+  .demo-footnote {
+    margin-top: 22px;
+    font: 400 12px/1.5 var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    color: var(--text-muted); letter-spacing: 0.02em; text-align: center;
+  }
+  .demo-footnote code { color: var(--accent); background: var(--accent-soft); padding: 2px 6px; border-radius: 4px; font-size: 11px; }
+
+  @media (max-width: 820px) {
+    .demo-section { padding: 70px 24px; }
+    .demo-grid { grid-template-columns: 1fr; }
+    .demo-panel { min-height: 0; }
+    .demo-head { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+
+<section class="demo-section" id="demo">
+  <div class="demo-inner">
+    <div class="demo-head">
+      <div class="demo-head-left">
+        <span class="section-tag mono">SEE IT RUN</span>
+        <h2 class="section-title">One eval, <em>traced and scored</em> in real time.</h2>
+        <p class="section-lede">A live replay of a single agent invocation flowing through retrieval, generation, and the full scorer suite — the same loop you'll build by Module 4. Press replay to run it again.</p>
+      </div>
+      <div class="demo-controls">
+        <span class="demo-status" id="demoStatus"><span class="dot"></span><span id="demoStatusText">Idle</span></span>
+        <button class="demo-btn primary" id="demoPlay" type="button">
+          <svg class="icon"><use href="#i-play-circle"/></svg>
+          <span id="demoPlayLabel">Replay</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="demo-grid reveal">
+      <!-- Trace panel -->
+      <div class="demo-panel">
+        <div class="demo-panel-head">
+          <span class="tile-dot"></span>
+          <span class="demo-panel-title">trace · run-a7c91</span>
+          <span class="demo-panel-meta" id="demoTotal">0 ms</span>
+        </div>
+        <div class="demo-query" id="demoQuery">
+          <span class="q-label">query</span><span id="demoQueryText"></span><span class="caret" id="demoCaret"></span>
+        </div>
+        <div class="demo-trace" id="demoTrace">
+          <div class="d-row" data-step="0" data-dur="284"><span class="d-tree">▼</span><span class="d-name">agent.invoke</span><span class="spinner"></span><span class="d-dur">— ms</span></div>
+          <div class="d-row indent-1" data-step="1" data-dur="42"><span class="d-tree">├─</span><span class="d-name">retriever.search</span><span class="spinner"></span><span class="d-dur">— ms</span></div>
+          <div class="d-row indent-1" data-step="2" data-dur="18"><span class="d-tree">├─</span><span class="d-name">rerank</span><span class="spinner"></span><span class="d-dur">— ms</span></div>
+          <div class="d-row indent-1" data-step="3" data-dur="203"><span class="d-tree">└─ ▼</span><span class="d-name">llm.generate</span><span class="spinner"></span><span class="d-dur">— ms</span></div>
+          <div class="d-row indent-2" data-step="4" data-dur="198"><span class="d-tree">└─</span><span class="d-name">openai.chat</span><span class="spinner"></span><span class="d-dur">— ms</span></div>
+        </div>
+      </div>
+
+      <!-- Scores panel -->
+      <div class="demo-panel">
+        <div class="demo-panel-head">
+          <span class="tile-dot"></span>
+          <span class="demo-panel-title">scorer suite</span>
+          <span class="demo-panel-meta" id="demoScorerMeta">0 / 4 scored</span>
+        </div>
+        <div class="demo-scores" id="demoScores">
+          <div class="d-score" data-score="0" data-target="0.92" data-threshold="0.85">
+            <div class="d-score-row">
+              <span class="d-score-name">Correctness</span>
+              <span class="d-score-judge">judges.Correctness</span>
+              <span class="d-score-val">—</span>
+            </div>
+            <div class="d-score-bar"><div class="d-score-fill"></div></div>
+          </div>
+          <div class="d-score" data-score="1" data-target="1.00" data-threshold="0.95">
+            <div class="d-score-row">
+              <span class="d-score-name">Safety</span>
+              <span class="d-score-judge">judges.Safety</span>
+              <span class="d-score-val">—</span>
+            </div>
+            <div class="d-score-bar"><div class="d-score-fill"></div></div>
+          </div>
+          <div class="d-score" data-score="2" data-target="0.87" data-threshold="0.80">
+            <div class="d-score-row">
+              <span class="d-score-name">Groundedness</span>
+              <span class="d-score-judge">judges.RetrievalGroundedness</span>
+              <span class="d-score-val">—</span>
+            </div>
+            <div class="d-score-bar"><div class="d-score-fill"></div></div>
+          </div>
+          <div class="d-score" data-score="3" data-target="284" data-threshold="500" data-unit="ms" data-inverse="1">
+            <div class="d-score-row">
+              <span class="d-score-name">Latency</span>
+              <span class="d-score-judge">@scorer p50_ms</span>
+              <span class="d-score-val">—</span>
+            </div>
+            <div class="d-score-bar"><div class="d-score-fill"></div></div>
+          </div>
+        </div>
+        <div class="demo-verdict" id="demoVerdict">
+          <span class="v-icon"><svg><use href="#i-check"/></svg></span>
+          <div>
+            <div class="v-text" id="demoVerdictText">Quality gate: PASSED</div>
+            <div class="v-sub" id="demoVerdictSub">All 4 scorers above threshold · deploy unblocked</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p class="demo-footnote">
+      This is the same loop <code>mlflow.genai.evaluate()</code> runs across thousands of traces in CI. You write it in Module 04.
+    </p>
+  </div>
+</section>
+
+<script>
+(function () {
+  var section = document.getElementById('demo');
+  if (!section) return;
+
+  var playBtn = document.getElementById('demoPlay');
+  var playLabel = document.getElementById('demoPlayLabel');
+  var status = document.getElementById('demoStatus');
+  var statusText = document.getElementById('demoStatusText');
+  var queryText = document.getElementById('demoQueryText');
+  var caret = document.getElementById('demoCaret');
+  var totalEl = document.getElementById('demoTotal');
+  var scorerMeta = document.getElementById('demoScorerMeta');
+  var verdict = document.getElementById('demoVerdict');
+  var rows = section.querySelectorAll('.d-row');
+  var scores = section.querySelectorAll('.d-score');
+
+  var QUERY = 'How does AI Gateway enforce PII guardrails on a serving endpoint?';
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ── Reduced-motion: paint final state, no animation, no autoplay, no listeners ──
+  if (reduceMotion) {
+    queryText.textContent = QUERY;
+    caret.style.display = 'none';
+    totalEl.textContent = '284 ms';
+    rows.forEach(function (r) {
+      r.classList.add('visible', 'done');
+      r.querySelector('.d-dur').textContent = r.dataset.dur + ' ms';
+    });
+    scores.forEach(function (s) {
+      s.classList.add('visible');
+      var inverse = s.dataset.inverse === '1';
+      var target = parseFloat(s.dataset.target);
+      var threshold = parseFloat(s.dataset.threshold);
+      var pass = inverse ? target <= threshold : target >= threshold;
+      s.classList.add(pass ? 'pass' : 'fail');
+      s.querySelector('.d-score-val').textContent = inverse ? target + ' ms' : target.toFixed(2);
+      s.querySelector('.d-score-fill').style.width = inverse ? '57%' : (target * 100) + '%';
+    });
+    scorerMeta.textContent = '4 / 4 scored';
+    verdict.classList.add('visible', 'pass');
+    status.classList.add('done');
+    statusText.textContent = 'Passed';
+    playBtn.setAttribute('disabled', 'disabled');
+    playBtn.style.opacity = '0.5';
+    playBtn.style.cursor = 'not-allowed';
+    return;
+  }
+
+  var timeouts = [];
+  var intervals = [];
+  var rafs = [];
+  var running = false;
+
+  function schedule(fn, ms) { var t = setTimeout(fn, ms); timeouts.push(t); return t; }
+  function startInterval(fn, ms) { var iv = setInterval(fn, ms); intervals.push(iv); return iv; }
+  function startRaf(fn) { var id = requestAnimationFrame(fn); rafs.push(id); return id; }
+  function clearAll() {
+    timeouts.forEach(clearTimeout); timeouts = [];
+    intervals.forEach(clearInterval); intervals = [];
+    rafs.forEach(cancelAnimationFrame); rafs = [];
+  }
+
+  function reset() {
+    clearAll();
+    running = false;
+    queryText.textContent = '';
+    caret.style.display = 'inline-block';
+    totalEl.textContent = '0 ms';
+    scorerMeta.textContent = '0 / 4 scored';
+    verdict.classList.remove('visible', 'pass');
+    status.classList.remove('running', 'done');
+    statusText.textContent = 'Idle';
+    rows.forEach(function (r) {
+      r.classList.remove('visible', 'active', 'done', 'pending');
+      r.querySelector('.d-dur').textContent = '— ms';
+    });
+    scores.forEach(function (s) {
+      s.classList.remove('visible', 'pass', 'fail');
+      s.querySelector('.d-score-val').textContent = '—';
+      s.querySelector('.d-score-fill').style.width = '0%';
+    });
+  }
+
+  function typeQuery(done) {
+    var i = 0;
+    var iv = startInterval(function () {
+      queryText.textContent = QUERY.slice(0, ++i);
+      if (i >= QUERY.length) { clearInterval(iv); caret.style.display = 'none'; done && done(); }
+    }, 22);
+  }
+
+  function animateRow(row, dur, after) {
+    row.classList.add('visible', 'active');
+    var durEl = row.querySelector('.d-dur');
+    var start = performance.now();
+    function tick(t) {
+      var p = Math.min(1, (t - start) / dur);
+      durEl.textContent = Math.round(p * dur) + ' ms';
+      if (p < 1) { startRaf(tick); }
+      else {
+        row.classList.remove('active');
+        row.classList.add('done');
+        after && after();
+      }
+    }
+    startRaf(tick);
+  }
+
+  function animateScore(idx, after) {
+    var s = scores[idx];
+    s.classList.add('visible');
+    var target = parseFloat(s.dataset.target);
+    var threshold = parseFloat(s.dataset.threshold);
+    var unit = s.dataset.unit || '';
+    var inverse = s.dataset.inverse === '1';
+    var pass = inverse ? target <= threshold : target >= threshold;
+    var val = s.querySelector('.d-score-val');
+    var fill = s.querySelector('.d-score-fill');
+    s.classList.add(pass ? 'pass' : 'fail');
+    var start = performance.now();
+    var dur = 700;
+    var max = inverse ? 600 : 1;
+    function tick(t) {
+      var p = Math.min(1, (t - start) / dur);
+      var ease = 1 - Math.pow(1 - p, 3);
+      var cur = target * ease;
+      if (inverse) { val.textContent = Math.round(cur) + ' ' + unit; }
+      else { val.textContent = cur.toFixed(2); }
+      var pct = inverse ? Math.max(8, 100 - (cur / max) * 100) : (cur / max) * 100;
+      fill.style.width = pct + '%';
+      if (p < 1) startRaf(tick);
+      else {
+        scorerMeta.textContent = (idx + 1) + ' / 4 scored';
+        after && after();
+      }
+    }
+    startRaf(tick);
+  }
+
+  function run() {
+    if (running) return;
+    reset();
+    running = true;
+    playLabel.textContent = 'Running…';
+    status.classList.add('running');
+    statusText.textContent = 'Tracing';
+
+    typeQuery(function () {
+      // agent.invoke parent shows immediately
+      rows[0].classList.add('visible', 'active');
+      var grandTotal = 0;
+      var totalDur = 284;
+      // animate agent.invoke ticking from 0 → 284 over full duration
+      var startT = performance.now();
+      function tickTotal(t) {
+        var p = Math.min(1, (t - startT) / totalDur);
+        totalEl.textContent = Math.round(p * totalDur) + ' ms';
+        rows[0].querySelector('.d-dur').textContent = Math.round(p * totalDur) + ' ms';
+        if (p < 1) startRaf(tickTotal);
+        else {
+          rows[0].classList.remove('active');
+          rows[0].classList.add('done');
+        }
+      }
+      startRaf(tickTotal);
+
+      // staggered children
+      schedule(function () { animateRow(rows[1], 42); }, 80);
+      schedule(function () { animateRow(rows[2], 18); }, 140);
+      schedule(function () {
+        rows[3].classList.add('visible', 'active');
+        var s = performance.now();
+        function tick(t) {
+          var p = Math.min(1, (t - s) / 203);
+          rows[3].querySelector('.d-dur').textContent = Math.round(p * 203) + ' ms';
+          if (p < 1) startRaf(tick);
+          else { rows[3].classList.remove('active'); rows[3].classList.add('done'); }
+        }
+        startRaf(tick);
+        schedule(function () { animateRow(rows[4], 198); }, 60);
+      }, 200);
+
+      // Scoring phase after trace completes
+      schedule(function () {
+        statusText.textContent = 'Scoring';
+        animateScore(0, function () {
+          schedule(function () { animateScore(1, function () {
+            schedule(function () { animateScore(2, function () {
+              schedule(function () { animateScore(3, function () {
+                // Verdict
+                schedule(function () {
+                  verdict.classList.add('visible', 'pass');
+                  status.classList.remove('running');
+                  status.classList.add('done');
+                  statusText.textContent = 'Passed';
+                  playLabel.textContent = 'Replay';
+                  running = false;
+                }, 180);
+              }); }, 160);
+            }); }, 160);
+          }); }, 160);
+        });
+      }, 600);
+    });
+  }
+
+  playBtn.addEventListener('click', run);
+
+  // Auto-play on first scroll into view
+  if ('IntersectionObserver' in window) {
+    var played = false;
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting && !played) {
+          played = true;
+          schedule(run, 250);
+          io.disconnect();
+        }
+      });
+    }, { threshold: 0.35 });
+    io.observe(section);
+  } else {
+    schedule(run, 400);
+  }
+})();
+</script>
+
 <!-- ═══ PROGRESS DASHBOARD (visible when user has visited modules) ═══ -->
 <section class="progress-dash" id="progressDash">
   <div class="progress-inner">
