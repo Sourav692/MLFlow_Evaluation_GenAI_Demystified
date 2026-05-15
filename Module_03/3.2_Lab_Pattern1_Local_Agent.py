@@ -150,6 +150,20 @@ print("Evaluation complete.")
 
 # COMMAND ----------
 
+display(results.tables["eval_results"])
+
+# COMMAND ----------
+
+# results = mlflow.genai.evaluate(
+#     data=eval_dataset,
+#     predict_fn=lambda question: my_agent(question),
+#     scorers=[Correctness()],
+# )
+
+# display(results.tables["eval_results"])
+
+# COMMAND ----------
+
 # MAGIC %md
 # MAGIC ---
 # MAGIC ## Step 5 — Inspect Results

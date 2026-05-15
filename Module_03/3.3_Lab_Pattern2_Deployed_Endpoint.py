@@ -99,6 +99,10 @@ import mlflow.genai.datasets
 eval_dataset = mlflow.genai.datasets.get_dataset(name=DATASET_FQN)
 eval_pdf = eval_dataset.to_df()
 
+display(eval_pdf)
+
+# COMMAND ----------
+
 endpoint_eval_data = []
 for _, row in eval_pdf.iterrows():
     endpoint_eval_data.append({
@@ -154,12 +158,10 @@ results_endpoint = mlflow.genai.evaluate(
     data=endpoint_eval_data,
     predict_fn=predict_fn,
     scorers=[Correctness(), RelevanceToQuery()],
-    model_id=f"endpoints:/{ENDPOINT_NAME}",
 )
 
 print("Endpoint evaluation complete.")
 display(results_endpoint.tables["eval_results"])
-
 
 # COMMAND ----------
 
