@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0a0a0a"/>
+      <stop offset="100%" stop-color="#141414"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.15" cy="0.4" r="0.6">
+      <stop offset="0%" stop-color="#ff6b35" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#ff6b35" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="grid" width="64" height="64" patternUnits="userSpaceOnUse">
+      <path d="M 64 0 L 0 0 0 64" fill="none" stroke="#ffffff" stroke-width="1" stroke-opacity="0.025"/>
+    </pattern>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#grid)"/>
+  <rect width="1200" height="630" fill="url(#glow)"/>
+
+  <!-- Orange accent line top -->
+  <line x1="80" y1="80" x2="160" y2="80" stroke="#ff6b35" stroke-width="2"/>
+
+  <!-- Eyebrow -->
+  <text x="80" y="120" fill="#ff6b35" font-family="ui-monospace, monospace" font-size="16" letter-spacing="2" font-weight="500">
+    8-MODULE COURSE  ·  MLFLOW 3  ·  2026
+  </text>
+
+  <!-- Main title -->
+  <text x="80" y="230" fill="#fafafa" font-family="system-ui, -apple-system, sans-serif" font-size="78" font-weight="600" letter-spacing="-2">
+    Evaluate GenAI
+  </text>
+  <text x="80" y="320" fill="#fafafa" font-family="system-ui, -apple-system, sans-serif" font-size="78" font-weight="600" letter-spacing="-2">
+    like an <tspan fill="#ff6b35" font-style="italic" font-family="Georgia, serif" font-weight="700">engineer</tspan>.
+  </text>
+
+  <!-- Lede -->
+  <text x="80" y="395" fill="#a0a0a0" font-family="system-ui, -apple-system, sans-serif" font-size="24" letter-spacing="-0.5">
+    The complete MLflow 3 evaluation stack on Databricks —
+  </text>
+  <text x="80" y="427" fill="#a0a0a0" font-family="system-ui, -apple-system, sans-serif" font-size="24" letter-spacing="-0.5">
+    datasets, judges, gateway, monitoring &amp; governance.
+  </text>
+
+  <!-- Stats row -->
+  <g transform="translate(80, 510)">
+    <text x="0" y="0" fill="#fafafa" font-family="system-ui, sans-serif" font-size="44" font-weight="500" letter-spacing="-1.5">8</text>
+    <text x="0" y="30" fill="#6e6e6e" font-family="ui-monospace, monospace" font-size="13" letter-spacing="1.5">MODULES</text>
+
+    <text x="180" y="0" fill="#fafafa" font-family="system-ui, sans-serif" font-size="44" font-weight="500" letter-spacing="-1.5">~24<tspan fill="#ff6b35">h</tspan></text>
+    <text x="180" y="30" fill="#6e6e6e" font-family="ui-monospace, monospace" font-size="13" letter-spacing="1.5">RUNTIME</text>
+
+    <text x="380" y="0" fill="#fafafa" font-family="system-ui, sans-serif" font-size="44" font-weight="500" letter-spacing="-1.5">15<tspan fill="#ff6b35">+</tspan></text>
+    <text x="380" y="30" fill="#6e6e6e" font-family="ui-monospace, monospace" font-size="13" letter-spacing="1.5">HANDS-ON LABS</text>
+
+    <text x="600" y="0" fill="#fafafa" font-family="system-ui, sans-serif" font-size="44" font-weight="500" letter-spacing="-1.5">3</text>
+    <text x="600" y="30" fill="#6e6e6e" font-family="ui-monospace, monospace" font-size="13" letter-spacing="1.5">QUALITY PILLARS</text>
+  </g>
+
+  <!-- Brand dot, top-right -->
+  <g transform="translate(1040, 80)">
+    <circle cx="0" cy="0" r="6" fill="#ff6b35"/>
+    <circle cx="0" cy="0" r="14" fill="#ff6b35" fill-opacity="0.18"/>
+    <text x="22" y="6" fill="#fafafa" font-family="system-ui, sans-serif" font-size="18" font-weight="500" letter-spacing="-0.3">
+      MLflow GenAI
+    </text>
+  </g>
+
+  <!-- Bottom brand strip -->
+  <line x1="80" y1="585" x2="1120" y2="585" stroke="#262626" stroke-width="1"/>
+  <text x="80" y="610" fill="#6e6e6e" font-family="ui-monospace, monospace" font-size="13" letter-spacing="1.2">
+    DATABRICKS  ·  MLFLOW 3  ·  UNITY CATALOG  ·  MOSAIC AI  ·  AI GATEWAY
+  </text>
+</svg>
