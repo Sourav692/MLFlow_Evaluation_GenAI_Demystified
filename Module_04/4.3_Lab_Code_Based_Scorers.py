@@ -117,7 +117,6 @@ def latency_ok(trace) -> Feedback:
 
 print("Three reference scorers defined.")
 
-
 # COMMAND ----------
 
 # MAGIC %md

@@ -197,30 +197,100 @@ display(runs[["run_id", "tags.mlflow.runName", "start_time"]])
 
 # COMMAND ----------
 
+# DBTITLE 1,Create and Register Sample Agent in UC
 # ============================================================================
-# 🗂️ APPENDIX A - PATTERN 3: REGISTERED MODEL FROM UNITY CATALOG
+# 🏗️ APPENDIX A - CREATE & REGISTER A SAMPLE AGENT IN UNITY CATALOG
 # ============================================================================
 
-# Pseudo-code — uncomment and supply a real registered-model URI to run
-#
-# REGISTERED_URI = "models:/genai_eval_tutorial.module_01.my_agent/1"
-#
-# pyfunc_model = mlflow.pyfunc.load_model(REGISTERED_URI)
-#
-# def registered_predict_fn(question: str) -> str:
-#     # pyfunc.predict expects a DataFrame; one row per call.
-#     import pandas as pd
-#     return pyfunc_model.predict(pd.DataFrame([{"question": question}]))[0]
-#
-# results_registered = mlflow.genai.evaluate(
-#     data=eval_dataset,
-#     predict_fn=registered_predict_fn,
-#     scorers=[Correctness(), RelevanceToQuery()],
-#     model_id=REGISTERED_URI,
-# )
+import mlflow
+import pandas as pd
+from mlflow.models import infer_signature
+from mlflow.models.resources import DatabricksServingEndpoint
 
-print("Pattern 3 example shown above. Uncomment with a real registered-model URI to run.")
+mlflow.set_registry_uri("databricks-uc")
 
+REGISTERED_MODEL_NAME = f"{CATALOG}.{SCHEMA}.sample_qa_agent"
+
+# Define a simple QA agent as a PyFunc model
+class SimpleQAAgent(mlflow.pyfunc.PythonModel):
+    """A simple QA agent that uses Databricks Foundation Model API."""
+
+    def load_context(self, context):
+        from databricks.sdk import WorkspaceClient
+        self.client = WorkspaceClient().serving_endpoints.get_open_ai_client()
+
+    def predict(self, context, model_input: pd.DataFrame) -> pd.DataFrame:
+        responses = []
+        for _, row in model_input.iterrows():
+            question = row["question"]
+            resp = self.client.chat.completions.create(
+                model="databricks-claude-opus-4-6",
+                messages=[
+                    {"role": "system", "content": "You are a helpful Databricks expert. Answer concisely."},
+                    {"role": "user", "content": question},
+                ],
+                max_tokens=256,
+            )
+            responses.append(resp.choices[0].message.content)
+        return pd.DataFrame({"answer": responses})
+
+# Define signature
+input_example = pd.DataFrame([{"question": "What is Delta Lake?"}])
+output_example = pd.DataFrame([{"answer": "Delta Lake is an open-source storage layer..."}])
+signature = infer_signature(input_example, output_example)
+
+# Log and register the model
+with mlflow.start_run(run_name="register-sample-qa-agent"):
+    model_info = mlflow.pyfunc.log_model(
+        name="model",
+        python_model=SimpleQAAgent(),
+        signature=signature,
+        input_example=input_example,
+        pip_requirements=[
+            "mlflow[databricks]>=3.1",
+            "databricks-sdk",
+            "databricks-openai",
+            "pandas",
+        ],
+        resources=[DatabricksServingEndpoint(endpoint_name="databricks-claude-opus-4-6")],
+        registered_model_name=REGISTERED_MODEL_NAME,
+    )
+
+print(f"✅ Model registered: {REGISTERED_MODEL_NAME}")
+print(f"   Model URI: {model_info.model_uri}")
+
+# COMMAND ----------
+
+# DBTITLE 1,Pattern 3: Evaluate Registered Model
+# ============================================================================
+# 🧪 APPENDIX A - PATTERN 3: EVALUATE THE REGISTERED MODEL
+# ============================================================================
+
+import mlflow
+import pandas as pd
+from mlflow.genai.scorers import Correctness, RelevanceToQuery
+
+REGISTERED_URI = f"models:/{CATALOG}.{SCHEMA}.sample_qa_agent/1"
+
+# Load the registered model from Unity Catalog
+pyfunc_model = mlflow.pyfunc.load_model(REGISTERED_URI)
+
+# Wrap the pyfunc model into a predict_fn compatible with evaluate()
+# The eval dataset uses inputs.question — pyfunc.predict expects a DataFrame
+def registered_predict_fn(question: str) -> str:
+    result = pyfunc_model.predict(pd.DataFrame([{"question": question}]))
+    return result["answer"].iloc[0]
+
+# Run evaluation against the registered model
+# Note: model_id is omitted as it requires a logged-model URI format
+results_registered = mlflow.genai.evaluate(
+    data=eval_dataset,
+    predict_fn=registered_predict_fn,
+    scorers=[Correctness(), RelevanceToQuery()],
+)
+
+print(f"✅ Pattern 3 evaluation complete using: {REGISTERED_URI}")
+display(results_registered.tables["eval_results"])
 
 # COMMAND ----------
 
@@ -264,6 +334,7 @@ print(await async_agent("What is Delta Lake?"))
 
 # COMMAND ----------
 
+# DBTITLE 1,Pattern 4: Evaluate Async Agent
 # ============================================================================
 # ▶️ STEP
 # ============================================================================
@@ -272,12 +343,10 @@ results_async = mlflow.genai.evaluate(
     data=eval_dataset,
     predict_fn=async_agent,                     # async def is supported directly
     scorers=[Correctness(), RelevanceToQuery()],
-    model_id="models:/my-agent-async/1",
 )
 
 print("Async-agent evaluation complete.")
 display(results_async.tables["eval_results"])
-
 
 # COMMAND ----------
 

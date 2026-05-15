@@ -210,7 +210,6 @@ print("Evaluation v1 complete.")
 
 display(results_v1.tables["eval_results"])
 
-
 # COMMAND ----------
 
 # ============================================================================
@@ -276,6 +275,10 @@ if first:
     display(trace)
 else:
     print("No failing rows to diagnose — your agent is doing well!")
+
+# COMMAND ----------
+
+first
 
 # COMMAND ----------
 
