@@ -1,4 +1,8 @@
 # Databricks notebook source
+# /// script
+# [tool.databricks.environment]
+# environment_version = "1"
+# ///
 # MAGIC %md
 # MAGIC # 🧰 Lab 4.3 — Code-Based Scorers with `@scorer` Decorator
 # MAGIC
@@ -23,7 +27,6 @@
 %pip install --quiet "mlflow[databricks]>=3.1" databricks-openai
 
 dbutils.library.restartPython()
-
 
 # COMMAND ----------
 
@@ -256,7 +259,7 @@ results = mlflow.genai.evaluate(
     data=eval_dataset,
     predict_fn=my_agent,
     scorers=[is_valid_json, latency_under_5s, has_citation],
-    model_id="models:/my-agent-citations/v1",
+    # model_id="models:/my-agent-citations/v1",
 )
 
 display(results.tables["eval_results"])
@@ -268,13 +271,16 @@ display(results.tables["eval_results"])
 # ▶️ AGGREGATE CODE-SCORER PASS RATES
 # ============================================================================
 
-display(results.tables["eval_results"].selectExpr(
-    "AVG(CASE WHEN `is_valid_json/v1/value`     = 'yes' THEN 1.0 ELSE 0.0 END) AS json_valid_rate",
-    "AVG(CASE WHEN `latency_under_5s/v1/value`  = 'yes' THEN 1.0 ELSE 0.0 END) AS latency_pass_rate",
-    "AVG(CASE WHEN `has_citation/v1/value`      = 'yes' THEN 1.0 ELSE 0.0 END) AS citation_rate",
-    "COUNT(*) AS rows",
-))
+import pandas as pd
 
+df = results.tables["eval_results"]
+agg = pd.DataFrame([{
+    "json_valid_rate":   (df["is_valid_json/value"] == "yes").mean(),
+    "latency_pass_rate": (df["latency_under_5s/value"] == "yes").mean(),
+    "citation_rate":     (df["has_citation/value"] == "yes").mean(),
+    "rows":              len(df),
+}])
+display(agg)
 
 # COMMAND ----------
 
@@ -304,7 +310,7 @@ results_combined = mlflow.genai.evaluate(
         latency_under_5s,
         has_citation,
     ],
-    model_id="models:/my-agent-citations/v1-combined",
+    # model_id="models:/my-agent-citations/v1-combined",
 )
 
 display(results_combined.tables["eval_results"])

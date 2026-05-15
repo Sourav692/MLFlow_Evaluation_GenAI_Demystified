@@ -1,4 +1,8 @@
 # Databricks notebook source
+# /// script
+# [tool.databricks.environment]
+# environment_version = "1"
+# ///
 # MAGIC %md
 # MAGIC # 🎯 Lab 4.4 — Custom LLM Judge with `make_judge()` on Databricks
 # MAGIC
@@ -23,7 +27,6 @@
 %pip install --quiet "mlflow[databricks]>=3.1" databricks-openai
 
 dbutils.library.restartPython()
-
 
 # COMMAND ----------
 
@@ -146,7 +149,7 @@ results_v1 = mlflow.genai.evaluate(
     data=eval_dataset,
     predict_fn=my_agent,
     scorers=[tech_accuracy],
-    model_id="models:/my-agent/v1",
+    # model_id="models:/my-agent/v1",
 )
 
 display(results_v1.tables["eval_results"])
@@ -172,13 +175,11 @@ display(results_v1.tables["eval_results"])
 # 🔍 STEP 4 - INSPECT PER-ROW RATIONALES
 # ============================================================================
 
-display(results_v1.tables["eval_results"].select(
-    "inputs",
-    "outputs",
-    "databricks_technical_accuracy/v1/value",
-    "databricks_technical_accuracy/v1/rationale",
-))
+import pandas as pd
 
+df = results_v1.tables["eval_results"]
+
+display(df[["request", "response", "databricks_technical_accuracy/value"]])
 
 # COMMAND ----------
 
@@ -233,14 +234,10 @@ results_v2 = mlflow.genai.evaluate(
     data=eval_dataset,
     predict_fn=my_agent,
     scorers=[tech_accuracy_v2],
-    model_id="models:/my-agent/v1-judge-v2",
+    # model_id="models:/my-agent/v1-judge-v2",
 )
 
-display(results_v2.tables["eval_results"].select(
-    "inputs",
-    "databricks_technical_accuracy/v1/value",
-    "databricks_technical_accuracy/v1/rationale",
-))
+display(results_v2.tables["eval_results"][["request", "response", "databricks_technical_accuracy/value"]])
 
 
 # COMMAND ----------
