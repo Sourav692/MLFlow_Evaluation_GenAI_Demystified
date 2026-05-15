@@ -1,0 +1,2016 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 03 — predict_fn: All Patterns for Calling Your Agent</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=Syne:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #05080f;
+  --surface: #0b0f1a;
+  --surface2: #111827;
+  --surface3: #1a2235;
+  --border: #1e2d45;
+  --border2: #243550;
+  --accent-orange: #ff6b35;
+  --accent-teal: #00bfa5;
+  --accent-blue: #4a9eff;
+  --accent-purple: #a855f7;
+  --accent-yellow: #fbbf24;
+  --text: #e8edf5;
+  --text-dim: #8899bb;
+  --text-muted: #4a5878;
+  --green: #22c55e;
+  --amber: #f59e0b;
+  --red: #ef4444;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Syne', sans-serif;
+  font-weight: 400;
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+
+/* ── MODULE HEADER ── */
+.mod-hero {
+  position: relative;
+  padding: 64px 48px 52px;
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.mod-hero::before {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 60% 80% at 10% 50%, rgba(255,107,53,0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 50% at 90% 20%, rgba(0,191,165,0.05) 0%, transparent 55%);
+  pointer-events: none;
+}
+
+.hero-inner { max-width: 960px; margin: 0 auto; position: relative; }
+
+.breadcrumb {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 28px;
+}
+
+.bc-tag {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; font-weight: 500;
+  letter-spacing: 0.15em; text-transform: uppercase;
+  color: var(--accent-teal);
+  padding: 4px 12px;
+  border: 1px solid rgba(0,191,165,0.25);
+  border-radius: 2px;
+  background: rgba(0,191,165,0.06);
+}
+
+.bc-sep { color: var(--text-muted); font-size: 12px; }
+
+.bc-current {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: var(--text-muted);
+  letter-spacing: 0.1em; text-transform: uppercase;
+}
+
+.mod-eyebrow {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-orange);
+  margin-bottom: 14px;
+}
+
+.mod-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(34px, 4.5vw, 56px);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  margin-bottom: 16px;
+}
+
+.mod-title em { font-style: italic; color: var(--accent-orange); }
+
+.mod-desc {
+  font-size: 16px; color: var(--text-dim);
+  max-width: 620px; line-height: 1.75;
+  margin-bottom: 36px;
+}
+
+.mod-meta {
+  display: flex; gap: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  width: fit-content;
+}
+
+.meta-chip {
+  padding: 10px 20px;
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: 2px;
+}
+.meta-chip:last-child { border-right: none; }
+
+.meta-val {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 16px; font-weight: 500;
+  color: var(--accent-teal);
+}
+
+.meta-lbl {
+  font-size: 10px; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.1em;
+}
+
+/* ── PROGRESS NAV ── */
+.progress-nav {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 48px;
+  position: sticky; top: 0;
+  z-index: 100;
+}
+
+.nav-inner {
+  max-width: 960px; margin: 0 auto;
+  display: flex; gap: 0; align-items: stretch;
+  overflow-x: auto;
+}
+
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 20px;
+  border-right: 1px solid var(--border);
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.nav-item:hover { background: var(--surface2); }
+.nav-item.active { background: rgba(255,107,53,0.06); }
+.nav-item:last-child { border-right: none; }
+
+.nav-num {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: var(--text-muted);
+  letter-spacing: 0.1em;
+}
+
+.nav-label {
+  font-size: 12px; color: var(--text-dim);
+  font-weight: 500;
+}
+
+.nav-item.active .nav-label { color: var(--accent-orange); }
+.nav-item.active .nav-num { color: var(--accent-orange); }
+
+/* ── MAIN ── */
+main {
+  max-width: 960px; margin: 0 auto;
+  padding: 56px 48px 100px;
+}
+
+/* ── SECTION ── */
+.section {
+  margin-bottom: 80px;
+  scroll-margin-top: 60px;
+}
+
+.section-header {
+  display: flex; align-items: center; gap: 16px;
+  margin-bottom: 36px;
+}
+
+.section-marker {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: var(--accent-orange);
+  letter-spacing: 0.15em; text-transform: uppercase;
+  padding: 4px 12px;
+  border: 1px solid rgba(255,107,53,0.25);
+  border-radius: 2px;
+  background: rgba(255,107,53,0.06);
+  white-space: nowrap;
+}
+
+.section-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 28px; line-height: 1.2;
+}
+
+.section-rule { flex: 1; height: 1px; background: var(--border); }
+
+/* ── CONCEPT PROSE ── */
+.prose {
+  font-size: 15px; color: var(--text-dim);
+  line-height: 1.8; max-width: 720px;
+  margin-bottom: 28px;
+}
+
+.prose strong { color: var(--text); font-weight: 600; }
+
+.prose code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12.5px;
+  color: var(--accent-blue);
+  background: rgba(74,158,255,0.08);
+  padding: 2px 7px;
+  border-radius: 3px;
+}
+
+/* ── KEY INSIGHT BOX ── */
+.insight {
+  padding: 20px 24px;
+  background: rgba(0,191,165,0.04);
+  border: 1px solid rgba(0,191,165,0.15);
+  border-left: 3px solid var(--accent-teal);
+  border-radius: 0 8px 8px 0;
+  margin-bottom: 28px;
+}
+
+.insight-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--accent-teal);
+  margin-bottom: 8px;
+}
+
+.insight p {
+  font-size: 14px; color: var(--text-dim); line-height: 1.7;
+}
+
+.insight p strong { color: var(--accent-teal); }
+
+/* ── WARNING BOX ── */
+.warning {
+  padding: 16px 20px;
+  background: rgba(245,158,11,0.04);
+  border: 1px solid rgba(245,158,11,0.15);
+  border-left: 3px solid var(--amber);
+  border-radius: 0 8px 8px 0;
+  margin-bottom: 28px;
+  font-size: 13.5px; color: var(--text-dim); line-height: 1.6;
+}
+
+.warning::before {
+  content: 'Note  ';
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--amber);
+}
+
+/* ── CONCEPT CARDS GRID ── */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+  margin-bottom: 36px;
+}
+
+.concept-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 22px;
+  transition: border-color 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+.concept-card::before {
+  content: '';
+  position: absolute; left: 0; top: 0; bottom: 0;
+  width: 3px;
+}
+
+.concept-card.teal::before { background: var(--accent-teal); }
+.concept-card.orange::before { background: var(--accent-orange); }
+.concept-card.purple::before { background: var(--accent-purple); }
+.concept-card.blue::before { background: var(--accent-blue); }
+.concept-card.amber::before { background: var(--amber); }
+.concept-card.red::before { background: var(--red); }
+.concept-card.green::before { background: var(--green); }
+
+.concept-card:hover { border-color: var(--border2); }
+
+.card-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.concept-card.teal .card-label { color: var(--accent-teal); }
+.concept-card.orange .card-label { color: var(--accent-orange); }
+.concept-card.purple .card-label { color: var(--accent-purple); }
+.concept-card.blue .card-label { color: var(--accent-blue); }
+.concept-card.amber .card-label { color: var(--amber); }
+.concept-card.red .card-label { color: var(--red); }
+.concept-card.green .card-label { color: var(--green); }
+
+.card-title {
+  font-size: 15px; font-weight: 600;
+  color: var(--text); margin-bottom: 8px;
+  line-height: 1.3;
+}
+
+.card-body {
+  font-size: 13px; color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.card-body code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; color: var(--accent-blue);
+  background: rgba(74,158,255,0.08);
+  padding: 1px 5px; border-radius: 2px;
+}
+
+/* ── COMPARISON TABLE ── */
+.compare-wrap { overflow-x: auto; margin-bottom: 36px; }
+
+.compare-table {
+  width: 100%; border-collapse: collapse;
+  font-size: 13.5px;
+}
+
+.compare-table thead tr {
+  border-bottom: 1px solid var(--border2);
+}
+
+.compare-table th {
+  padding: 12px 16px; text-align: left;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--text-muted);
+  font-weight: 500;
+}
+
+.compare-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-dim);
+  vertical-align: top;
+  line-height: 1.55;
+}
+
+.compare-table tr:last-child td { border-bottom: none; }
+
+.compare-table tr:hover td { background: rgba(255,255,255,0.012); }
+
+.compare-table td:first-child {
+  font-weight: 500; color: var(--text);
+  white-space: nowrap;
+}
+
+.compare-table td code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11.5px; color: var(--accent-blue);
+  background: rgba(74,158,255,0.08);
+  padding: 1px 5px; border-radius: 2px;
+}
+
+.badge {
+  display: inline-block;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; padding: 2px 8px;
+  border-radius: 2px; font-weight: 500;
+  letter-spacing: 0.04em;
+  border: 1px solid;
+}
+
+.badge-fail { color: var(--red); background: rgba(239,68,68,0.08); border-color: rgba(239,68,68,0.2); }
+.badge-pass { color: var(--green); background: rgba(34,197,94,0.08); border-color: rgba(34,197,94,0.2); }
+.badge-partial { color: var(--amber); background: rgba(245,158,11,0.08); border-color: rgba(245,158,11,0.2); }
+
+/* ── STACK ARCHITECTURE ── */
+.stack-diagram {
+  display: flex; flex-direction: column;
+  gap: 3px;
+  margin-bottom: 36px;
+}
+
+.stack-layer {
+  display: grid;
+  grid-template-columns: 120px 1fr auto;
+  align-items: center;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  transition: border-color 0.15s;
+}
+
+.stack-layer:hover { border-color: var(--border2); }
+
+.stack-index {
+  padding: 16px 14px;
+  background: var(--surface2);
+  border-right: 1px solid var(--border);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--text-muted);
+  text-align: center;
+}
+
+.stack-content { padding: 14px 20px; }
+
+.stack-title {
+  font-size: 14px; font-weight: 600; color: var(--text);
+  margin-bottom: 4px;
+}
+
+.stack-desc {
+  font-size: 12px; color: var(--text-muted); line-height: 1.5;
+}
+
+.stack-desc code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; color: var(--accent-blue);
+  background: rgba(74,158,255,0.08);
+  padding: 1px 5px; border-radius: 2px;
+}
+
+.stack-tag {
+  padding: 14px 18px;
+  background: var(--surface2);
+  border-left: 1px solid var(--border);
+}
+
+/* ── CODE BLOCK ── */
+.code-block {
+  background: #020509;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent-blue);
+  border-radius: 0 6px 6px 0;
+  padding: 14px 18px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11.5px;
+  line-height: 1.8;
+  overflow-x: auto;
+  white-space: pre;
+  margin-bottom: 28px;
+}
+
+.kw { color: #c792ea; }
+.fn { color: #82aaff; }
+.st { color: #c3e88d; }
+.cm { color: var(--text-muted); }
+.nm { color: var(--accent-orange); }
+.nu { color: #f78c6c; }
+.op { color: var(--text-dim); }
+
+/* ── INTERACTIVE DIAGRAM CONTAINER ── */
+.diagram-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 28px 24px;
+  margin-bottom: 36px;
+  overflow: hidden;
+  position: relative;
+}
+
+.diagram-wrap svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.diagram-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--text-muted);
+  margin-bottom: 16px;
+}
+
+/* ── METRIC FAILURE DEMO ── */
+.metric-demo {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 36px;
+}
+
+.demo-header {
+  padding: 14px 20px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; color: var(--text-muted);
+  letter-spacing: 0.08em; text-transform: uppercase;
+}
+
+.demo-row {
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--border);
+  display: grid;
+  grid-template-columns: 120px 1fr auto;
+  gap: 16px;
+  align-items: start;
+}
+
+.demo-row:last-child { border-bottom: none; }
+
+.demo-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; color: var(--text-muted);
+  letter-spacing: 0.06em; text-transform: uppercase;
+  padding-top: 2px;
+}
+
+.demo-text {
+  font-size: 13.5px; color: var(--text-dim);
+  line-height: 1.6;
+}
+
+.demo-text code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; color: var(--accent-blue);
+  background: rgba(74,158,255,0.08);
+  padding: 1px 5px; border-radius: 2px;
+}
+
+/* ── INTERACTIVE: STEP-THROUGH PIPELINE ── */
+.stepper {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 36px;
+}
+
+.stepper-header {
+  padding: 14px 20px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.stepper-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; color: var(--text-muted);
+  letter-spacing: 0.08em; text-transform: uppercase;
+}
+
+.stepper-dots {
+  display: flex; gap: 6px;
+}
+
+.stepper-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--border);
+  transition: background 0.3s, box-shadow 0.3s;
+  cursor: pointer;
+}
+
+.stepper-dot.active {
+  background: var(--accent-orange);
+  box-shadow: 0 0 8px rgba(255,107,53,0.4);
+}
+
+.stepper-body {
+  padding: 24px;
+  min-height: 180px;
+}
+
+.stepper-panel {
+  display: none;
+}
+
+.stepper-panel.active {
+  display: block;
+  animation: fadeStep 0.3s ease-out;
+}
+
+@keyframes fadeStep {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.stepper-panel h4 {
+  font-size: 16px; font-weight: 600; color: var(--text);
+  margin-bottom: 10px;
+}
+
+.stepper-panel p {
+  font-size: 14px; color: var(--text-dim); line-height: 1.7;
+  margin-bottom: 12px;
+}
+
+.stepper-panel p code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11.5px; color: var(--accent-blue);
+  background: rgba(74,158,255,0.08);
+  padding: 1px 5px; border-radius: 2px;
+}
+
+.stepper-panel .step-code {
+  background: #020509;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; line-height: 1.7;
+  overflow-x: auto; white-space: pre;
+}
+
+.stepper-nav {
+  padding: 14px 20px;
+  background: var(--surface2);
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.step-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  padding: 6px 16px;
+  border-radius: 4px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.step-btn:hover {
+  border-color: var(--accent-orange);
+  color: var(--accent-orange);
+}
+
+.step-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.step-counter {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* ── INTERACTIVE: ANIMATED TIMELINE ── */
+.timeline-viz {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 36px;
+}
+
+.timeline-header {
+  padding: 14px 20px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.timeline-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; color: var(--text-muted);
+  letter-spacing: 0.08em; text-transform: uppercase;
+}
+
+.timeline-toggle {
+  display: flex; gap: 0;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.tgl-btn {
+  padding: 4px 14px;
+  background: none;
+  border: none;
+  border-right: 1px solid var(--border);
+  color: var(--text-muted);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.tgl-btn:last-child { border-right: none; }
+
+.tgl-btn.active {
+  background: rgba(255,107,53,0.1);
+  color: var(--accent-orange);
+}
+
+.timeline-body { padding: 24px; }
+
+.timeline-canvas {
+  position: relative;
+  height: 200px;
+  overflow: hidden;
+}
+
+.tl-row {
+  display: flex;
+  align-items: center;
+  height: 36px;
+  margin-bottom: 4px;
+}
+
+.tl-label {
+  width: 80px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.tl-track {
+  flex: 1; height: 24px;
+  position: relative;
+  background: rgba(255,255,255,0.02);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.tl-block {
+  position: absolute;
+  height: 100%;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  font-weight: 500;
+  transition: all 0.5s ease;
+}
+
+.tl-work {
+  background: rgba(255,107,53,0.2);
+  border: 1px solid rgba(255,107,53,0.4);
+  color: var(--accent-orange);
+}
+
+.tl-wait {
+  background: rgba(74,158,255,0.1);
+  border: 1px solid rgba(74,158,255,0.2);
+  color: var(--accent-blue);
+}
+
+.tl-score {
+  background: rgba(0,191,165,0.15);
+  border: 1px solid rgba(0,191,165,0.3);
+  color: var(--accent-teal);
+}
+
+.tl-total {
+  margin-top: 12px;
+  display: flex;
+  justify-content: space-between;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.tl-total .tl-val {
+  color: var(--accent-orange);
+  font-weight: 500;
+}
+
+/* ── INTERACTIVE: CONVERSATION REPLAY ── */
+.convo-replay {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 36px;
+}
+
+.convo-header {
+  padding: 14px 20px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.convo-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; color: var(--text-muted);
+  letter-spacing: 0.08em; text-transform: uppercase;
+}
+
+.convo-body {
+  padding: 20px;
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+.convo-msg {
+  display: flex; gap: 12px;
+  margin-bottom: 14px;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: all 0.4s ease;
+}
+
+.convo-msg.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.convo-avatar {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; font-weight: 500;
+}
+
+.convo-avatar.user {
+  background: rgba(255,107,53,0.12);
+  color: var(--accent-orange);
+}
+
+.convo-avatar.agent {
+  background: rgba(0,191,165,0.12);
+  color: var(--accent-teal);
+}
+
+.convo-bubble {
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.55;
+  max-width: 85%;
+}
+
+.convo-bubble.user-msg {
+  background: rgba(255,107,53,0.06);
+  border: 1px solid rgba(255,107,53,0.15);
+  color: var(--text-dim);
+}
+
+.convo-bubble.agent-msg {
+  background: rgba(0,191,165,0.04);
+  border: 1px solid rgba(0,191,165,0.12);
+  color: var(--text-dim);
+}
+
+.convo-judge {
+  margin-top: 16px;
+  padding: 14px 16px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.convo-judge.visible { opacity: 1; }
+
+.judge-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 4px 0;
+}
+
+.judge-name {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; color: var(--text-muted);
+}
+
+.judge-score {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px; font-weight: 500;
+}
+
+.convo-footer {
+  padding: 12px 20px;
+  background: var(--surface2);
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: center;
+}
+
+/* ── OUTCOME BLOCK ── */
+.outcome {
+  margin-top: 60px;
+  padding: 28px 32px;
+  background: rgba(0,191,165,0.03);
+  border: 1px solid rgba(0,191,165,0.15);
+  border-radius: 10px;
+  display: flex; gap: 20px; align-items: flex-start;
+}
+
+.outcome-icon { font-size: 22px; flex-shrink: 0; margin-top: 2px; }
+
+.outcome-text {
+  font-size: 14px; color: var(--text-dim); line-height: 1.75;
+}
+
+.outcome-text strong { color: var(--accent-teal); font-weight: 600; }
+
+.outcome-text code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11.5px; color: var(--accent-blue);
+  background: rgba(74,158,255,0.08);
+  padding: 1px 5px; border-radius: 2px;
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 700px) {
+  .mod-hero, main { padding-left: 20px; padding-right: 20px; }
+  .progress-nav { padding: 0 20px; }
+  .card-grid { grid-template-columns: 1fr; }
+  .stack-layer { grid-template-columns: 1fr; }
+  .demo-row { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── HERO ── -->
+<header class="mod-hero">
+  <div class="hero-inner">
+    <div class="breadcrumb">
+      <span class="bc-tag">Databricks · MLflow 3 · GenAI</span>
+      <span class="bc-sep">/</span>
+      <span class="bc-current">Module 03 · predict_fn</span>
+    </div>
+    <div class="mod-eyebrow">Module 03 · Beginner–Intermediate · ~3h</div>
+    <h1 class="mod-title"><em>predict_fn</em> — All Patterns<br>for Calling Your Agent</h1>
+    <p class="mod-desc">The bridge between your application and the evaluation harness. How <code>mlflow.genai.evaluate()</code> invokes your agent — every pattern from local functions through deployed endpoints, async pipelines, and multi-turn conversations.</p>
+    <div class="mod-meta">
+      <div class="meta-chip"><span class="meta-val">3</span><span class="meta-lbl">Theory topics</span></div>
+      <div class="meta-chip"><span class="meta-val">2</span><span class="meta-lbl">Labs</span></div>
+      <div class="meta-chip"><span class="meta-val">3h</span><span class="meta-lbl">Duration</span></div>
+      <div class="meta-chip"><span class="meta-val">100%</span><span class="meta-lbl">New content</span></div>
+    </div>
+  </div>
+</header>
+
+<!-- ── NAV ── -->
+<nav class="progress-nav">
+  <div class="nav-inner">
+    <a href="#topic-3-1" class="nav-item active">
+      <span class="nav-num">3.1</span>
+      <span class="nav-label">How predict_fn works</span>
+    </a>
+    <a href="#topic-3-2" class="nav-item">
+      <span class="nav-num">3.2</span>
+      <span class="nav-label">Local agent</span>
+    </a>
+    <a href="#topic-3-3" class="nav-item">
+      <span class="nav-num">3.3</span>
+      <span class="nav-label">Deployed endpoints</span>
+    </a>
+    <a href="#topic-3-4" class="nav-item">
+      <span class="nav-num">3.4</span>
+      <span class="nav-label">Async &amp; registered models</span>
+    </a>
+    <a href="#topic-3-5" class="nav-item">
+      <span class="nav-num">3.5</span>
+      <span class="nav-label">Multi-turn</span>
+    </a>
+  </div>
+</nav>
+
+<!-- ── MAIN ── -->
+<main>
+
+<!-- ════════════════════════════════════════════ SECTION 3.1 -->
+<section class="section" id="topic-3-1">
+
+  <div class="section-header">
+    <span class="section-marker">3.1 · Theory</span>
+    <h2 class="section-title">How predict_fn Works Inside mlflow.genai.evaluate()</h2>
+    <span class="section-rule"></span>
+  </div>
+
+  <p class="prose">
+    The <code>predict_fn</code> is the bridge between your AI agent and MLflow's evaluation harness. It tells <code>evaluate()</code> <strong>how to call your agent</strong> for each row in your dataset. Understanding this mechanism is the prerequisite for every pattern in this module.
+  </p>
+
+  <!-- ── THREE MODES ── -->
+  <div class="section-header" style="margin-top:40px; margin-bottom:16px;">
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">Three evaluation modes</h3>
+  </div>
+
+  <p class="prose">
+    <code>mlflow.genai.evaluate()</code> operates in three distinct modes depending on what you provide. The mode determines whether MLflow calls your agent live, hits a remote endpoint, or simply scores pre-existing outputs.
+  </p>
+
+  <div class="card-grid">
+    <div class="concept-card blue">
+      <div class="card-label">Mode 1</div>
+      <div class="card-title">Pre-generated outputs</div>
+      <div class="card-body">You already have agent responses in your dataset. No <code>predict_fn</code> needed — MLflow just scores the existing outputs. Useful for evaluating historical data or comparing cached responses.</div>
+    </div>
+    <div class="concept-card orange">
+      <div class="card-label">Mode 2</div>
+      <div class="card-title">Live predict_fn</div>
+      <div class="card-body">You pass a callable function. MLflow calls it once per dataset row, collects the output and trace, then scores everything. The primary pattern for development-time evaluation.</div>
+    </div>
+    <div class="concept-card teal">
+      <div class="card-label">Mode 3</div>
+      <div class="card-title">Deployed endpoint via to_predict_fn()</div>
+      <div class="card-body">You wrap a serving endpoint with <code>to_predict_fn()</code>. MLflow calls the endpoint remotely, retrieves the trace, and scores it. The pattern for CI gates and production testing.</div>
+    </div>
+  </div>
+
+  <!-- ── INTERACTIVE: STEP-THROUGH PIPELINE ── -->
+  <div class="stepper" id="pipeline-stepper">
+    <div class="stepper-header">
+      <span class="stepper-title">Interactive — Per-row evaluation pipeline</span>
+      <div class="stepper-dots" id="pipeline-dots"></div>
+    </div>
+    <div class="stepper-body" id="pipeline-body">
+      <div class="stepper-panel active" data-step="0">
+        <h4>Step 1 — Pick a row from the dataset</h4>
+        <p>MLflow extracts the <code>inputs</code> dict, <code>expectations</code> (if present), and any <code>tags</code> for this row.</p>
+        <div class="step-code"><span class="cm"># What the row looks like internally:</span>
+row = {
+  <span class="st">"inputs"</span>: {<span class="st">"question"</span>: <span class="st">"What is Z-ordering in Delta?"</span>},
+  <span class="st">"expectations"</span>: {<span class="st">"expected_facts"</span>: [<span class="st">"data skipping"</span>, <span class="st">"multi-dimensional clustering"</span>]}
+}</div>
+      </div>
+      <div class="stepper-panel" data-step="1">
+        <h4>Step 2 — Unpack inputs as keyword arguments</h4>
+        <p>MLflow calls <code>predict_fn(**row["inputs"])</code>. This is why parameter names must match exactly — a key named <code>question</code> in the dataset must correspond to a parameter named <code>question</code> in your function.</p>
+        <div class="step-code"><span class="cm"># MLflow does this internally:</span>
+output = predict_fn(**{<span class="st">"question"</span>: <span class="st">"What is Z-ordering in Delta?"</span>})
+<span class="cm"># ...which means:</span>
+output = predict_fn(question=<span class="st">"What is Z-ordering in Delta?"</span>)</div>
+      </div>
+      <div class="stepper-panel" data-step="2">
+        <h4>Step 3 — Call predict_fn, capture trace</h4>
+        <p>Your function runs, calls the LLM, returns a response. MLflow captures the trace automatically via <code>@mlflow.trace</code> or <code>autolog()</code>. One trace is linked to this evaluation row.</p>
+        <div class="step-code"><span class="nm">@mlflow.trace</span>                  <span class="cm"># ← this is what captures the trace</span>
+<span class="kw">def</span> <span class="fn">my_agent</span>(question: <span class="fn">str</span>) -> <span class="fn">str</span>:
+    resp = client.chat.completions.<span class="fn">create</span>(...)
+    <span class="kw">return</span> resp.choices[<span class="nu">0</span>].message.content   <span class="cm"># ← output captured</span></div>
+      </div>
+      <div class="stepper-panel" data-step="3">
+        <h4>Step 4 — Pass everything to scorers in parallel</h4>
+        <p>Each scorer receives: <code>inputs</code>, <code>outputs</code> (your return value), <code>expectations</code>, and the full <code>trace</code>. All scorers for this row run concurrently in a thread pool.</p>
+        <div class="step-code"><span class="cm"># Each scorer gets this signature:</span>
+<span class="kw">def</span> <span class="fn">scorer</span>(
+    inputs: <span class="fn">dict</span>,         <span class="cm"># {"question": "..."}</span>
+    outputs: <span class="fn">str</span>,         <span class="cm"># your predict_fn return value</span>
+    expectations: <span class="fn">dict</span>,   <span class="cm"># {"expected_facts": [...]}</span>
+    trace: <span class="fn">Trace</span>          <span class="cm"># full MLflow trace with spans</span>
+) -> <span class="fn">Feedback</span></div>
+      </div>
+      <div class="stepper-panel" data-step="4">
+        <h4>Step 5 — Collect Feedback, attach to trace</h4>
+        <p>Each scorer returns a <code>Feedback</code> object with value, rationale, and source. These appear as assessments on the trace in the MLflow UI. After all rows complete, MLflow aggregates per-row scores into run-level metrics.</p>
+        <div class="step-code"><span class="cm"># Run-level metrics after all rows:</span>
+{
+  <span class="st">"correctness/mean"</span>: <span class="nu">4.2</span>,          <span class="cm"># average across rows</span>
+  <span class="st">"safety/ratio_pass"</span>: <span class="nu">0.97</span>,         <span class="cm"># fraction passing</span>
+  <span class="st">"relevance_to_query/mean"</span>: <span class="nu">3.8</span>,   <span class="cm"># average across rows</span>
+}</div>
+      </div>
+    </div>
+    <div class="stepper-nav">
+      <button class="step-btn" id="pipe-prev" disabled>← Prev</button>
+      <span class="step-counter" id="pipe-count">Step 1 of 5</span>
+      <button class="step-btn" id="pipe-next">Next →</button>
+    </div>
+  </div>
+
+  <!-- ── THE CONTRACT ── -->
+  <div class="section-header" style="margin-top:40px; margin-bottom:16px;">
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">The predict_fn contract</h3>
+  </div>
+
+  <p class="prose">
+    When you pass a <code>predict_fn</code> to <code>evaluate()</code>, MLflow expects it to follow a strict contract. Violating any of these rules produces confusing errors or silently broken evaluations.
+  </p>
+
+  <div class="stack-diagram">
+    <div class="stack-layer">
+      <div class="stack-index">Rule 1</div>
+      <div class="stack-content">
+        <div class="stack-title">Parameter names must match inputs keys exactly</div>
+        <div class="stack-desc">If your dataset has <code>inputs: {"question": "..."}</code>, your function must be <code>def my_fn(question: str)</code>. MLflow unpacks the inputs dict as keyword arguments.</div>
+      </div>
+      <div class="stack-tag"><span class="badge badge-fail">Most common error</span></div>
+    </div>
+    <div class="stack-layer">
+      <div class="stack-index">Rule 2</div>
+      <div class="stack-content">
+        <div class="stack-title">Each call must emit exactly one MLflow trace</div>
+        <div class="stack-desc">Use <code>@mlflow.trace</code> or enable <code>mlflow.openai.autolog()</code>. The trace is how MLflow links the row to the agent's internal spans. Without it, trace-based scorers silently fail.</div>
+      </div>
+      <div class="stack-tag"><span class="badge" style="color:var(--accent-purple); background:rgba(168,85,247,0.08); border-color:rgba(168,85,247,0.2);">@mlflow.trace</span></div>
+    </div>
+    <div class="stack-layer">
+      <div class="stack-index">Rule 3</div>
+      <div class="stack-content">
+        <div class="stack-title">Return value must be JSON-serializable</div>
+        <div class="stack-desc">A plain string for Q&A agents, or a dict for structured outputs. Lists and nested dicts are fine. Custom objects or generator outputs will fail serialization.</div>
+      </div>
+      <div class="stack-tag"><span class="badge badge-pass">str / dict</span></div>
+    </div>
+  </div>
+
+  <div class="insight">
+    <div class="insight-label">Key insight — concurrency</div>
+    <p>MLflow runs <code>predict_fn</code> and scorers <strong>concurrently via thread pools</strong>. Multiple rows are processed in parallel, and all scorers for a given row also run in parallel. Two env vars control this: <code>MLFLOW_GENAI_EVAL_MAX_WORKERS</code> for row parallelism and <code>MLFLOW_GENAI_EVAL_MAX_SCORER_WORKERS</code> for scorer parallelism.</p>
+  </div>
+
+</section>
+
+
+<!-- ════════════════════════════════════════════ SECTION 3.2 -->
+<section class="section" id="topic-3-2">
+
+  <div class="section-header">
+    <span class="section-marker" style="background:rgba(168,85,247,0.06); color:var(--accent-purple); border-color:rgba(168,85,247,0.2);">3.2 · Lab</span>
+    <h2 class="section-title">Pattern 1 — Plain Python Function (Local Agent)</h2>
+    <span class="section-rule"></span>
+  </div>
+
+  <p class="prose">
+    The most common pattern during development. You define your agent as a regular Python function in your notebook, decorate it for tracing, and pass it directly to <code>evaluate()</code>. No deployment needed — iterate on prompts and logic in real time.
+  </p>
+
+  <div class="code-block"><span class="kw">from</span> databricks_openai <span class="kw">import</span> DatabricksOpenAI
+
+client = <span class="fn">DatabricksOpenAI</span>()
+
+<span class="nm">@mlflow.trace</span>
+<span class="kw">def</span> <span class="fn">my_agent</span>(question: <span class="fn">str</span>) -> <span class="fn">str</span>:
+    resp = client.chat.completions.<span class="fn">create</span>(
+        model=<span class="st">"databricks-claude-sonnet-4"</span>,
+        messages=[
+            {<span class="st">"role"</span>: <span class="st">"system"</span>, <span class="st">"content"</span>: <span class="st">"You are a Databricks expert."</span>},
+            {<span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: question}
+        ]
+    )
+    <span class="kw">return</span> resp.choices[<span class="nu">0</span>].message.content
+
+results = mlflow.genai.<span class="fn">evaluate</span>(
+    data=eval_dataset,
+    predict_fn=my_agent,
+    scorers=[<span class="fn">Correctness</span>(), <span class="fn">RelevanceToQuery</span>()],
+    model_id=<span class="st">"models:/my-agent/1"</span>   <span class="cm"># lineage tag, not execution</span>
+)</div>
+
+  <p class="prose">
+    The critical detail: <code>question</code> in the function signature must match the key name in the dataset's <code>inputs</code> dict. If the dataset has <code>{"inputs": {"question": "..."}}</code>, the function parameter must be named <code>question</code> — not <code>q</code>, not <code>query</code>, not <code>prompt</code>.
+  </p>
+
+  <div class="warning">If you use <code>mlflow.openai.autolog()</code>, traces are captured automatically for OpenAI-compatible clients — you don't need the <code>@mlflow.trace</code> decorator. But one of the two is required.</div>
+
+  <!-- ── COMMON PITFALLS ── -->
+  <div class="section-header" style="margin-top:40px; margin-bottom:16px;">
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">Common pitfalls</h3>
+  </div>
+
+  <div class="metric-demo">
+    <div class="demo-header">Pattern 1 — failure modes and fixes</div>
+    <div class="demo-row">
+      <div class="demo-label">Pitfall</div>
+      <div class="demo-text"><strong style="color:var(--text);">Parameter name mismatch</strong> — <code>def my_agent(q: str)</code> with dataset <code>inputs: {"question": "..."}</code></div>
+      <div style="padding:2px 8px;"><span class="badge badge-fail">TypeError</span></div>
+    </div>
+    <div class="demo-row">
+      <div class="demo-label">Fix</div>
+      <div class="demo-text">Rename parameter to <code>question</code> — or rename the dataset key to <code>q</code>. They must be identical.</div>
+      <div></div>
+    </div>
+    <div class="demo-row">
+      <div class="demo-label">Pitfall</div>
+      <div class="demo-text"><strong style="color:var(--text);">Heavy init inside predict_fn</strong> — creating <code>DatabricksOpenAI()</code> inside the function. Called N times.</div>
+      <div style="padding:2px 8px;"><span class="badge badge-partial">Slow</span></div>
+    </div>
+    <div class="demo-row">
+      <div class="demo-label">Fix</div>
+      <div class="demo-text">Move client creation <strong>outside</strong> the function. Initialize once, reference many times.</div>
+      <div></div>
+    </div>
+    <div class="demo-row">
+      <div class="demo-label">Pitfall</div>
+      <div class="demo-text"><strong style="color:var(--text);">No trace emitted</strong> — forgot <code>@mlflow.trace</code> and autolog is off. Trace-based scorers silently produce null.</div>
+      <div style="padding:2px 8px;"><span class="badge badge-fail">Silent fail</span></div>
+    </div>
+    <div class="demo-row">
+      <div class="demo-label">Fix</div>
+      <div class="demo-text">Always add <code>@mlflow.trace</code> or call <code>mlflow.openai.autolog()</code> before defining the function.</div>
+      <div></div>
+    </div>
+  </div>
+
+  <div class="insight">
+    <div class="insight-label">model_id is metadata, not execution</div>
+    <p>The <code>model_id</code> parameter in <code>evaluate()</code> doesn't affect how your agent runs — it's a <strong>lineage tag</strong> that links the evaluation run to a specific model version in MLflow. This becomes essential when you set up CI quality gates in Module 7.</p>
+  </div>
+
+</section>
+
+
+<!-- ════════════════════════════════════════════ SECTION 3.3 -->
+<section class="section" id="topic-3-3">
+
+  <div class="section-header">
+    <span class="section-marker" style="background:rgba(168,85,247,0.06); color:var(--accent-purple); border-color:rgba(168,85,247,0.2);">3.3 · Lab</span>
+    <h2 class="section-title">Pattern 2 — to_predict_fn() for Deployed Endpoints</h2>
+    <span class="section-rule"></span>
+  </div>
+
+  <p class="prose">
+    When your agent is already deployed to Databricks Model Serving, you don't rewrite your agent as a local function. <code>to_predict_fn()</code> wraps the endpoint into something <code>evaluate()</code> can call — translating inputs to the endpoint's payload format, adding <code>return_trace=True</code>, and copying the trace back to your experiment.
+  </p>
+
+  <!-- ── INTERACTIVE: Architecture SVG ── -->
+  <div class="diagram-wrap">
+    <div class="diagram-label">to_predict_fn() — remote endpoint evaluation architecture</div>
+    <svg viewBox="0 0 860 380" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="arr-a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M2 1L8 5L2 9" fill="none" stroke="var(--text-muted)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </marker>
+        <marker id="arr-g" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M2 1L8 5L2 9" fill="none" stroke="var(--green)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </marker>
+      </defs>
+
+      <!-- Your notebook container -->
+      <rect x="20" y="16" width="380" height="350" rx="16" fill="none" stroke="var(--border)" stroke-width="0.8" stroke-dasharray="6 3"/>
+      <text x="40" y="44" fill="var(--text-muted)" font-family="'IBM Plex Mono',monospace" font-size="10" letter-spacing="0.1em">YOUR NOTEBOOK</text>
+
+      <!-- Dataset -->
+      <rect x="45" y="64" width="140" height="50" rx="8" fill="var(--surface2)" stroke="var(--accent-teal)" stroke-width="0.6"/>
+      <text x="115" y="86" text-anchor="middle" fill="var(--text)" font-family="'Syne',sans-serif" font-size="12" font-weight="600">Dataset</text>
+      <text x="115" y="102" text-anchor="middle" fill="var(--text-muted)" font-family="'IBM Plex Mono',monospace" font-size="9">messages format</text>
+
+      <!-- evaluate() -->
+      <line x1="115" y1="114" x2="115" y2="142" stroke="var(--text-muted)" stroke-width="1" marker-end="url(#arr-a)"/>
+      <rect x="45" y="144" width="320" height="50" rx="8" fill="var(--surface2)" stroke="var(--accent-purple)" stroke-width="0.6"/>
+      <text x="205" y="166" text-anchor="middle" fill="var(--text)" font-family="'Syne',sans-serif" font-size="12" font-weight="600">evaluate()</text>
+      <text x="205" y="182" text-anchor="middle" fill="var(--text-muted)" font-family="'IBM Plex Mono',monospace" font-size="9">calls predict_fn per row</text>
+
+      <!-- to_predict_fn wrapper -->
+      <line x1="205" y1="194" x2="205" y2="222" stroke="var(--text-muted)" stroke-width="1" marker-end="url(#arr-a)"/>
+      <rect x="45" y="224" width="320" height="56" rx="8" fill="var(--surface2)" stroke="var(--accent-orange)" stroke-width="1"/>
+      <text x="205" y="246" text-anchor="middle" fill="var(--accent-orange)" font-family="'IBM Plex Mono',monospace" font-size="10" letter-spacing="0.08em">TO_PREDICT_FN() WRAPPER</text>
+      <text x="205" y="266" text-anchor="middle" fill="var(--text-muted)" font-family="'IBM Plex Mono',monospace" font-size="9">Translates inputs → payload, return_trace=True</text>
+
+      <!-- Arrow to endpoint -->
+      <line x1="365" y1="252" x2="458" y2="252" stroke="var(--accent-orange)" stroke-width="1" marker-end="url(#arr-a)"/>
+      <text x="412" y="244" text-anchor="middle" fill="var(--text-muted)" font-family="'IBM Plex Mono',monospace" font-size="9">HTTP</text>
+
+      <!-- Databricks cloud container -->
+      <rect x="460" y="16" width="380" height="260" rx="16" fill="none" stroke="var(--accent-blue)" stroke-width="0.8" stroke-dasharray="6 3"/>
+      <text x="480" y="44" fill="var(--accent-blue)" font-family="'IBM Plex Mono',monospace" font-size="10" letter-spacing="0.1em">DATABRICKS SERVING</text>
+
+      <!-- Endpoint -->
+      <rect x="490" y="64" width="310" height="50" rx="8" fill="var(--surface2)" stroke="var(--accent-blue)" stroke-width="0.6"/>
+      <text x="645" y="86" text-anchor="middle" fill="var(--text)" font-family="'Syne',sans-serif" font-size="12" font-weight="600">Model serving endpoint</text>
+      <text x="645" y="102" text-anchor="middle" fill="var(--text-muted)" font-family="'IBM Plex Mono',monospace" font-size="9">tracing enabled (required)</text>
+
+      <!-- Agent inside endpoint -->
+      <rect x="490" y="130" width="310" height="50" rx="8" fill="var(--surface2)" stroke="var(--border2)" stroke-width="0.6"/>
+      <text x="645" y="152" text-anchor="middle" fill="var(--text)" font-family="'Syne',sans-serif" font-size="12" font-weight="600">Your agent</text>
+      <text x="645" y="168" text-anchor="middle" fill="var(--text-muted)" font-family="'IBM Plex Mono',monospace" font-size="9">Runs + emits trace</text>
+
+      <!-- Return arrow: response + trace back -->
+      <path d="M490 200 L440 200 L440 310 L205 310" fill="none" stroke="var(--green)" stroke-width="1" marker-end="url(#arr-g)"/>
+      <text x="350" y="300" fill="var(--green)" font-family="'IBM Plex Mono',monospace" font-size="9">response + trace returned</text>
+
+      <!-- Trace copied to experiment -->
+      <rect x="45" y="320" width="320" height="40" rx="8" fill="var(--surface2)" stroke="var(--green)" stroke-width="0.8"/>
+      <text x="205" y="344" text-anchor="middle" fill="var(--text)" font-family="'Syne',sans-serif" font-size="12" font-weight="600">Trace copied to experiment → scorers run</text>
+    </svg>
+  </div>
+
+  <div class="code-block"><span class="kw">import</span> mlflow
+<span class="kw">from</span> mlflow.genai.scorers <span class="kw">import</span> RelevanceToQuery, Correctness
+
+<span class="cm"># Step 1: Wrap the deployed endpoint</span>
+predict_fn = mlflow.genai.<span class="fn">to_predict_fn</span>(<span class="st">"endpoints:/my-databricks-agent"</span>)
+
+<span class="cm"># Step 2: Data MUST match endpoint schema (chat = messages key)</span>
+endpoint_eval_data = [
+    {<span class="st">"inputs"</span>: {<span class="st">"messages"</span>: [{<span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: <span class="st">"What is Z-ordering?"</span>}]},
+     <span class="st">"expectations"</span>: {<span class="st">"expected_facts"</span>: [<span class="st">"data skipping"</span>, <span class="st">"multi-dimensional clustering"</span>]}},
+]
+
+<span class="cm"># Step 3: Same evaluate() call — pattern is transparent</span>
+results = mlflow.genai.<span class="fn">evaluate</span>(
+    data=endpoint_eval_data,
+    predict_fn=predict_fn,
+    scorers=[<span class="fn">Correctness</span>(), <span class="fn">RelevanceToQuery</span>()]
+)</div>
+
+  <!-- ── INPUT FORMAT CATCH ── -->
+  <div class="section-header" style="margin-top:40px; margin-bottom:16px;">
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">The input format catch</h3>
+  </div>
+
+  <p class="prose">
+    This is the detail that trips people up most often. The <code>inputs</code> format in your dataset <strong>must match the endpoint's expected schema</strong>, not the simpler format you'd use with a local function.
+  </p>
+
+  <div class="compare-wrap">
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>Pattern</th>
+          <th>Dataset inputs format</th>
+          <th>Why</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Pattern 1 (local)</td>
+          <td><code>{"question": "What is Z-ordering?"}</code></td>
+          <td>Matches your function signature directly</td>
+        </tr>
+        <tr>
+          <td>Pattern 2 (endpoint)</td>
+          <td><code>{"messages": [{"role": "user", ...}]}</code></td>
+          <td>Must match the endpoint's HTTP payload schema</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="warning">Sending <code>{"question": "..."}</code> to a chat endpoint produces a schema mismatch error. The wrapper translates your <code>inputs</code> into the HTTP payload, but it can't guess the format — you have to provide it correctly.</div>
+
+  <div class="card-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+    <div class="concept-card teal">
+      <div class="card-label">Required</div>
+      <div class="card-title">Tracing enabled</div>
+      <div class="card-body">Either deployed via <code>mlflow.deploy()</code> (auto-enables) or set <code>ENABLE_MLFLOW_TRACING=True</code> in endpoint env vars.</div>
+    </div>
+    <div class="concept-card orange">
+      <div class="card-label">Required</div>
+      <div class="card-title">Endpoint is live</div>
+      <div class="card-body">The wrapper makes real HTTP calls. Endpoint must be running and accessible from your notebook.</div>
+    </div>
+    <div class="concept-card blue">
+      <div class="card-label">Required</div>
+      <div class="card-title">Correct input schema</div>
+      <div class="card-body">Know whether the endpoint expects <code>messages</code>, <code>question</code>, or another key structure.</div>
+    </div>
+    <div class="concept-card purple">
+      <div class="card-label">Required</div>
+      <div class="card-title">Experiment set</div>
+      <div class="card-body">Traces are copied to the current experiment. Call <code>mlflow.set_experiment()</code> before <code>evaluate()</code>.</div>
+    </div>
+  </div>
+
+  <div class="insight">
+    <div class="insight-label">When to use Pattern 2</div>
+    <p>Use <code>to_predict_fn()</code> when you need to validate the <strong>deployed version</strong> — the serving environment (dependencies, compute, configuration) can cause behaviour differences from local code. This is the standard pattern for CI quality gates and A/B endpoint comparisons.</p>
+  </div>
+
+</section>
+
+
+<!-- ════════════════════════════════════════════ SECTION 3.4 -->
+<section class="section" id="topic-3-4">
+
+  <div class="section-header">
+    <span class="section-marker">3.4 · Theory</span>
+    <h2 class="section-title">Pattern 3 — Async predict_fn & Registered Models</h2>
+    <span class="section-rule"></span>
+  </div>
+
+  <p class="prose">
+    These two patterns solve different problems but share a common theme: <strong>optimising how your agent gets called during evaluation</strong>. Async functions maximise throughput by overlapping network waits. Registered models avoid redundant loading.
+  </p>
+
+  <!-- ── INTERACTIVE: SYNC vs ASYNC TIMELINE ── -->
+  <div class="timeline-viz" id="exec-timeline">
+    <div class="timeline-header">
+      <span class="timeline-title">Interactive — execution timeline comparison</span>
+      <div class="timeline-toggle">
+        <button class="tgl-btn active" onclick="showTimeline('sync')">Sync</button>
+        <button class="tgl-btn" onclick="showTimeline('async')">Async</button>
+      </div>
+    </div>
+    <div class="timeline-body">
+      <div class="timeline-canvas" id="tl-canvas">
+        <!-- Filled by JS -->
+      </div>
+      <div class="tl-total">
+        <span>Total wall-clock time:</span>
+        <span class="tl-val" id="tl-time">~12.0s</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="code-block"><span class="kw">from</span> openai <span class="kw">import</span> AsyncOpenAI
+
+async_client = <span class="fn">AsyncOpenAI</span>(...)
+
+<span class="kw">async def</span> <span class="fn">my_async_agent</span>(question: <span class="fn">str</span>) -> <span class="fn">str</span>:
+    resp = <span class="kw">await</span> async_client.chat.completions.<span class="fn">create</span>(
+        model=<span class="st">"databricks-claude-sonnet-4"</span>,
+        messages=[{<span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: question}]
+    )
+    <span class="kw">return</span> resp.choices[<span class="nu">0</span>].message.content
+
+<span class="cm"># MLflow auto-detects async — just pass it in</span>
+results = mlflow.genai.<span class="fn">evaluate</span>(
+    data=eval_dataset,
+    predict_fn=my_async_agent,
+    scorers=[<span class="fn">Correctness</span>()]
+)</div>
+
+  <p class="prose">
+    Two environment variables control async behaviour: <code>MLFLOW_GENAI_EVAL_ASYNC_TIMEOUT</code> (default 5 minutes per call — increase for complex multi-step agents) and <code>MLFLOW_GENAI_EVAL_MAX_WORKERS</code> (controls concurrency — start at 4 for Databricks Foundation Model APIs).
+  </p>
+
+  <!-- ── REGISTERED MODEL ── -->
+  <div class="section-header" style="margin-top:48px; margin-bottom:16px;">
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">Registered model pattern</h3>
+  </div>
+
+  <p class="prose">
+    This pattern solves a different problem: <strong>avoiding redundant model loading</strong>. If you call <code>mlflow.pyfunc.load_model()</code> inside your <code>predict_fn</code>, the model gets loaded from scratch on every single evaluation row.
+  </p>
+
+  <div class="compare-wrap">
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>Approach</th>
+          <th>Code pattern</th>
+          <th>Cost for 50 rows</th>
+          <th>Verdict</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Anti-pattern</td>
+          <td><code>load_model()</code> inside predict_fn</td>
+          <td>50 × 3s load = 2.5 min wasted</td>
+          <td><span class="badge badge-fail">Avoid</span></td>
+        </tr>
+        <tr>
+          <td>Correct</td>
+          <td><code>load_model()</code> once, outside</td>
+          <td>3s load once, then near-zero</td>
+          <td><span class="badge badge-pass">Use this</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="code-block"><span class="cm"># Load the model ONCE, outside predict_fn</span>
+model = mlflow.pyfunc.<span class="fn">load_model</span>(<span class="st">"models:/my-agent/3"</span>)
+
+<span class="cm"># predict_fn just calls .predict() — no loading overhead</span>
+<span class="kw">def</span> <span class="fn">predict_fn</span>(question: <span class="fn">str</span>) -> <span class="fn">str</span>:
+    <span class="kw">return</span> model.<span class="fn">predict</span>({<span class="st">"question"</span>: question})
+
+results = mlflow.genai.<span class="fn">evaluate</span>(
+    data=eval_dataset,
+    predict_fn=predict_fn,
+    scorers=[<span class="fn">Correctness</span>()],
+    model_id=<span class="st">"models:/my-agent/3"</span>
+)</div>
+
+  <!-- ── RATE LIMITING ── -->
+  <div class="section-header" style="margin-top:40px; margin-bottom:16px;">
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">Rate limiting & backoff</h3>
+  </div>
+
+  <p class="prose">
+    When running evaluations against Databricks Foundation Model APIs with larger datasets, you will hit rate limits. The recommended approach is to wrap your predict_fn with retry logic using exponential backoff. This combines cleanly with both sync and async patterns.
+  </p>
+
+  <div class="code-block"><span class="kw">from</span> tenacity <span class="kw">import</span> retry, wait_exponential, stop_after_attempt
+
+<span class="nm">@retry</span>(wait=<span class="fn">wait_exponential</span>(min=<span class="nu">1</span>, max=<span class="nu">30</span>), stop=<span class="fn">stop_after_attempt</span>(<span class="nu">5</span>))
+<span class="nm">@mlflow.trace</span>
+<span class="kw">def</span> <span class="fn">my_agent</span>(question: <span class="fn">str</span>) -> <span class="fn">str</span>:
+    resp = client.chat.completions.<span class="fn">create</span>(
+        model=<span class="st">"databricks-claude-sonnet-4"</span>,
+        messages=[{<span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: question}]
+    )
+    <span class="kw">return</span> resp.choices[<span class="nu">0</span>].message.content</div>
+
+  <div class="warning">For Databricks serverless environments, start with <code>MLFLOW_GENAI_EVAL_MAX_WORKERS=4</code> and tune up based on endpoint throughput. Pushing too high causes 429 errors and actually slows things down due to retries.</div>
+
+</section>
+
+
+<!-- ════════════════════════════════════════════ SECTION 3.5 -->
+<section class="section" id="topic-3-5">
+
+  <div class="section-header">
+    <span class="section-marker">3.5 · Theory</span>
+    <h2 class="section-title">Pattern 4 — Multi-Turn with ConversationSimulator</h2>
+    <span class="section-rule"></span>
+  </div>
+
+  <p class="prose">
+    All previous patterns evaluate single-turn interactions: one question in, one answer out. But many real agents handle multi-turn conversations — customer support, onboarding wizards, research assistants — where quality depends on how well the agent maintains context across turns. <code>ConversationSimulator</code> addresses exactly this.
+  </p>
+
+  <div class="card-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+    <div class="concept-card red">
+      <div class="card-label">Failure mode 1</div>
+      <div class="card-title">Context amnesia</div>
+      <div class="card-body">Agent gives a great recommendation in turn 1, then in turn 3 suggests something contradictory — as if the earlier exchange never happened.</div>
+    </div>
+    <div class="concept-card red">
+      <div class="card-label">Failure mode 2</div>
+      <div class="card-title">Repetitive responses</div>
+      <div class="card-body">Agent gives the same generic advice in turns 2 and 4 instead of building on what was already discussed.</div>
+    </div>
+    <div class="concept-card red">
+      <div class="card-label">Failure mode 3</div>
+      <div class="card-title">Goal drift</div>
+      <div class="card-body">User wanted pipeline setup help, but the agent keeps answering tangential questions without steering back.</div>
+    </div>
+    <div class="concept-card red">
+      <div class="card-label">Failure mode 4</div>
+      <div class="card-title">Escalation failure</div>
+      <div class="card-body">User signals frustration ("I already tried that"), but the agent doesn't adjust its tone or approach.</div>
+    </div>
+  </div>
+
+  <!-- ── INTERACTIVE: CONVERSATION REPLAY ── -->
+  <div class="convo-replay" id="convo-demo">
+    <div class="convo-header">
+      <span class="convo-title">Interactive — ConversationSimulator replay</span>
+      <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--accent-orange);">PERSONA: Frustrated admin</span>
+    </div>
+    <div class="convo-body" id="convo-body">
+      <div class="convo-msg" data-turn="1">
+        <div class="convo-avatar user">U</div>
+        <div class="convo-bubble user-msg">I've been trying to grant my team access to a Unity Catalog schema for hours. The docs say to use GRANT but it keeps failing with a permissions error.</div>
+      </div>
+      <div class="convo-msg" data-turn="1">
+        <div class="convo-avatar agent">A</div>
+        <div class="convo-bubble agent-msg">To grant access to a Unity Catalog schema, you'll need to be the schema owner or have MANAGE permissions. Try: <code style="font-size:11px;color:var(--accent-blue);">GRANT USE SCHEMA ON SCHEMA catalog.schema TO `group_name`</code></div>
+      </div>
+      <div class="convo-msg" data-turn="2">
+        <div class="convo-avatar user">U</div>
+        <div class="convo-bubble user-msg">I already tried that exact command. It says "User does not have MANAGE on schema." I'm a workspace admin — shouldn't I have all permissions?</div>
+      </div>
+      <div class="convo-msg" data-turn="2">
+        <div class="convo-avatar agent">A</div>
+        <div class="convo-bubble agent-msg">Good catch — workspace admin and Unity Catalog admin are separate roles. Being a workspace admin doesn't automatically grant UC permissions. You need the metastore admin to grant you ownership or MANAGE on that schema first.</div>
+      </div>
+      <div class="convo-msg" data-turn="3">
+        <div class="convo-avatar user">U</div>
+        <div class="convo-bubble user-msg">OK, who is the metastore admin? How do I find out?</div>
+      </div>
+      <div class="convo-msg" data-turn="3">
+        <div class="convo-avatar agent">A</div>
+        <div class="convo-bubble agent-msg">In your Databricks workspace, go to the Admin Console → Unity Catalog tab. The metastore admin is listed at the top. If you're using an account-level metastore, you may need to check the account console instead.</div>
+      </div>
+      <div class="convo-judge" id="convo-judges">
+        <div class="judge-row">
+          <span class="judge-name">KnowledgeRetention</span>
+          <span class="judge-score" style="color:var(--green);">5 / 5 — remembered user is workspace admin</span>
+        </div>
+        <div class="judge-row">
+          <span class="judge-name">TaskCompletion</span>
+          <span class="judge-score" style="color:var(--amber);">3 / 5 — didn't resolve the grant, gave next step</span>
+        </div>
+        <div class="judge-row">
+          <span class="judge-name">UserFrustration</span>
+          <span class="judge-score" style="color:var(--green);">Low — adapted to frustration cues well</span>
+        </div>
+      </div>
+    </div>
+    <div class="convo-footer">
+      <button class="step-btn" id="replay-btn" onclick="replayConvo()">Replay conversation</button>
+    </div>
+  </div>
+
+  <div class="code-block"><span class="nm">@mlflow.trace</span>
+<span class="kw">def</span> <span class="fn">my_multi_turn_agent</span>(input: <span class="fn">list</span>[<span class="fn">dict</span>]) -> <span class="fn">str</span>:
+    <span class="cm">"""
+    input looks like:
+    [
+        {"role": "user", "content": "Help me set up a Delta table"},
+        {"role": "assistant", "content": "Sure! First, let's..."},
+        {"role": "user", "content": "What about partitioning?"}
+    ]
+    """</span>
+    resp = client.chat.completions.<span class="fn">create</span>(
+        model=<span class="st">"databricks-claude-sonnet-4"</span>,
+        messages=[
+            {<span class="st">"role"</span>: <span class="st">"system"</span>, <span class="st">"content"</span>: <span class="st">"You are a Databricks expert."</span>},
+            *input  <span class="cm"># pass full history</span>
+        ]
+    )
+    <span class="kw">return</span> resp.choices[<span class="nu">0</span>].message.content</div>
+
+  <p class="prose">
+    The critical signature change: instead of <code>question: str</code>, multi-turn agents accept <code>input: list[dict]</code> — the full conversation history in OpenAI Responses format. The simulator manages state, calling your function repeatedly and appending each exchange.
+  </p>
+
+  <!-- ── MULTI-TURN JUDGES ── -->
+  <div class="section-header" style="margin-top:40px; margin-bottom:16px;">
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">Multi-turn judges</h3>
+  </div>
+
+  <div class="compare-wrap">
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>Judge</th>
+          <th>What it measures</th>
+          <th>Failure it catches</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>KnowledgeRetention</td>
+          <td>Does the agent remember facts from earlier turns?</td>
+          <td>User said "I'm using Unity Catalog" in turn 1, agent asks "which catalog?" in turn 4</td>
+        </tr>
+        <tr>
+          <td>TaskCompletion</td>
+          <td>Did the conversation achieve its stated goal?</td>
+          <td>User wanted pipeline setup — conversation ended without completing it</td>
+        </tr>
+        <tr>
+          <td>UserFrustration</td>
+          <td>Does the user need to repeat or rephrase?</td>
+          <td>User says "I already tried that" but agent doesn't adjust its approach</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── SCENARIO DESIGN ── -->
+  <div class="section-header" style="margin-top:40px; margin-bottom:16px;">
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">Conversation scenario design</h3>
+  </div>
+
+  <div class="code-block">multi_turn_scenarios = [
+    {
+        <span class="st">"inputs"</span>: {
+            <span class="st">"user_persona"</span>: <span class="st">"A data engineer new to Databricks"</span>,
+            <span class="st">"goal"</span>: <span class="st">"Set up a Delta Live Tables pipeline with quality constraints"</span>,
+            <span class="st">"num_turns"</span>: <span class="nu">5</span>
+        }
+    },
+    {
+        <span class="st">"inputs"</span>: {
+            <span class="st">"user_persona"</span>: <span class="st">"A frustrated admin who already tried the docs"</span>,
+            <span class="st">"goal"</span>: <span class="st">"Debug a failing Unity Catalog permission for a team"</span>,
+            <span class="st">"num_turns"</span>: <span class="nu">4</span>
+        }
+    },
+]</div>
+
+  <div class="insight">
+    <div class="insight-label">Cost awareness</div>
+    <p>Multi-turn evaluation is significantly more expensive than single-turn. Each scenario requires <strong>multiple LLM calls per turn</strong> (one for the simulator, one for your agent), plus the judges at the end. Use it strategically for conversational agents and multi-step workflows — not for simple Q&A where each interaction is independent.</p>
+  </div>
+
+</section>
+
+
+<!-- ════════════════════════════════════════════ SUMMARY -->
+<section class="section" id="pattern-compare">
+
+  <div class="section-header">
+    <span class="section-marker">Summary</span>
+    <h2 class="section-title">Pattern Comparison — When to Use Each</h2>
+    <span class="section-rule"></span>
+  </div>
+
+  <div class="compare-wrap">
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>Pattern</th>
+          <th>predict_fn signature</th>
+          <th>Best for</th>
+          <th>Tradeoff</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>1 — Local function</td>
+          <td><code>def fn(question: str) -> str</code></td>
+          <td>Development iteration — fast prompt and logic changes</td>
+          <td>Tests local code, not deployed environment</td>
+        </tr>
+        <tr>
+          <td>2 — to_predict_fn()</td>
+          <td><code>to_predict_fn("endpoints:/...")</code></td>
+          <td>CI gates, production regression testing</td>
+          <td>Requires live endpoint, slower iteration</td>
+        </tr>
+        <tr>
+          <td>3a — Async</td>
+          <td><code>async def fn(question: str) -> str</code></td>
+          <td>Large eval datasets (50+ rows), I/O-bound agents</td>
+          <td>3–5× faster, but rate limit risk</td>
+        </tr>
+        <tr>
+          <td>3b — Registered model</td>
+          <td><code>model.predict({...})</code> loaded once</td>
+          <td>Evaluating versioned model artifacts</td>
+          <td>Avoids reload overhead, gives version lineage</td>
+        </tr>
+        <tr>
+          <td>4 — Multi-turn</td>
+          <td><code>def fn(input: list[dict]) -> str</code></td>
+          <td>Conversational agents, multi-step workflows</td>
+          <td>Most expensive, catches context + goal drift</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── DECISION FLOW ── -->
+  <div class="diagram-wrap">
+    <div class="diagram-label">Decision flow — choosing the right predict_fn pattern</div>
+    <svg viewBox="0 0 860 360" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="arr-d" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M2 1L8 5L2 9" fill="none" stroke="var(--text-muted)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </marker>
+      </defs>
+
+      <!-- Start -->
+      <rect x="310" y="20" width="240" height="44" rx="8" fill="var(--surface2)" stroke="var(--border2)" stroke-width="0.8"/>
+      <text x="430" y="46" text-anchor="middle" fill="var(--text)" font-family="'Syne',sans-serif" font-size="13" font-weight="600">Is the agent deployed?</text>
+
+      <!-- Branches -->
+      <line x1="350" y1="64" x2="175" y2="110" stroke="var(--text-muted)" stroke-width="1" marker-end="url(#arr-d)"/>
+      <text x="240" y="82" fill="var(--text-muted)" font-family="'IBM Plex Mono',monospace" font-size="10">No</text>
+      <line x1="510" y1="64" x2="685" y2="110" stroke="var(--text-muted)" stroke-width="1" marker-end="url(#arr-d)"/>
+      <text x="615" y="82" fill="var(--text-muted)" font-family="'IBM Plex Mono',monospace" font-size="10">Yes</text>
+
+      <!-- Left: Local -->
+      <rect x="60" y="112" width="230" height="44" rx="8" fill="var(--surface2)" stroke="var(--border2)" stroke-width="0.8"/>
+      <text x="175" y="138" text-anchor="middle" fill="var(--text)" font-family="'Syne',sans-serif" font-size="13" font-weight="600">Multi-turn conversation?</text>
+
+      <!-- Right: Deployed -->
+      <rect x="570" y="112" width="230" height="44" rx="8" fill="var(--surface2)" stroke="var(--border2)" stroke-width="0.8"/>
+      <text x="685" y="138" text-anchor="middle" fill="var(--text)" font-family="'Syne',sans-serif" font-size="13" font-weight="600">Need versioned model?</text>
+
+      <!-- Left branch: No → sync/async -->
+      <line x1="120" y1="156" x2="120" y2="200" stroke="var(--text-muted)" stroke-width="1" marker-end="url(#arr-d)"/>
+      <text x="108" y="182" fill="var(--text-muted)" font-family="'IBM Plex Mono',monospace" font-size="10">No</text>
+
+      <rect x="30" y="202" width="180" height="44" rx="8" fill="var(--surface2)" stroke="var(--border2)" stroke-width="0.8"/>
+      <text x="120" y="228" text-anchor="middle" fill="var(--text)" font-family="'Syne',sans-serif" font-size="12" font-weight="500">50+ rows?</text>
+
+      <line x1="80" y1="246" x2="80" y2="290" stroke="var(--text-muted)" stroke-width="1" marker-end="url(#arr-d)"/>
+      <text x="68" y="272" fill="var(--text-muted)" font-family="'IBM Plex Mono',monospace" font-size="10">No</text>
+      <rect x="20" y="292" width="120" height="56" rx="8" fill="rgba(255,107,53,0.06)" stroke="var(--accent-orange)" stroke-width="0.8"/>
+      <text x="80" y="314" text-anchor="middle" fill="var(--accent-orange)" font-family="'IBM Plex Mono',monospace" font-size="11" font-weight="500">Pattern 1</text>
+      <text x="80" y="334" text-anchor="middle" fill="var(--text-muted)" font-family="'IBM Plex Mono',monospace" font-size="9">Local sync</text>
+
+      <line x1="160" y1="246" x2="160" y2="290" stroke="var(--text-muted)" stroke-width="1" marker-end="url(#arr-d)"/>
+      <text x="168" y="272" fill="var(--text-muted)" font-family="'IBM Plex Mono',monospace" font-size="10">Yes</text>
+      <rect x="150" y="292" width="120" height="56" rx="8" fill="rgba(168,85,247,0.06)" stroke="var(--accent-purple)" stroke-width="0.8"/>
+      <text x="210" y="314" text-anchor="middle" fill="var(--accent-purple)" font-family="'IBM Plex Mono',monospace" font-size="11" font-weight="500">Pattern 3a</text>
+      <text x="210" y="334" text-anchor="middle" fill="var(--text-muted)" font-family="'IBM Plex Mono',monospace" font-size="9">Async</text>
+
+      <!-- Left-Right: Yes → Pattern 4 -->
+      <line x1="230" y1="156" x2="350" y2="292" stroke="var(--text-muted)" stroke-width="1" marker-end="url(#arr-d)"/>
+      <text x="275" y="210" fill="var(--text-muted)" font-family="'IBM Plex Mono',monospace" font-size="10">Yes</text>
+      <rect x="290" y="292" width="150" height="56" rx="8" fill="rgba(0,191,165,0.06)" stroke="var(--accent-teal)" stroke-width="0.8"/>
+      <text x="365" y="314" text-anchor="middle" fill="var(--accent-teal)" font-family="'IBM Plex Mono',monospace" font-size="11" font-weight="500">Pattern 4</text>
+      <text x="365" y="334" text-anchor="middle" fill="var(--text-muted)" font-family="'IBM Plex Mono',monospace" font-size="9">Multi-turn</text>
+
+      <!-- Right-Left: No → Pattern 2 -->
+      <line x1="640" y1="156" x2="560" y2="292" stroke="var(--text-muted)" stroke-width="1" marker-end="url(#arr-d)"/>
+      <text x="580" y="210" fill="var(--text-muted)" font-family="'IBM Plex Mono',monospace" font-size="10">No</text>
+      <rect x="490" y="292" width="150" height="56" rx="8" fill="rgba(74,158,255,0.06)" stroke="var(--accent-blue)" stroke-width="0.8"/>
+      <text x="565" y="314" text-anchor="middle" fill="var(--accent-blue)" font-family="'IBM Plex Mono',monospace" font-size="11" font-weight="500">Pattern 2</text>
+      <text x="565" y="334" text-anchor="middle" fill="var(--text-muted)" font-family="'IBM Plex Mono',monospace" font-size="9">to_predict_fn()</text>
+
+      <!-- Right-Right: Yes → Pattern 3b -->
+      <line x1="730" y1="156" x2="730" y2="290" stroke="var(--text-muted)" stroke-width="1" marker-end="url(#arr-d)"/>
+      <text x="738" y="210" fill="var(--text-muted)" font-family="'IBM Plex Mono',monospace" font-size="10">Yes</text>
+      <rect x="670" y="292" width="150" height="56" rx="8" fill="rgba(34,197,94,0.06)" stroke="var(--green)" stroke-width="0.8"/>
+      <text x="745" y="314" text-anchor="middle" fill="var(--green)" font-family="'IBM Plex Mono',monospace" font-size="11" font-weight="500">Pattern 3b</text>
+      <text x="745" y="334" text-anchor="middle" fill="var(--text-muted)" font-family="'IBM Plex Mono',monospace" font-size="9">Registered model</text>
+    </svg>
+  </div>
+
+</section>
+
+
+<!-- ── MODULE OUTCOME ── -->
+<div class="outcome">
+  <div class="outcome-icon">🎯</div>
+  <div class="outcome-text">
+    <strong>Module 03 outcome:</strong> You understand the full <code>predict_fn</code> contract — parameter matching, trace requirements, and JSON-serializable returns. You can wire up any agent to <code>mlflow.genai.evaluate()</code>: a local function with <code>@mlflow.trace</code> (Pattern 1), a deployed endpoint via <code>to_predict_fn()</code> (Pattern 2), an async function for high-throughput evaluation (Pattern 3a), a pre-loaded registered model (Pattern 3b), or a multi-turn conversation via <code>ConversationSimulator</code> (Pattern 4). You know when to use each pattern, how to tune concurrency, and how to handle rate limits on Databricks.
+  </div>
+</div>
+
+</main>
+
+<!-- ════════════════════════════════════════════ SCRIPTS ════════════════════════════════════════════ -->
+<script>
+/* ── NAV SCROLL OBSERVER ── */
+const sections = document.querySelectorAll('.section');
+const navItems = document.querySelectorAll('.nav-item');
+
+const navObs = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const id = entry.target.getAttribute('id');
+      navItems.forEach(item => {
+        item.classList.toggle('active', item.getAttribute('href') === '#' + id);
+      });
+    }
+  });
+}, { rootMargin: '-20% 0px -60% 0px' });
+
+sections.forEach(s => navObs.observe(s));
+
+
+/* ── PIPELINE STEPPER ── */
+(function() {
+  const panels = document.querySelectorAll('#pipeline-body .stepper-panel');
+  const dotsC = document.getElementById('pipeline-dots');
+  const prevBtn = document.getElementById('pipe-prev');
+  const nextBtn = document.getElementById('pipe-next');
+  const counter = document.getElementById('pipe-count');
+  let cur = 0;
+
+  // Create dots
+  panels.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'stepper-dot' + (i === 0 ? ' active' : '');
+    d.onclick = () => goTo(i);
+    dotsC.appendChild(d);
+  });
+
+  function goTo(n) {
+    panels[cur].classList.remove('active');
+    dotsC.children[cur].classList.remove('active');
+    cur = n;
+    panels[cur].classList.add('active');
+    dotsC.children[cur].classList.add('active');
+    prevBtn.disabled = cur === 0;
+    nextBtn.disabled = cur === panels.length - 1;
+    counter.textContent = 'Step ' + (cur + 1) + ' of ' + panels.length;
+  }
+
+  prevBtn.onclick = () => { if (cur > 0) goTo(cur - 1); };
+  nextBtn.onclick = () => { if (cur < panels.length - 1) goTo(cur + 1); };
+})();
+
+
+/* ── SYNC / ASYNC TIMELINE ── */
+const syncData = {
+  rows: [
+    { label: 'Row 1', blocks: [
+      { type: 'work', left: 0, width: 8, text: 'Call' },
+      { type: 'wait', left: 8, width: 25, text: 'Wait I/O' },
+      { type: 'work', left: 33, width: 5, text: '' },
+      { type: 'score', left: 38, width: 12, text: 'Score' },
+    ]},
+    { label: 'Row 2', blocks: [
+      { type: 'work', left: 0, width: 8, text: 'Call' },
+      { type: 'wait', left: 8, width: 30, text: 'Wait I/O' },
+      { type: 'work', left: 38, width: 5, text: '' },
+      { type: 'score', left: 43, width: 12, text: 'Score' },
+    ]},
+    { label: 'Row 3', blocks: [
+      { type: 'work', left: 0, width: 8, text: 'Call' },
+      { type: 'wait', left: 8, width: 22, text: 'Wait I/O' },
+      { type: 'work', left: 30, width: 5, text: '' },
+      { type: 'score', left: 35, width: 12, text: 'Score' },
+    ]},
+    { label: 'Row 4', blocks: [
+      { type: 'work', left: 0, width: 8, text: 'Call' },
+      { type: 'wait', left: 8, width: 28, text: 'Wait I/O' },
+      { type: 'work', left: 36, width: 5, text: '' },
+      { type: 'score', left: 41, width: 12, text: 'Score' },
+    ]},
+  ],
+  note: 'Threads run in parallel, each blocked during I/O wait',
+  time: '~12.0s (4 threads)'
+};
+
+const asyncData = {
+  rows: [
+    { label: 'Event loop', blocks: [
+      { type: 'work', left: 0, width: 4, text: 'R1' },
+      { type: 'work', left: 4, width: 4, text: 'R2' },
+      { type: 'work', left: 8, width: 4, text: 'R3' },
+      { type: 'work', left: 12, width: 4, text: 'R4' },
+      { type: 'work', left: 28, width: 3, text: 'R1' },
+      { type: 'work', left: 31, width: 3, text: 'R3' },
+      { type: 'work', left: 34, width: 3, text: 'R4' },
+      { type: 'work', left: 37, width: 3, text: 'R2' },
+    ]},
+    { label: 'I/O (R1)', blocks: [
+      { type: 'wait', left: 4, width: 24, text: '' },
+    ]},
+    { label: 'I/O (R2)', blocks: [
+      { type: 'wait', left: 8, width: 29, text: '' },
+    ]},
+    { label: 'I/O (R3)', blocks: [
+      { type: 'wait', left: 12, width: 19, text: '' },
+    ]},
+    { label: 'Scoring', blocks: [
+      { type: 'score', left: 40, width: 12, text: 'All 4 rows' },
+    ]},
+  ],
+  note: '1 thread, no blocking — all waits overlap',
+  time: '~4.5s (overlapped)'
+};
+
+function showTimeline(mode) {
+  const btns = document.querySelectorAll('.tgl-btn');
+  btns.forEach(b => b.classList.toggle('active', b.textContent.toLowerCase() === mode));
+
+  const data = mode === 'sync' ? syncData : asyncData;
+  const canvas = document.getElementById('tl-canvas');
+  const timeEl = document.getElementById('tl-time');
+
+  canvas.innerHTML = '';
+  data.rows.forEach(row => {
+    const rowEl = document.createElement('div');
+    rowEl.className = 'tl-row';
+    rowEl.innerHTML = '<div class="tl-label">' + row.label + '</div><div class="tl-track"></div>';
+    const track = rowEl.querySelector('.tl-track');
+    row.blocks.forEach((b, i) => {
+      const block = document.createElement('div');
+      block.className = 'tl-block tl-' + b.type;
+      block.style.left = b.left + '%';
+      block.style.width = '0%';
+      block.textContent = b.text;
+      track.appendChild(block);
+      // Animate in
+      setTimeout(() => { block.style.width = b.width + '%'; }, 80 + i * 60);
+    });
+    canvas.appendChild(rowEl);
+  });
+
+  // Note row
+  const noteEl = document.createElement('div');
+  noteEl.style.cssText = 'margin-top:8px;font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--text-muted);text-align:center;';
+  noteEl.textContent = data.note;
+  canvas.appendChild(noteEl);
+
+  timeEl.textContent = data.time;
+}
+
+// Init
+showTimeline('sync');
+
+
+/* ── CONVERSATION REPLAY ── */
+function replayConvo() {
+  const msgs = document.querySelectorAll('#convo-body .convo-msg');
+  const judges = document.getElementById('convo-judges');
+  msgs.forEach(m => m.classList.remove('visible'));
+  judges.classList.remove('visible');
+
+  msgs.forEach((m, i) => {
+    setTimeout(() => m.classList.add('visible'), 400 + i * 500);
+  });
+
+  setTimeout(() => judges.classList.add('visible'), 400 + msgs.length * 500 + 300);
+}
+
+// Auto-play on scroll into view
+const convoObs = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      replayConvo();
+      convoObs.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.3 });
+
+convoObs.observe(document.getElementById('convo-demo'));
+</script>
+
+</body>
+</html>

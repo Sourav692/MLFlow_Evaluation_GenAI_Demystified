@@ -1,0 +1,1658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 06 — AI Gateway, Inference Tables &amp; Production Monitoring</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=Syne:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #05080f;
+  --surface: #0b0f1a;
+  --surface2: #111827;
+  --surface3: #1a2235;
+  --border: #1e2d45;
+  --border2: #243550;
+  --accent-orange: #ff6b35;
+  --accent-teal: #00bfa5;
+  --accent-blue: #4a9eff;
+  --accent-purple: #a855f7;
+  --accent-yellow: #fbbf24;
+  --text: #e8edf5;
+  --text-dim: #8899bb;
+  --text-muted: #4a5878;
+  --green: #22c55e;
+  --amber: #f59e0b;
+  --red: #ef4444;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Syne', sans-serif;
+  font-weight: 400;
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+
+.mod-hero {
+  position: relative;
+  padding: 64px 48px 52px;
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.mod-hero::before {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 60% 80% at 10% 50%, rgba(255,107,53,0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 50% at 90% 20%, rgba(0,191,165,0.06) 0%, transparent 55%);
+  pointer-events: none;
+}
+
+.hero-inner { max-width: 960px; margin: 0 auto; position: relative; }
+
+.breadcrumb {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 28px;
+}
+
+.bc-tag {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; font-weight: 500;
+  letter-spacing: 0.15em; text-transform: uppercase;
+  color: var(--accent-teal);
+  padding: 4px 12px;
+  border: 1px solid rgba(0,191,165,0.25);
+  border-radius: 2px;
+  background: rgba(0,191,165,0.06);
+}
+
+.bc-sep { color: var(--text-muted); font-size: 12px; }
+
+.bc-current {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: var(--text-muted);
+  letter-spacing: 0.1em; text-transform: uppercase;
+}
+
+.mod-eyebrow {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-orange);
+  margin-bottom: 14px;
+}
+
+.mod-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(34px, 4.5vw, 56px);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  margin-bottom: 16px;
+}
+
+.mod-title em { font-style: italic; color: var(--accent-orange); }
+
+.mod-desc {
+  font-size: 16px; color: var(--text-dim);
+  max-width: 620px; line-height: 1.75;
+  margin-bottom: 36px;
+}
+
+.mod-desc code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px; color: var(--accent-blue);
+  background: rgba(74,158,255,0.08);
+  padding: 2px 7px; border-radius: 3px;
+}
+
+.mod-meta {
+  display: flex; gap: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  width: fit-content;
+}
+
+.meta-chip {
+  padding: 10px 20px;
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: 2px;
+}
+.meta-chip:last-child { border-right: none; }
+
+.meta-val {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 16px; font-weight: 500;
+  color: var(--accent-teal);
+}
+
+.meta-lbl {
+  font-size: 10px; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.1em;
+}
+
+.progress-nav {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 48px;
+  position: sticky; top: 0;
+  z-index: 100;
+}
+
+.nav-inner {
+  max-width: 960px; margin: 0 auto;
+  display: flex; gap: 0; align-items: stretch;
+  overflow-x: auto;
+}
+
+.nav-inner::-webkit-scrollbar { height: 0; }
+
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 20px;
+  border-right: 1px solid var(--border);
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.nav-item:hover { background: var(--surface2); }
+.nav-item.active { background: rgba(255,107,53,0.06); }
+.nav-item:last-child { border-right: none; }
+
+.nav-num {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: var(--text-muted);
+  letter-spacing: 0.1em;
+}
+
+.nav-label {
+  font-size: 12px; color: var(--text-dim);
+  font-weight: 500;
+}
+
+.nav-item.active .nav-label { color: var(--accent-orange); }
+.nav-item.active .nav-num { color: var(--accent-orange); }
+
+main {
+  max-width: 960px; margin: 0 auto;
+  padding: 56px 48px 100px;
+}
+
+.section {
+  margin-bottom: 80px;
+  scroll-margin-top: 60px;
+}
+
+.section-header {
+  display: flex; align-items: center; gap: 16px;
+  margin-bottom: 36px;
+}
+
+.section-marker {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: var(--accent-orange);
+  letter-spacing: 0.15em; text-transform: uppercase;
+  padding: 4px 12px;
+  border: 1px solid rgba(255,107,53,0.25);
+  border-radius: 2px;
+  background: rgba(255,107,53,0.06);
+  white-space: nowrap;
+}
+
+.section-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 28px; line-height: 1.2;
+}
+
+.section-rule { flex: 1; height: 1px; background: var(--border); }
+
+.prose {
+  font-size: 15px; color: var(--text-dim);
+  line-height: 1.8; max-width: 720px;
+  margin-bottom: 28px;
+}
+
+.prose strong { color: var(--text); font-weight: 600; }
+
+.prose code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12.5px;
+  color: var(--accent-blue);
+  background: rgba(74,158,255,0.08);
+  padding: 2px 7px;
+  border-radius: 3px;
+}
+
+.insight {
+  padding: 20px 24px;
+  background: rgba(0,191,165,0.04);
+  border: 1px solid rgba(0,191,165,0.15);
+  border-left: 3px solid var(--accent-teal);
+  border-radius: 0 8px 8px 0;
+  margin-bottom: 28px;
+}
+
+.insight-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--accent-teal);
+  margin-bottom: 8px;
+}
+
+.insight p {
+  font-size: 14px; color: var(--text-dim); line-height: 1.7;
+}
+
+.insight p strong { color: var(--accent-teal); }
+
+.warning {
+  padding: 16px 20px;
+  background: rgba(245,158,11,0.04);
+  border: 1px solid rgba(245,158,11,0.15);
+  border-left: 3px solid var(--amber);
+  border-radius: 0 8px 8px 0;
+  margin-bottom: 28px;
+  font-size: 13.5px; color: var(--text-dim); line-height: 1.6;
+}
+
+.warning::before {
+  content: 'Note  ';
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--amber);
+}
+
+.warning code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: var(--accent-blue);
+  background: rgba(74,158,255,0.08);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+  margin-bottom: 36px;
+}
+
+.concept-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 22px;
+  transition: border-color 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+.concept-card::before {
+  content: '';
+  position: absolute; left: 0; top: 0; bottom: 0;
+  width: 3px;
+}
+
+.concept-card.teal::before { background: var(--accent-teal); }
+.concept-card.orange::before { background: var(--accent-orange); }
+.concept-card.purple::before { background: var(--accent-purple); }
+.concept-card.blue::before { background: var(--accent-blue); }
+.concept-card.amber::before { background: var(--amber); }
+.concept-card.red::before { background: var(--red); }
+.concept-card.green::before { background: var(--green); }
+
+.concept-card:hover { border-color: var(--border2); }
+
+.card-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.concept-card.teal .card-label { color: var(--accent-teal); }
+.concept-card.orange .card-label { color: var(--accent-orange); }
+.concept-card.purple .card-label { color: var(--accent-purple); }
+.concept-card.blue .card-label { color: var(--accent-blue); }
+.concept-card.amber .card-label { color: var(--amber); }
+.concept-card.red .card-label { color: var(--red); }
+.concept-card.green .card-label { color: var(--green); }
+
+.card-title {
+  font-size: 15px; font-weight: 600;
+  color: var(--text); margin-bottom: 8px;
+  line-height: 1.3;
+}
+
+.card-body {
+  font-size: 13px; color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.card-body code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11.5px;
+  color: var(--accent-blue);
+  background: rgba(74,158,255,0.08);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.compare-wrap { overflow-x: auto; margin-bottom: 36px; }
+
+.compare-table {
+  width: 100%; border-collapse: collapse;
+  font-size: 13.5px;
+}
+
+.compare-table thead tr {
+  border-bottom: 1px solid var(--border2);
+}
+
+.compare-table th {
+  padding: 12px 16px; text-align: left;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--text-muted);
+  font-weight: 500;
+}
+
+.compare-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-dim);
+  vertical-align: top;
+  line-height: 1.55;
+}
+
+.compare-table tr:last-child td { border-bottom: none; }
+.compare-table tr:hover td { background: rgba(255,255,255,0.012); }
+
+.compare-table td:first-child {
+  font-weight: 500; color: var(--text);
+  white-space: nowrap;
+}
+
+.compare-table td code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11.5px;
+  color: var(--accent-blue);
+  background: rgba(74,158,255,0.08);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.badge {
+  display: inline-block;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; padding: 2px 8px;
+  border-radius: 2px; font-weight: 500;
+  letter-spacing: 0.04em;
+  border: 1px solid;
+}
+
+.badge-fail { color: var(--red); background: rgba(239,68,68,0.08); border-color: rgba(239,68,68,0.2); }
+.badge-pass { color: var(--green); background: rgba(34,197,94,0.08); border-color: rgba(34,197,94,0.2); }
+.badge-partial { color: var(--amber); background: rgba(245,158,11,0.08); border-color: rgba(245,158,11,0.2); }
+
+.code-block {
+  background: #020509;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent-blue);
+  border-radius: 0 6px 6px 0;
+  padding: 14px 18px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11.5px;
+  line-height: 1.8;
+  overflow-x: auto;
+  white-space: pre;
+  margin-bottom: 28px;
+}
+
+.kw { color: #c792ea; }
+.fn { color: #82aaff; }
+.st { color: #c3e88d; }
+.cm { color: var(--text-muted); }
+.nm { color: var(--accent-orange); }
+.nu { color: #f78c6c; }
+
+.stack-diagram {
+  display: flex; flex-direction: column;
+  gap: 3px;
+  margin-bottom: 36px;
+}
+
+.stack-layer {
+  display: grid;
+  grid-template-columns: 120px 1fr auto;
+  align-items: center;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  transition: border-color 0.15s;
+}
+
+.stack-layer:hover { border-color: var(--border2); }
+
+.stack-index {
+  padding: 16px 14px;
+  background: var(--surface2);
+  border-right: 1px solid var(--border);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--text-muted);
+  text-align: center;
+}
+
+.stack-content {
+  padding: 14px 20px;
+}
+
+.stack-title {
+  font-size: 14px; font-weight: 600; color: var(--text);
+  margin-bottom: 4px;
+}
+
+.stack-desc {
+  font-size: 12px; color: var(--text-muted); line-height: 1.5;
+}
+
+.stack-desc code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-blue);
+  background: rgba(74,158,255,0.08);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.stack-tag {
+  padding: 14px 18px;
+  background: var(--surface2);
+  border-left: 1px solid var(--border);
+}
+
+.diagram-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 36px;
+}
+
+.diagram-header {
+  padding: 14px 20px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+}
+
+.diagram-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: var(--text-muted);
+  letter-spacing: 0.08em; text-transform: uppercase;
+}
+
+.diagram-body {
+  padding: 32px 24px;
+  display: flex;
+  justify-content: center;
+}
+
+.diagram-body svg { max-width: 100%; height: auto; }
+
+.pipeline-wrap {
+  display: flex; flex-direction: column;
+  gap: 2px; margin-bottom: 36px;
+}
+
+.pipe-stage {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: stretch;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.pipe-inner { padding: 16px 20px; }
+
+.pipe-name {
+  font-size: 14px; font-weight: 600; color: var(--text);
+  margin-bottom: 4px;
+}
+
+.pipe-detail {
+  font-size: 12.5px; color: var(--text-muted); line-height: 1.5;
+}
+
+.pipe-detail code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-blue);
+  background: rgba(74,158,255,0.08);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.pipe-api {
+  padding: 12px 16px;
+  background: var(--surface2);
+  border-left: 1px solid var(--border);
+  display: flex; align-items: center;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; color: var(--text-muted);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.layer-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3px;
+  margin-bottom: 4px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.lt-panel {
+  background: var(--surface);
+  padding: 22px;
+  cursor: pointer;
+  transition: background 0.2s;
+  position: relative;
+}
+
+.lt-panel:hover { background: var(--surface2); }
+.lt-panel.active { background: rgba(255,107,53,0.04); }
+
+.lt-panel.active::after {
+  content: '';
+  position: absolute; bottom: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--accent-orange);
+}
+
+.lt-num {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--text-muted);
+  margin-bottom: 10px;
+}
+
+.lt-name {
+  font-size: 15px; font-weight: 600;
+  color: var(--text); margin-bottom: 6px;
+}
+
+.lt-desc {
+  font-size: 12.5px; color: var(--text-muted); line-height: 1.5;
+}
+
+.lt-desc code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-blue);
+  background: rgba(74,158,255,0.08);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.lt-detail {
+  padding: 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: 0 0 10px 10px;
+  margin-bottom: 36px;
+  font-size: 13.5px; color: var(--text-dim);
+  line-height: 1.7;
+}
+
+.lt-detail code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: var(--accent-blue);
+  background: rgba(74,158,255,0.08);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.outcome {
+  margin-top: 60px;
+  padding: 28px 32px;
+  background: rgba(0,191,165,0.03);
+  border: 1px solid rgba(0,191,165,0.15);
+  border-radius: 10px;
+  display: flex; gap: 20px; align-items: flex-start;
+}
+
+.outcome-icon {
+  font-size: 22px; flex-shrink: 0; margin-top: 2px;
+}
+
+.outcome-text {
+  font-size: 14px; color: var(--text-dim); line-height: 1.75;
+}
+
+.outcome-text strong { color: var(--accent-teal); }
+.outcome-text code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: var(--accent-blue);
+  background: rgba(74,158,255,0.08);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+@media (max-width: 700px) {
+  .mod-hero, main { padding-left: 20px; padding-right: 20px; }
+  .progress-nav { padding: 0 20px; }
+  .card-grid { grid-template-columns: 1fr; }
+  .stack-layer { grid-template-columns: 1fr; }
+  .layer-toggle { grid-template-columns: 1fr; }
+  .pipe-stage { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<header class="mod-hero">
+  <div class="hero-inner">
+    <div class="breadcrumb">
+      <span class="bc-tag">Databricks · MLflow 3 · GenAI</span>
+      <span class="bc-sep">/</span>
+      <span class="bc-current">Module 06 · Production Stack</span>
+    </div>
+    <div class="mod-eyebrow">Module 06 · Advanced · ~3.5h</div>
+    <h1 class="mod-title">AI Gateway,<br><em>Inference Tables</em><br>&amp; Production Monitoring</h1>
+    <p class="mod-desc">The Databricks production stack: AI Gateway guardrails as your synchronous safety net, Inference Tables as the automatic audit trail, and registered scorers for continuous quality monitoring.</p>
+    <div class="mod-meta">
+      <div class="meta-chip"><span class="meta-val">3</span><span class="meta-lbl">Theory topics</span></div>
+      <div class="meta-chip"><span class="meta-val">3</span><span class="meta-lbl">Labs</span></div>
+      <div class="meta-chip"><span class="meta-val">3.5h</span><span class="meta-lbl">Duration</span></div>
+      <div class="meta-chip"><span class="meta-val">Advanced</span><span class="meta-lbl">Level</span></div>
+    </div>
+  </div>
+</header>
+
+<nav class="progress-nav">
+  <div class="nav-inner">
+    <a href="#topic-6-1" class="nav-item active">
+      <span class="nav-num">6.1</span>
+      <span class="nav-label">AI Gateway</span>
+    </a>
+    <a href="#topic-6-2" class="nav-item">
+      <span class="nav-num">6.2</span>
+      <span class="nav-label">Lab: Enable Gateway</span>
+    </a>
+    <a href="#topic-6-3" class="nav-item">
+      <span class="nav-num">6.3</span>
+      <span class="nav-label">Inference Tables</span>
+    </a>
+    <a href="#topic-6-4" class="nav-item">
+      <span class="nav-num">6.4</span>
+      <span class="nav-label">Lab: Query tables</span>
+    </a>
+    <a href="#topic-6-5" class="nav-item">
+      <span class="nav-num">6.5</span>
+      <span class="nav-label">Prod monitoring</span>
+    </a>
+    <a href="#topic-6-6" class="nav-item">
+      <span class="nav-num">6.6</span>
+      <span class="nav-label">Lab: register().start()</span>
+    </a>
+  </div>
+</nav>
+
+<main>
+
+<!-- ════════════════════════════════════════════ SECTION 6.1 -->
+<section class="section" id="topic-6-1">
+
+  <div class="section-header">
+    <span class="section-marker">6.1 · Theory</span>
+    <h2 class="section-title">Databricks AI Gateway — Architecture &amp; Role in Evaluation</h2>
+    <span class="section-rule"></span>
+  </div>
+
+  <p class="prose">
+    The AI Gateway is a <strong>centralised control plane</strong> that sits between your applications and every LLM endpoint. Think of it as a smart proxy — every request to any model passes through it, giving you a single enforcement point for policies, cost controls, and safety guardrails. In the context of evaluation, AI Gateway is the first line of defence: it catches violations in real time, before they ever reach your inference tables or scorers.
+  </p>
+
+  <!-- ── FOUR CAPABILITIES ── -->
+  <div class="section-header" style="margin-top:40px; margin-bottom:16px;">
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">Four core capabilities</h3>
+  </div>
+
+  <div class="card-grid">
+    <div class="concept-card orange">
+      <div class="card-label">Capability 1</div>
+      <div class="card-title">Rate limiting</div>
+      <div class="card-body">Controls how many requests hit your model endpoints per minute or hour. Prevents runaway costs from sudden traffic spikes and ensures fair resource allocation across teams and applications.</div>
+    </div>
+    <div class="concept-card blue">
+      <div class="card-label">Capability 2</div>
+      <div class="card-title">Cost tracking</div>
+      <div class="card-body">Logs token counts and associated costs per request, per model, per user. You get a unified cost view across all LLM providers — OpenAI, Anthropic, and Databricks Foundation Models — in a single pane.</div>
+    </div>
+    <div class="concept-card purple">
+      <div class="card-label">Capability 3</div>
+      <div class="card-title">Model routing</div>
+      <div class="card-body">Directs traffic to different model endpoints based on rules. Route simple queries to a cheaper model and complex queries to a frontier model, or implement A/B testing across model versions.</div>
+    </div>
+    <div class="concept-card teal">
+      <div class="card-label">Capability 4</div>
+      <div class="card-title">Guardrails</div>
+      <div class="card-body">Applies input and output filters that block requests in real time. PII detection, toxicity filtering, topic restriction, and custom safety rules — all enforced synchronously before the response reaches the user.</div>
+    </div>
+  </div>
+
+  <!-- ── ARCHITECTURE DIAGRAM ── -->
+  <div class="section-header" style="margin-top:40px; margin-bottom:16px;">
+    <span class="section-marker" style="background:rgba(74,158,255,0.06); color:var(--accent-blue); border-color:rgba(74,158,255,0.2);">Architecture</span>
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">Request flow through AI Gateway</h3>
+  </div>
+
+  <p class="prose">
+    Every request from your application passes through the Gateway's input guardrails first, then rate limiting and routing, then to the model. The response returns through output guardrails before reaching the user. Any guardrail violation can <strong>block</strong> the request entirely or <strong>warn</strong> (log and pass through).
+  </p>
+
+  <div class="diagram-wrap">
+    <div class="diagram-header">
+      <div class="diagram-label">Interactive diagram</div>
+      <span style="font-family:'IBM Plex Mono',monospace; font-size:9px; padding:2px 8px; border-radius:2px; color:var(--accent-teal); background:rgba(0,191,165,0.08); border:1px solid rgba(0,191,165,0.2);">Hover nodes for details</span>
+    </div>
+    <div class="diagram-body">
+      <svg width="100%" viewBox="0 0 860 420" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arr-gw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </marker>
+        </defs>
+
+        <!-- User App -->
+        <g class="gw-node" data-tip="Your application sends requests to the serving endpoint. It doesn't know the Gateway exists.">
+          <rect x="340" y="20" width="180" height="44" rx="8" fill="var(--surface2)" stroke="var(--border2)" stroke-width="0.8"/>
+          <text x="430" y="46" text-anchor="middle" fill="var(--text)" font-family="'Syne',sans-serif" font-size="13" font-weight="500">Your application</text>
+        </g>
+
+        <line x1="430" y1="64" x2="430" y2="98" stroke="var(--text-muted)" stroke-width="1" marker-end="url(#arr-gw)"/>
+
+        <!-- Gateway Container -->
+        <rect x="60" y="100" width="740" height="180" rx="16" fill="rgba(168,85,247,0.03)" stroke="var(--accent-purple)" stroke-width="0.6" stroke-dasharray="6 4"/>
+        <text x="430" y="126" text-anchor="middle" fill="var(--accent-purple)" font-family="'IBM Plex Mono',monospace" font-size="11" font-weight="500" letter-spacing="0.08em">AI GATEWAY CONTROL PLANE</text>
+
+        <!-- Input guardrail -->
+        <g class="gw-node" data-tip="Synchronous: blocks PII, toxic content, and off-topic queries BEFORE they reach the model.">
+          <rect x="100" y="148" width="170" height="56" rx="8" fill="rgba(239,68,68,0.06)" stroke="var(--red)" stroke-width="0.8"/>
+          <text x="185" y="170" text-anchor="middle" fill="var(--red)" font-family="'IBM Plex Mono',monospace" font-size="12" font-weight="500">Input guard</text>
+          <text x="185" y="190" text-anchor="middle" fill="var(--text-muted)" font-family="'Syne',sans-serif" font-size="11">PII · toxicity · topic</text>
+        </g>
+
+        <!-- Rate limit + routing -->
+        <g class="gw-node" data-tip="Enforces per-user or per-team rate limits and routes to the optimal model endpoint.">
+          <rect x="310" y="148" width="170" height="56" rx="8" fill="rgba(74,158,255,0.06)" stroke="var(--accent-blue)" stroke-width="0.8"/>
+          <text x="395" y="170" text-anchor="middle" fill="var(--accent-blue)" font-family="'IBM Plex Mono',monospace" font-size="12" font-weight="500">Rate limit</text>
+          <text x="395" y="190" text-anchor="middle" fill="var(--text-muted)" font-family="'Syne',sans-serif" font-size="11">Cost · routing</text>
+        </g>
+
+        <!-- Output guardrail -->
+        <g class="gw-node" data-tip="Synchronous: filters the model's response for safety violations BEFORE returning to user.">
+          <rect x="520" y="148" width="170" height="56" rx="8" fill="rgba(239,68,68,0.06)" stroke="var(--red)" stroke-width="0.8"/>
+          <text x="605" y="170" text-anchor="middle" fill="var(--red)" font-family="'IBM Plex Mono',monospace" font-size="12" font-weight="500">Output guard</text>
+          <text x="605" y="190" text-anchor="middle" fill="var(--text-muted)" font-family="'Syne',sans-serif" font-size="11">Safety filter</text>
+        </g>
+
+        <!-- Arrows between inner nodes -->
+        <line x1="270" y1="176" x2="308" y2="176" stroke="var(--text-muted)" stroke-width="1" marker-end="url(#arr-gw)"/>
+        <line x1="480" y1="176" x2="518" y2="176" stroke="var(--text-muted)" stroke-width="1" marker-end="url(#arr-gw)"/>
+
+        <!-- Blocked label -->
+        <rect x="100" y="224" width="80" height="30" rx="5" fill="rgba(239,68,68,0.08)" stroke="rgba(239,68,68,0.25)" stroke-width="0.6"/>
+        <text x="140" y="243" text-anchor="middle" fill="var(--red)" font-family="'IBM Plex Mono',monospace" font-size="10" font-weight="500">BLOCKED</text>
+        <line x1="185" y1="204" x2="150" y2="222" stroke="rgba(239,68,68,0.4)" stroke-width="0.6" marker-end="url(#arr-gw)"/>
+
+        <!-- Arrow to model serving -->
+        <line x1="430" y1="280" x2="430" y2="318" stroke="var(--text-muted)" stroke-width="1" marker-end="url(#arr-gw)"/>
+
+        <!-- Model Serving -->
+        <g class="gw-node" data-tip="The actual LLM endpoint. Runs your agent with MLflow tracing enabled. Writes to inference table.">
+          <rect x="280" y="320" width="300" height="56" rx="8" fill="rgba(0,191,165,0.06)" stroke="var(--accent-teal)" stroke-width="0.8"/>
+          <text x="430" y="342" text-anchor="middle" fill="var(--accent-teal)" font-family="'IBM Plex Mono',monospace" font-size="12" font-weight="500">Model serving</text>
+          <text x="430" y="362" text-anchor="middle" fill="var(--text-muted)" font-family="'Syne',sans-serif" font-size="11">LLM endpoint + MLflow tracing</text>
+        </g>
+
+        <!-- Side labels -->
+        <text x="750" y="166" text-anchor="end" fill="var(--text-muted)" font-family="'IBM Plex Mono',monospace" font-size="10" letter-spacing="0.06em">SYNCHRONOUS</text>
+        <text x="750" y="182" text-anchor="end" fill="var(--text-muted)" font-family="'Syne',sans-serif" font-size="11">Real-time blocking</text>
+
+        <text x="750" y="342" text-anchor="end" fill="var(--text-muted)" font-family="'IBM Plex Mono',monospace" font-size="10" letter-spacing="0.06em">ASYNC (NEXT SECTION)</text>
+        <text x="750" y="358" text-anchor="end" fill="var(--text-muted)" font-family="'Syne',sans-serif" font-size="11">Inference Tables + scorers</text>
+
+        <!-- Dashed boundary -->
+        <line x1="60" y1="300" x2="800" y2="300" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="6 4"/>
+
+        <!-- Tooltip -->
+        <rect id="gw-tip-bg" x="80" y="390" width="700" height="26" rx="6" fill="var(--surface2)" stroke="var(--border)" stroke-width="0.5" opacity="0"/>
+        <text id="gw-tip-text" x="430" y="408" text-anchor="middle" fill="var(--text-dim)" font-family="'Syne',sans-serif" font-size="12" opacity="0"></text>
+      </svg>
+    </div>
+  </div>
+
+  <!-- ── TWO-LAYER DEFENCE ── -->
+  <div class="section-header" style="margin-top:40px; margin-bottom:16px;">
+    <span class="section-marker" style="background:rgba(0,191,165,0.06); color:var(--accent-teal); border-color:rgba(0,191,165,0.2);">Key concept</span>
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">The two-layer defence model</h3>
+  </div>
+
+  <p class="prose">
+    This is the architectural insight that connects AI Gateway to the rest of the evaluation pipeline. Gateway guardrails and registered scorers serve fundamentally different purposes, operate at different speeds, and catch different failure modes.
+  </p>
+
+  <div class="layer-toggle" id="layer-toggle">
+    <div class="lt-panel active" onclick="selectLayer(0)">
+      <div class="lt-num">Layer 1</div>
+      <div class="lt-name">Gateway guardrails</div>
+      <div class="lt-desc">Synchronous · real-time · blocking</div>
+    </div>
+    <div class="lt-panel" onclick="selectLayer(1)">
+      <div class="lt-num">Layer 2</div>
+      <div class="lt-name">Registered scorers</div>
+      <div class="lt-desc">Asynchronous · background · analytical</div>
+    </div>
+  </div>
+
+  <div class="lt-detail" id="layer-detail-0" style="display:block;">
+    <strong style="color:var(--accent-orange);">Gateway guardrails</strong> run inline with every request. If a user sends PII or the model returns something unsafe, the Gateway blocks it <strong>before</strong> it reaches the user. This is your safety net — fast, binary (pass/block), and synchronous. Think of it as the <strong>bouncer at the door</strong>: immediate rejection of clearly bad requests. Guardrails don't assess quality — they enforce policy. A response can pass all guardrails and still be factually wrong.
+  </div>
+
+  <div class="lt-detail" id="layer-detail-1" style="display:none;">
+    <strong style="color:var(--accent-orange);">Registered scorers</strong> run in the background after the response has already been served. They evaluate quality dimensions — correctness, groundedness, compliance — using <code>.register(name="...").start()</code>. They don't block anything; they produce analytics. Think of them as the <strong>quality audit team</strong>: analysing patterns after the fact to spot degradation trends. Use these to detect when your model is getting worse, not to prevent individual bad responses.
+  </div>
+
+  <div class="insight">
+    <div class="insight-label">Design principle</div>
+    <p>Gateway guardrails catch <strong>policy violations</strong> (things that should never happen). Registered scorers catch <strong>quality degradation</strong> (things that technically pass policy but aren't good enough). A response can sail through every guardrail and still score poorly on correctness — that's the scorer's job to detect.</p>
+  </div>
+
+  <!-- ── GUARDRAIL TYPES ── -->
+  <div class="section-header" style="margin-top:40px; margin-bottom:16px;">
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">Guardrail types and configuration modes</h3>
+  </div>
+
+  <div class="compare-wrap">
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>Guardrail</th>
+          <th>Direction</th>
+          <th>What it catches</th>
+          <th>Mode</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>PII detection</td>
+          <td>Input</td>
+          <td>SSNs, credit card numbers, email addresses in queries</td>
+          <td><code>BLOCK</code> or <code>WARN</code></td>
+        </tr>
+        <tr>
+          <td>Toxicity filtering</td>
+          <td>Input</td>
+          <td>Hate speech, harassment, and abusive language</td>
+          <td><code>BLOCK</code> or <code>WARN</code></td>
+        </tr>
+        <tr>
+          <td>Topic restriction</td>
+          <td>Input</td>
+          <td>Off-domain queries that your agent shouldn't handle</td>
+          <td><code>BLOCK</code> or <code>WARN</code></td>
+        </tr>
+        <tr>
+          <td>Safety filter</td>
+          <td>Output</td>
+          <td>Harmful, inappropriate, or dangerous model responses</td>
+          <td><code>BLOCK</code> or <code>WARN</code></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="warning"><code>BLOCK</code> rejects the request entirely and returns an error response. <code>WARN</code> logs the violation but lets the request through. Most teams use <code>WARN</code> during initial rollout to calibrate false-positive rates, then switch to <code>BLOCK</code> once confident in the guardrail's precision.</div>
+
+  <!-- ── GATEWAY CONFIG CODE ── -->
+  <div class="section-header" style="margin-top:40px; margin-bottom:16px;">
+    <span class="section-marker" style="background:rgba(74,158,255,0.06); color:var(--accent-blue); border-color:rgba(74,158,255,0.2);">API</span>
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">Enabling AI Gateway on a serving endpoint</h3>
+  </div>
+
+  <div class="code-block"><span class="kw">from</span> databricks.sdk <span class="kw">import</span> WorkspaceClient
+<span class="kw">from</span> databricks.sdk.service.serving <span class="kw">import</span> AiGatewayConfig, GuardrailParameters
+
+w = <span class="fn">WorkspaceClient</span>()
+
+w.serving_endpoints.<span class="fn">put_ai_gateway</span>(
+    name=<span class="st">"my-databricks-agent"</span>,
+    guardrails=<span class="fn">AiGatewayConfig</span>(
+        input_guardrail=<span class="fn">GuardrailParameters</span>(
+            pii=<span class="st">"BLOCK"</span>,           <span class="cm"># block PII in inputs</span>
+            toxicity=<span class="st">"WARN"</span>,       <span class="cm"># log but allow toxic inputs (calibration phase)</span>
+        ),
+        output_guardrail=<span class="fn">GuardrailParameters</span>(
+            safety=<span class="st">"BLOCK"</span>         <span class="cm"># block unsafe model outputs</span>
+        )
+    ),
+    inference_table_config={    <span class="cm"># enable inference table (covered in 6.3)</span>
+        <span class="st">"enabled"</span>: <span class="kw">True</span>,
+        <span class="st">"catalog_name"</span>: <span class="st">"main"</span>,
+        <span class="st">"schema_name"</span>: <span class="st">"genai_eval"</span>,
+        <span class="st">"table_name_prefix"</span>: <span class="st">"tutorial_agent"</span>
+    }
+)</div>
+
+</section>
+
+
+<!-- ════════════════════════════════════════════ SECTION 6.3 -->
+<section class="section" id="topic-6-3">
+
+  <div class="section-header">
+    <span class="section-marker">6.3 · Theory</span>
+    <h2 class="section-title">Inference Tables — Architecture &amp; Schema</h2>
+    <span class="section-rule"></span>
+  </div>
+
+  <p class="prose">
+    Inference Tables are the <strong>automatic audit trail</strong> for every request your served model handles. When enabled on a Model Serving endpoint, every request-response pair gets logged as a row in a Unity Catalog Delta table — no custom logging code required. Think of it as a flight recorder for your AI application: every call, every response, every trace, every token count — captured automatically and queryable with SQL or Spark.
+  </p>
+
+  <!-- ── HOW THEY WORK ── -->
+  <div class="section-header" style="margin-top:40px; margin-bottom:16px;">
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">How inference tables work</h3>
+  </div>
+
+  <p class="prose">
+    When a request hits your serving endpoint, the system does two things simultaneously: serves the response to the user, and writes a record to the inference table. This happens transparently — your application code doesn't change. For agents with MLflow tracing enabled, the table also stores the <strong>full trace JSON</strong> per request, meaning you can reconstruct every retrieval step, LLM call, and tool invocation after the fact.
+  </p>
+
+  <!-- ── DATA FLOW DIAGRAM ── -->
+  <div class="diagram-wrap">
+    <div class="diagram-header">
+      <div class="diagram-label">Interactive diagram</div>
+      <span style="font-family:'IBM Plex Mono',monospace; font-size:9px; padding:2px 8px; border-radius:2px; color:var(--accent-teal); background:rgba(0,191,165,0.08); border:1px solid rgba(0,191,165,0.2);">Request → tables → eval dataset</span>
+    </div>
+    <div class="diagram-body">
+      <svg width="100%" viewBox="0 0 860 460" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arr-inf" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </marker>
+        </defs>
+
+        <!-- User request -->
+        <rect x="340" y="20" width="180" height="44" rx="8" fill="var(--surface2)" stroke="var(--border2)" stroke-width="0.8"/>
+        <text x="430" y="46" text-anchor="middle" fill="var(--text)" font-family="'Syne',sans-serif" font-size="13" font-weight="500">User request</text>
+
+        <line x1="430" y1="64" x2="430" y2="98" stroke="var(--text-muted)" stroke-width="1" marker-end="url(#arr-inf)"/>
+
+        <!-- Model Serving -->
+        <g class="inf-node" data-tip="Runs your agent with MLflow tracing. Simultaneously serves the response and logs to inference table.">
+          <rect x="280" y="100" width="300" height="56" rx="8" fill="rgba(74,158,255,0.06)" stroke="var(--accent-blue)" stroke-width="0.8"/>
+          <text x="430" y="122" text-anchor="middle" fill="var(--accent-blue)" font-family="'IBM Plex Mono',monospace" font-size="12" font-weight="500">Model serving</text>
+          <text x="430" y="142" text-anchor="middle" fill="var(--text-muted)" font-family="'Syne',sans-serif" font-size="11">Agent + MLflow tracing</text>
+        </g>
+
+        <!-- Response arrow (left) -->
+        <path d="M330 156 L330 186 L200 186" fill="none" stroke="var(--text-muted)" stroke-width="1" marker-end="url(#arr-inf)"/>
+        <rect x="100" y="170" width="100" height="32" rx="6" fill="rgba(0,191,165,0.06)" stroke="var(--accent-teal)" stroke-width="0.6"/>
+        <text x="150" y="190" text-anchor="middle" fill="var(--accent-teal)" font-family="'Syne',sans-serif" font-size="12" font-weight="500">Response</text>
+
+        <!-- Auto-logged arrow (right, down) -->
+        <line x1="530" y1="156" x2="530" y2="204" stroke="var(--accent-purple)" stroke-width="1" marker-end="url(#arr-inf)"/>
+        <text x="554" y="184" text-anchor="start" fill="var(--accent-purple)" font-family="'IBM Plex Mono',monospace" font-size="10">auto-logged</text>
+
+        <!-- UC container -->
+        <rect x="100" y="220" width="660" height="136" rx="16" fill="rgba(168,85,247,0.03)" stroke="var(--accent-purple)" stroke-width="0.6" stroke-dasharray="6 4"/>
+        <text x="430" y="246" text-anchor="middle" fill="var(--accent-purple)" font-family="'IBM Plex Mono',monospace" font-size="11" font-weight="500" letter-spacing="0.08em">UNITY CATALOG DELTA TABLES</text>
+
+        <!-- Three tables -->
+        <g class="inf-node" data-tip="Primary table: full request, response, trace JSON, timestamp, latency, token count, and databricks_request_id.">
+          <rect x="130" y="268" width="176" height="56" rx="8" fill="rgba(255,107,53,0.06)" stroke="var(--accent-orange)" stroke-width="0.8"/>
+          <text x="218" y="290" text-anchor="middle" fill="var(--accent-orange)" font-family="'IBM Plex Mono',monospace" font-size="11" font-weight="500">_request_response</text>
+          <text x="218" y="310" text-anchor="middle" fill="var(--text-muted)" font-family="'Syne',sans-serif" font-size="11">Full I/O + trace JSON</text>
+        </g>
+
+        <g class="inf-node" data-tip="Stores scorer results and human feedback attached to traces. One row per assessment event.">
+          <rect x="342" y="268" width="176" height="56" rx="8" fill="rgba(0,191,165,0.06)" stroke="var(--accent-teal)" stroke-width="0.8"/>
+          <text x="430" y="290" text-anchor="middle" fill="var(--accent-teal)" font-family="'IBM Plex Mono',monospace" font-size="11" font-weight="500">_assessment_logs</text>
+          <text x="430" y="310" text-anchor="middle" fill="var(--text-muted)" font-family="'Syne',sans-serif" font-size="11">Scorer + human feedback</text>
+        </g>
+
+        <g class="inf-node" data-tip="HTTP headers, client info, routing decisions, Gateway annotations. Useful for debugging and compliance.">
+          <rect x="554" y="268" width="176" height="56" rx="8" fill="rgba(74,158,255,0.06)" stroke="var(--accent-blue)" stroke-width="0.8"/>
+          <text x="642" y="290" text-anchor="middle" fill="var(--accent-blue)" font-family="'IBM Plex Mono',monospace" font-size="11" font-weight="500">_payload_logs</text>
+          <text x="642" y="310" text-anchor="middle" fill="var(--text-muted)" font-family="'Syne',sans-serif" font-size="11">Request metadata</text>
+        </g>
+
+        <!-- Bottom: downstream uses -->
+        <line x1="218" y1="356" x2="218" y2="390" stroke="var(--text-muted)" stroke-width="0.6" stroke-dasharray="4 3" marker-end="url(#arr-inf)"/>
+        <line x1="430" y1="356" x2="430" y2="390" stroke="var(--text-muted)" stroke-width="0.6" stroke-dasharray="4 3" marker-end="url(#arr-inf)"/>
+        <line x1="642" y1="356" x2="642" y2="390" stroke="var(--text-muted)" stroke-width="0.6" stroke-dasharray="4 3" marker-end="url(#arr-inf)"/>
+
+        <rect x="130" y="394" width="176" height="36" rx="6" fill="var(--surface2)" stroke="var(--border)" stroke-width="0.6"/>
+        <text x="218" y="416" text-anchor="middle" fill="var(--text-dim)" font-family="'Syne',sans-serif" font-size="12" font-weight="500">Build eval dataset</text>
+
+        <rect x="342" y="394" width="176" height="36" rx="6" fill="var(--surface2)" stroke="var(--border)" stroke-width="0.6"/>
+        <text x="430" y="416" text-anchor="middle" fill="var(--text-dim)" font-family="'Syne',sans-serif" font-size="12" font-weight="500">Monitor quality trends</text>
+
+        <rect x="554" y="394" width="176" height="36" rx="6" fill="var(--surface2)" stroke="var(--border)" stroke-width="0.6"/>
+        <text x="642" y="416" text-anchor="middle" fill="var(--text-dim)" font-family="'Syne',sans-serif" font-size="12" font-weight="500">Debug &amp; audit</text>
+
+        <!-- Tooltip -->
+        <rect id="inf-tip-bg" x="80" y="440" width="700" height="26" rx="6" fill="var(--surface2)" stroke="var(--border)" stroke-width="0.5" opacity="0"/>
+        <text id="inf-tip-text" x="430" y="458" text-anchor="middle" fill="var(--text-dim)" font-family="'Syne',sans-serif" font-size="12" opacity="0"></text>
+      </svg>
+    </div>
+  </div>
+
+  <!-- ── THREE TABLES ── -->
+  <div class="section-header" style="margin-top:40px; margin-bottom:16px;">
+    <span class="section-marker" style="background:rgba(74,158,255,0.06); color:var(--accent-blue); border-color:rgba(74,158,255,0.2);">Schema</span>
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">The three auto-generated tables</h3>
+  </div>
+
+  <p class="prose">
+    When you enable inference tables on a serving endpoint, Databricks automatically creates three Delta tables in your specified Unity Catalog schema. Each serves a distinct purpose in the evaluation lifecycle.
+  </p>
+
+  <div class="stack-diagram">
+    <div class="stack-layer">
+      <div class="stack-index" style="background:rgba(255,107,53,0.08); color:var(--accent-orange);">Table 1</div>
+      <div class="stack-content">
+        <div class="stack-title">_request_response</div>
+        <div class="stack-desc">The primary table. Every row is one request-response pair. Captures full request payload, full response, timestamp, latency, token count, and the <code>databricks_request_id</code> unique identifier. When tracing is enabled, also stores the complete MLflow trace JSON — letting you reconstruct every span after the fact.</div>
+      </div>
+      <div class="stack-tag"><span class="badge" style="color:var(--accent-orange); background:rgba(255,107,53,0.08); border-color:rgba(255,107,53,0.2);">primary</span></div>
+    </div>
+    <div class="stack-layer">
+      <div class="stack-index" style="background:rgba(0,191,165,0.08); color:var(--accent-teal);">Table 2</div>
+      <div class="stack-content">
+        <div class="stack-title">_assessment_logs</div>
+        <div class="stack-desc">Stores all feedback and scorer results attached to traces. When registered scorers run via <code>.register().start()</code>, their results land here. When humans submit feedback through the Review App or <code>mlflow.log_feedback()</code>, those ratings also appear here. The single source of truth for "how good was this response?"</div>
+      </div>
+      <div class="stack-tag"><span class="badge" style="color:var(--accent-teal); background:rgba(0,191,165,0.08); border-color:rgba(0,191,165,0.2);">feedback</span></div>
+    </div>
+    <div class="stack-layer">
+      <div class="stack-index" style="background:rgba(74,158,255,0.08); color:var(--accent-blue);">Table 3</div>
+      <div class="stack-content">
+        <div class="stack-title">_payload_request_logs</div>
+        <div class="stack-desc">Detailed request metadata: HTTP headers, client information, routing decisions, and Gateway-level annotations (e.g., whether a guardrail was triggered). Primarily useful for debugging and compliance auditing, not for evaluation workflows.</div>
+      </div>
+      <div class="stack-tag"><span class="badge" style="color:var(--accent-blue); background:rgba(74,158,255,0.08); border-color:rgba(74,158,255,0.2);">metadata</span></div>
+    </div>
+  </div>
+
+  <!-- ── SCHEMA FIELDS ── -->
+  <div class="section-header" style="margin-top:40px; margin-bottom:16px;">
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">What gets captured per request</h3>
+  </div>
+
+  <p class="prose">
+    Every row in the main <code>_request_response</code> table includes these fields. The <code>trace</code> column is the most important for evaluation — it gives you the full execution graph of every agent call.
+  </p>
+
+  <div class="compare-wrap">
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>Field</th>
+          <th>Type</th>
+          <th>What it contains</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>databricks_request_id</code></td>
+          <td>String</td>
+          <td>Unique identifier — the key to look up the full trace later</td>
+        </tr>
+        <tr>
+          <td><code>request</code></td>
+          <td>JSON</td>
+          <td>Full request payload your app sent to the endpoint</td>
+        </tr>
+        <tr>
+          <td><code>response</code></td>
+          <td>JSON</td>
+          <td>Full response the endpoint returned</td>
+        </tr>
+        <tr>
+          <td><code>timestamp_ms</code></td>
+          <td>Long</td>
+          <td>When the request arrived (millisecond precision)</td>
+        </tr>
+        <tr>
+          <td><code>execution_time_ms</code></td>
+          <td>Long</td>
+          <td>End-to-end latency from receipt to response</td>
+        </tr>
+        <tr>
+          <td><code>status_code</code></td>
+          <td>Int</td>
+          <td>HTTP status (200, 429, 500, etc.)</td>
+        </tr>
+        <tr>
+          <td><code>token_count</code></td>
+          <td>Struct</td>
+          <td>Input and output token counts for cost tracking</td>
+        </tr>
+        <tr>
+          <td><code>trace</code></td>
+          <td>JSON</td>
+          <td>Full MLflow trace JSON (when tracing is enabled)</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── ENABLING ── -->
+  <div class="section-header" style="margin-top:40px; margin-bottom:16px;">
+    <span class="section-marker" style="background:rgba(245,158,11,0.06); color:var(--amber); border-color:rgba(245,158,11,0.2);">Setup</span>
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">How to enable inference tables</h3>
+  </div>
+
+  <p class="prose">
+    There are two paths. If you deploy your agent using <code>mlflow.deploy()</code>, inference tables are enabled automatically — no extra configuration needed. For existing endpoints, you enable them via the AI Gateway config shown in section 6.1. Once enabled, logging starts immediately. The tables are standard Unity Catalog Delta tables, so they inherit all UC governance: access controls, lineage tracking, and audit logging.
+  </p>
+
+  <div class="warning">For the inference table to capture full trace JSON (not just request/response), your serving endpoint must have MLflow tracing enabled. Either set <code>ENABLE_MLFLOW_TRACING=True</code> in your endpoint config, or deploy using <code>mlflow.deploy()</code> which enables it by default. Without tracing, you get request/response logging but lose the ability to inspect individual spans.</div>
+
+  <!-- ── PROD-TO-EVAL LOOP ── -->
+  <div class="section-header" style="margin-top:48px; margin-bottom:16px;">
+    <span class="section-marker" style="background:rgba(0,191,165,0.06); color:var(--accent-teal); border-color:rgba(0,191,165,0.2);">Pattern</span>
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">The production-to-evaluation closed loop</h3>
+  </div>
+
+  <p class="prose">
+    The real power of inference tables is that they create a <strong>closed loop</strong> between production and development. Production traffic feeds the eval dataset, which improves scorers, which improve the agent, which changes production traffic. This is the canonical LLMOps feedback cycle.
+  </p>
+
+  <div class="pipeline-wrap">
+    <div class="pipe-stage">
+      <div class="pipe-inner">
+        <div class="pipe-name">Step 1 — Accumulate production data</div>
+        <div class="pipe-detail">Your serving endpoint handles real user traffic. Every request, response, and trace gets logged automatically to the inference table. No code changes required.</div>
+      </div>
+      <div class="pipe-api">auto</div>
+    </div>
+    <div class="pipe-stage">
+      <div class="pipe-inner">
+        <div class="pipe-name">Step 2 — Query and filter</div>
+        <div class="pipe-detail">Use Spark SQL to filter the table for interesting cases: recent requests, failed requests, low-scoring requests, or specific user segments. The <code>databricks_request_id</code> lets you look up the full trace.</div>
+      </div>
+      <div class="pipe-api">spark.table()</div>
+    </div>
+    <div class="pipe-stage">
+      <div class="pipe-inner">
+        <div class="pipe-name">Step 3 — Build eval dataset from real traffic</div>
+        <div class="pipe-detail">Extract traces from the inference table and add them to a UC-backed evaluation dataset using <code>eval_dataset.merge_records(traces=...)</code>. Far more representative than hand-curated examples.</div>
+      </div>
+      <div class="pipe-api">merge_records()</div>
+    </div>
+    <div class="pipe-stage">
+      <div class="pipe-inner">
+        <div class="pipe-name">Step 4 — Evaluate in dev or CI</div>
+        <div class="pipe-detail">Run <code>mlflow.genai.evaluate()</code> against the production-sourced dataset during development or as a CI quality gate. If scores drop below thresholds, block deployment.</div>
+      </div>
+      <div class="pipe-api">evaluate()</div>
+    </div>
+    <div class="pipe-stage">
+      <div class="pipe-inner">
+        <div class="pipe-name">Step 5 — Continuous monitoring</div>
+        <div class="pipe-detail">Meanwhile, registered scorers run async against a sample of production traces, writing results to <code>_assessment_logs</code>. Live quality trends with no manual intervention.</div>
+      </div>
+      <div class="pipe-api">register().start()</div>
+    </div>
+  </div>
+
+  <div class="code-block"><span class="cm"># Query the inference table and build an eval dataset from production</span>
+inf_table = spark.<span class="fn">table</span>(<span class="st">"main.genai_eval.tutorial_agent_request_response"</span>)
+
+<span class="kw">from</span> pyspark.sql <span class="kw">import</span> functions <span class="kw">as</span> F
+
+<span class="cm"># Filter: last 24h, successful, non-gateway-blocked</span>
+recent_reqs = (
+    inf_table
+    .<span class="fn">filter</span>(F.<span class="fn">col</span>(<span class="st">"timestamp_ms"</span>) > (F.<span class="fn">unix_timestamp</span>() - <span class="nu">86400</span>) * <span class="nu">1000</span>)
+    .<span class="fn">filter</span>(F.<span class="fn">col</span>(<span class="st">"status_code"</span>) == <span class="nu">200</span>)
+    .<span class="fn">orderBy</span>(<span class="st">"timestamp_ms"</span>, ascending=<span class="kw">False</span>)
+    .<span class="fn">limit</span>(<span class="nu">50</span>)
+)
+
+<span class="cm"># Get request IDs → look up traces → add to eval dataset</span>
+req_ids = [r.databricks_request_id <span class="kw">for</span> r <span class="kw">in</span> recent_reqs.<span class="fn">collect</span>()]
+traces = mlflow.<span class="fn">search_traces</span>(
+    filter_string=<span class="st">f"tags.`mlflow.databricks.requestId` IN ({','.join(repr(i) for i in req_ids)})"</span>
+)
+eval_dataset.<span class="fn">merge_records</span>(traces=traces)</div>
+
+</section>
+
+
+<!-- ════════════════════════════════════════════ SECTION 6.5 -->
+<section class="section" id="topic-6-5">
+
+  <div class="section-header">
+    <span class="section-marker">6.5 · Theory</span>
+    <h2 class="section-title">Production Monitoring with Registered Scorers</h2>
+    <span class="section-rule"></span>
+  </div>
+
+  <p class="prose">
+    In Modules 3 and 4 you used scorers inside <code>mlflow.genai.evaluate()</code> — that's the dev/CI path. Now those same scorers graduate to <strong>production monitoring</strong>. The mechanism is <code>.register(name="...").start()</code>, which tells MLflow to continuously evaluate a sample of live production traces in the background. No code changes to your agent, no latency impact on the user — the scorer runs asynchronously after the response is served.
+  </p>
+
+  <!-- ── HOW IT WORKS ── -->
+  <div class="section-header" style="margin-top:40px; margin-bottom:16px;">
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">The register → start lifecycle</h3>
+  </div>
+
+  <p class="prose">
+    Registering a scorer is a two-step process. First, <code>.register(name="unique_name")</code> creates a named scorer entity in your MLflow experiment. Then <code>.start(sampling_config=...)</code> activates it — the scorer begins polling for new traces and evaluating them at the configured sample rate. Results appear as feedback objects on the trace, visible in the MLflow UI's Scorers tab.
+  </p>
+
+  <!-- ── LIFECYCLE DIAGRAM ── -->
+  <div class="diagram-wrap">
+    <div class="diagram-header">
+      <div class="diagram-label">Interactive diagram</div>
+      <span style="font-family:'IBM Plex Mono',monospace; font-size:9px; padding:2px 8px; border-radius:2px; color:var(--accent-orange); background:rgba(255,107,53,0.08); border:1px solid rgba(255,107,53,0.2);">Scorer lifecycle: dev → register → start → monitor</span>
+    </div>
+    <div class="diagram-body">
+      <svg width="100%" viewBox="0 0 860 320" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arr-lc" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </marker>
+        </defs>
+
+        <!-- Dev phase -->
+        <rect x="40" y="40" width="170" height="64" rx="8" fill="rgba(74,158,255,0.06)" stroke="var(--accent-blue)" stroke-width="0.8"/>
+        <text x="125" y="64" text-anchor="middle" fill="var(--accent-blue)" font-family="'IBM Plex Mono',monospace" font-size="12" font-weight="500">Dev / CI</text>
+        <text x="125" y="86" text-anchor="middle" fill="var(--text-muted)" font-family="'IBM Plex Mono',monospace" font-size="10">evaluate(scorers=[...])</text>
+
+        <line x1="210" y1="72" x2="268" y2="72" stroke="var(--text-muted)" stroke-width="1" marker-end="url(#arr-lc)"/>
+
+        <!-- Register -->
+        <rect x="270" y="40" width="170" height="64" rx="8" fill="rgba(168,85,247,0.06)" stroke="var(--accent-purple)" stroke-width="0.8"/>
+        <text x="355" y="64" text-anchor="middle" fill="var(--accent-purple)" font-family="'IBM Plex Mono',monospace" font-size="12" font-weight="500">.register()</text>
+        <text x="355" y="86" text-anchor="middle" fill="var(--text-muted)" font-family="'IBM Plex Mono',monospace" font-size="10">name="prod_v1"</text>
+
+        <line x1="440" y1="72" x2="498" y2="72" stroke="var(--text-muted)" stroke-width="1" marker-end="url(#arr-lc)"/>
+
+        <!-- Start -->
+        <rect x="500" y="40" width="170" height="64" rx="8" fill="rgba(0,191,165,0.06)" stroke="var(--accent-teal)" stroke-width="0.8"/>
+        <text x="585" y="64" text-anchor="middle" fill="var(--accent-teal)" font-family="'IBM Plex Mono',monospace" font-size="12" font-weight="500">.start()</text>
+        <text x="585" y="86" text-anchor="middle" fill="var(--text-muted)" font-family="'IBM Plex Mono',monospace" font-size="10">sample_rate=0.3</text>
+
+        <line x1="670" y1="72" x2="718" y2="72" stroke="var(--text-muted)" stroke-width="1" marker-end="url(#arr-lc)"/>
+
+        <!-- Running -->
+        <rect x="720" y="40" width="100" height="64" rx="8" fill="rgba(34,197,94,0.06)" stroke="var(--green)" stroke-width="0.8"/>
+        <text x="770" y="64" text-anchor="middle" fill="var(--green)" font-family="'IBM Plex Mono',monospace" font-size="12" font-weight="500">Running</text>
+        <text x="770" y="86" text-anchor="middle" fill="var(--text-muted)" font-family="'Syne',sans-serif" font-size="10">24/7 async</text>
+
+        <!-- Env labels -->
+        <text x="125" y="26" text-anchor="middle" fill="var(--text-muted)" font-family="'IBM Plex Mono',monospace" font-size="9" letter-spacing="0.08em">NOTEBOOK</text>
+        <text x="355" y="26" text-anchor="middle" fill="var(--text-muted)" font-family="'IBM Plex Mono',monospace" font-size="9" letter-spacing="0.08em">EXPERIMENT</text>
+        <text x="585" y="26" text-anchor="middle" fill="var(--text-muted)" font-family="'IBM Plex Mono',monospace" font-size="9" letter-spacing="0.08em">SAMPLING</text>
+        <text x="770" y="26" text-anchor="middle" fill="var(--text-muted)" font-family="'IBM Plex Mono',monospace" font-size="9" letter-spacing="0.08em">PRODUCTION</text>
+
+        <!-- What happens when running -->
+        <line x1="770" y1="104" x2="770" y2="140" stroke="var(--green)" stroke-width="0.5" stroke-dasharray="4 3"/>
+
+        <!-- Trace sampling -->
+        <rect x="490" y="150" width="320" height="44" rx="8" fill="rgba(34,197,94,0.04)" stroke="rgba(34,197,94,0.2)" stroke-width="0.6"/>
+        <text x="650" y="168" text-anchor="middle" fill="var(--green)" font-family="'IBM Plex Mono',monospace" font-size="11" font-weight="500">Polls new production traces</text>
+        <text x="650" y="184" text-anchor="middle" fill="var(--text-muted)" font-family="'Syne',sans-serif" font-size="11">Samples at configured rate (e.g. 30%)</text>
+
+        <line x1="650" y1="194" x2="650" y2="224" stroke="var(--green)" stroke-width="0.5" stroke-dasharray="4 3" marker-end="url(#arr-lc)"/>
+
+        <!-- Feedback on trace -->
+        <rect x="490" y="226" width="320" height="44" rx="8" fill="rgba(255,107,53,0.04)" stroke="rgba(255,107,53,0.2)" stroke-width="0.6"/>
+        <text x="650" y="244" text-anchor="middle" fill="var(--accent-orange)" font-family="'IBM Plex Mono',monospace" font-size="11" font-weight="500">Writes Feedback on each trace</text>
+        <text x="650" y="260" text-anchor="middle" fill="var(--text-muted)" font-family="'Syne',sans-serif" font-size="11">source=LLM_JUDGE → _assessment_logs</text>
+
+        <!-- Stop path -->
+        <line x1="770" y1="270" x2="770" y2="296" stroke="var(--red)" stroke-width="0.5" stroke-dasharray="4 3"/>
+        <rect x="700" y="278" width="140" height="28" rx="5" fill="rgba(239,68,68,0.06)" stroke="rgba(239,68,68,0.2)" stroke-width="0.6"/>
+        <text x="770" y="296" text-anchor="middle" fill="var(--red)" font-family="'IBM Plex Mono',monospace" font-size="10" font-weight="500">.stop() to deactivate</text>
+
+        <!-- Constraint note -->
+        <rect x="40" y="160" width="380" height="56" rx="8" fill="rgba(245,158,11,0.04)" stroke="rgba(245,158,11,0.15)" stroke-width="0.6"/>
+        <text x="58" y="180" fill="var(--amber)" font-family="'IBM Plex Mono',monospace" font-size="10" font-weight="500" letter-spacing="0.06em">CONSTRAINT</text>
+        <text x="58" y="200" fill="var(--text-muted)" font-family="'Syne',sans-serif" font-size="12">Only LLM judges can be registered. Code-based</text>
+        <text x="58" y="216" fill="var(--text-muted)" font-family="'Syne',sans-serif" font-size="12">@scorer functions are dev/CI only.</text>
+
+        <!-- Limit note -->
+        <rect x="40" y="240" width="380" height="44" rx="8" fill="rgba(74,158,255,0.04)" stroke="rgba(74,158,255,0.15)" stroke-width="0.6"/>
+        <text x="58" y="258" fill="var(--accent-blue)" font-family="'IBM Plex Mono',monospace" font-size="10" font-weight="500" letter-spacing="0.06em">LIMIT</text>
+        <text x="58" y="274" fill="var(--text-muted)" font-family="'Syne',sans-serif" font-size="12">Maximum 20 registered scorers per experiment.</text>
+      </svg>
+    </div>
+  </div>
+
+  <!-- ── WHICH SCORERS CAN REGISTER ── -->
+  <div class="section-header" style="margin-top:40px; margin-bottom:16px;">
+    <span class="section-marker" style="background:rgba(245,158,11,0.06); color:var(--amber); border-color:rgba(245,158,11,0.2);">Constraint</span>
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">Which scorers can be registered for production</h3>
+  </div>
+
+  <p class="prose">
+    This is a critical constraint you must design around from the start. Only <strong>LLM judges</strong> support <code>.register().start()</code>. Code-based <code>@scorer</code> functions cannot be registered for continuous monitoring — they only run inside <code>evaluate()</code> during dev and CI.
+  </p>
+
+  <div class="compare-wrap">
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>Scorer type</th>
+          <th>evaluate()</th>
+          <th>register().start()</th>
+          <th>Examples</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Built-in judges</td>
+          <td><span class="badge badge-pass">Yes</span></td>
+          <td><span class="badge badge-pass">Yes</span></td>
+          <td><code>Correctness()</code>, <code>Safety()</code>, <code>RelevanceToQuery()</code></td>
+        </tr>
+        <tr>
+          <td>Custom judges</td>
+          <td><span class="badge badge-pass">Yes</span></td>
+          <td><span class="badge badge-pass">Yes</span></td>
+          <td><code>make_judge()</code> with custom rubric and prompt</td>
+        </tr>
+        <tr>
+          <td>Guidelines</td>
+          <td><span class="badge badge-pass">Yes</span></td>
+          <td><span class="badge badge-pass">Yes</span></td>
+          <td><code>Guidelines(name="compliance", guidelines=[...])</code></td>
+        </tr>
+        <tr>
+          <td>Code-based scorers</td>
+          <td><span class="badge badge-pass">Yes</span></td>
+          <td><span class="badge badge-fail">No</span></td>
+          <td><code>@scorer</code> — latency check, word count, JSON format</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="warning">Design your scorer suite with this boundary in mind. Code-based checks like latency and format validation must be covered during dev/CI <code>evaluate()</code> runs. Only semantic quality, safety, and compliance can be monitored continuously in production.</div>
+
+  <!-- ── SAMPLING STRATEGY ── -->
+  <div class="section-header" style="margin-top:40px; margin-bottom:16px;">
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">Configuring sampling rates</h3>
+  </div>
+
+  <p class="prose">
+    Every registered scorer evaluates a <strong>sample</strong> of production traces — not all of them. The <code>ScorerSamplingConfig</code> controls the rate and optionally filters which traces to evaluate. Smart sampling is essential: running 5 LLM judges at 100% on 10,000 daily traces means 50,000 extra LLM calls purely for evaluation.
+  </p>
+
+  <div class="card-grid">
+    <div class="concept-card red">
+      <div class="card-label">Safety</div>
+      <div class="card-title">High sample rate (100%)</div>
+      <div class="card-body">Safety scorers should evaluate every trace. A single unsafe response is a critical failure. The cost of running a safety judge on every trace is trivially small compared to the reputational and legal cost of missing one violation.</div>
+    </div>
+    <div class="concept-card amber">
+      <div class="card-label">Quality</div>
+      <div class="card-title">Medium sample rate (30–50%)</div>
+      <div class="card-body">Quality judges like <code>Correctness</code> detect trends, not individual failures. A 30% sample is statistically sufficient to detect a 5-point drop in mean score. Higher rates cost more but don't meaningfully change alerting sensitivity.</div>
+    </div>
+    <div class="concept-card teal">
+      <div class="card-label">Compliance</div>
+      <div class="card-title">Full rate with filter (100%)</div>
+      <div class="card-body">Compliance rules via <code>Guidelines</code> are cheap to run and critical for regulated industries. Run at 100% but use <code>filter_string</code> to scope to specific environments or user segments.</div>
+    </div>
+  </div>
+
+  <!-- ── REGISTER CODE ── -->
+  <div class="section-header" style="margin-top:40px; margin-bottom:16px;">
+    <span class="section-marker" style="background:rgba(74,158,255,0.06); color:var(--accent-blue); border-color:rgba(74,158,255,0.2);">API</span>
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">Registering scorers — the full pattern</h3>
+  </div>
+
+  <div class="code-block"><span class="kw">from</span> mlflow.genai.scorers <span class="kw">import</span> Safety, Correctness, Guidelines, ScorerSamplingConfig
+
+<span class="cm"># ── Safety: 100% sample rate — no unsafe response should go unscored ──</span>
+safety_monitor = <span class="fn">Safety</span>().<span class="fn">register</span>(name=<span class="st">"prod_safety_v1"</span>)
+safety_monitor.<span class="fn">start</span>(
+    sampling_config=<span class="fn">ScorerSamplingConfig</span>(sample_rate=<span class="nu">1.0</span>)
+)
+
+<span class="cm"># ── Correctness: 30% sample — enough to detect quality trends ──</span>
+correctness_monitor = <span class="fn">Correctness</span>().<span class="fn">register</span>(name=<span class="st">"prod_correctness_v1"</span>)
+correctness_monitor.<span class="fn">start</span>(
+    sampling_config=<span class="fn">ScorerSamplingConfig</span>(sample_rate=<span class="nu">0.3</span>)
+)
+
+<span class="cm"># ── Compliance: 100% but filtered to prod environment traces ──</span>
+compliance_monitor = <span class="fn">Guidelines</span>(
+    name=<span class="st">"compliance"</span>,
+    guidelines=[
+        <span class="st">"Must not recommend dropping production tables"</span>,
+        <span class="st">"Response must be in English"</span>,
+    ]
+).<span class="fn">register</span>(name=<span class="st">"prod_compliance_v1"</span>)
+compliance_monitor.<span class="fn">start</span>(
+    sampling_config=<span class="fn">ScorerSamplingConfig</span>(
+        sample_rate=<span class="nu">1.0</span>,
+        filter_string=<span class="st">"tags.environment='prod'"</span>
+    )
+)
+
+<span class="cm"># ── Stop a scorer when no longer needed ──</span>
+<span class="cm"># correctness_monitor.stop()</span></div>
+
+  <div class="insight">
+    <div class="insight-label">Scorer versioning</div>
+    <p>Each registered scorer has a <strong>unique name</strong> scoped to the experiment. When you change a scorer's prompt or rules, register it with a new name (e.g., <code>"prod_correctness_v2"</code>) rather than overwriting the old one. This preserves historical trend data and lets you run old and new versions side by side during a transition period.</p>
+  </div>
+
+  <!-- ── THE COMPLETE PRODUCTION STACK ── -->
+  <div class="section-header" style="margin-top:48px; margin-bottom:16px;">
+    <span class="section-marker" style="background:rgba(0,191,165,0.06); color:var(--accent-teal); border-color:rgba(0,191,165,0.2);">Full picture</span>
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">The complete production evaluation stack</h3>
+  </div>
+
+  <p class="prose">
+    Zooming out, here is how every piece from this module connects into a single production system. AI Gateway handles synchronous safety. Inference Tables capture the audit trail. Registered scorers provide continuous quality analytics. And the closed loop feeds production data back into your eval datasets.
+  </p>
+
+  <div class="diagram-wrap">
+    <div class="diagram-header">
+      <div class="diagram-label">Architecture overview</div>
+      <span style="font-family:'IBM Plex Mono',monospace; font-size:9px; padding:2px 8px; border-radius:2px; color:var(--accent-orange); background:rgba(255,107,53,0.08); border:1px solid rgba(255,107,53,0.2);">All three layers combined</span>
+    </div>
+    <div class="diagram-body">
+      <svg width="100%" viewBox="0 0 860 480" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arr-full" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </marker>
+        </defs>
+
+        <!-- Layer labels -->
+        <text x="28" y="68" fill="var(--red)" font-family="'IBM Plex Mono',monospace" font-size="9" letter-spacing="0.1em" transform="rotate(-90 28 68)">SYNC</text>
+        <text x="28" y="260" fill="var(--accent-purple)" font-family="'IBM Plex Mono',monospace" font-size="9" letter-spacing="0.1em" transform="rotate(-90 28 260)">STORAGE</text>
+        <text x="28" y="420" fill="var(--accent-teal)" font-family="'IBM Plex Mono',monospace" font-size="9" letter-spacing="0.1em" transform="rotate(-90 28 420)">ASYNC</text>
+
+        <!-- LAYER 1: Sync -->
+        <rect x="50" y="20" width="760" height="100" rx="12" fill="rgba(239,68,68,0.02)" stroke="rgba(239,68,68,0.12)" stroke-width="0.5"/>
+
+        <rect x="80" y="40" width="130" height="56" rx="8" fill="var(--surface2)" stroke="var(--border2)" stroke-width="0.8"/>
+        <text x="145" y="62" text-anchor="middle" fill="var(--text)" font-family="'Syne',sans-serif" font-size="12" font-weight="500">User app</text>
+        <text x="145" y="82" text-anchor="middle" fill="var(--text-muted)" font-family="'Syne',sans-serif" font-size="10">Request</text>
+
+        <line x1="210" y1="68" x2="258" y2="68" stroke="var(--text-muted)" stroke-width="1" marker-end="url(#arr-full)"/>
+
+        <rect x="260" y="40" width="140" height="56" rx="8" fill="rgba(239,68,68,0.06)" stroke="var(--red)" stroke-width="0.8"/>
+        <text x="330" y="62" text-anchor="middle" fill="var(--red)" font-family="'IBM Plex Mono',monospace" font-size="11" font-weight="500">AI Gateway</text>
+        <text x="330" y="82" text-anchor="middle" fill="var(--text-muted)" font-family="'Syne',sans-serif" font-size="10">Guardrails</text>
+
+        <line x1="400" y1="68" x2="448" y2="68" stroke="var(--text-muted)" stroke-width="1" marker-end="url(#arr-full)"/>
+
+        <rect x="450" y="40" width="170" height="56" rx="8" fill="rgba(74,158,255,0.06)" stroke="var(--accent-blue)" stroke-width="0.8"/>
+        <text x="535" y="62" text-anchor="middle" fill="var(--accent-blue)" font-family="'IBM Plex Mono',monospace" font-size="11" font-weight="500">Model serving</text>
+        <text x="535" y="82" text-anchor="middle" fill="var(--text-muted)" font-family="'Syne',sans-serif" font-size="10">Agent + tracing</text>
+
+        <line x1="620" y1="68" x2="668" y2="68" stroke="var(--text-muted)" stroke-width="1" marker-end="url(#arr-full)"/>
+
+        <rect x="670" y="46" width="110" height="44" rx="8" fill="var(--surface2)" stroke="var(--border2)" stroke-width="0.8"/>
+        <text x="725" y="72" text-anchor="middle" fill="var(--text)" font-family="'Syne',sans-serif" font-size="12" font-weight="500">Response</text>
+
+        <!-- LAYER 2: Storage -->
+        <rect x="50" y="150" width="760" height="140" rx="12" fill="rgba(168,85,247,0.02)" stroke="rgba(168,85,247,0.12)" stroke-width="0.5"/>
+
+        <line x1="535" y1="96" x2="535" y2="170" stroke="var(--accent-purple)" stroke-width="0.8" marker-end="url(#arr-full)"/>
+        <text x="554" y="140" fill="var(--accent-purple)" font-family="'IBM Plex Mono',monospace" font-size="10">auto-log</text>
+
+        <rect x="80" y="180" width="200" height="56" rx="8" fill="rgba(255,107,53,0.06)" stroke="var(--accent-orange)" stroke-width="0.8"/>
+        <text x="180" y="202" text-anchor="middle" fill="var(--accent-orange)" font-family="'IBM Plex Mono',monospace" font-size="11" font-weight="500">_request_response</text>
+        <text x="180" y="222" text-anchor="middle" fill="var(--text-muted)" font-family="'Syne',sans-serif" font-size="10">I/O + trace JSON</text>
+
+        <rect x="320" y="180" width="200" height="56" rx="8" fill="rgba(0,191,165,0.06)" stroke="var(--accent-teal)" stroke-width="0.8"/>
+        <text x="420" y="202" text-anchor="middle" fill="var(--accent-teal)" font-family="'IBM Plex Mono',monospace" font-size="11" font-weight="500">_assessment_logs</text>
+        <text x="420" y="222" text-anchor="middle" fill="var(--text-muted)" font-family="'Syne',sans-serif" font-size="10">Scorer + human feedback</text>
+
+        <rect x="560" y="180" width="200" height="56" rx="8" fill="rgba(74,158,255,0.06)" stroke="var(--accent-blue)" stroke-width="0.8"/>
+        <text x="660" y="202" text-anchor="middle" fill="var(--accent-blue)" font-family="'IBM Plex Mono',monospace" font-size="11" font-weight="500">_payload_logs</text>
+        <text x="660" y="222" text-anchor="middle" fill="var(--text-muted)" font-family="'Syne',sans-serif" font-size="10">Metadata + audit</text>
+
+        <text x="430" y="275" text-anchor="middle" fill="var(--accent-purple)" font-family="'IBM Plex Mono',monospace" font-size="10" letter-spacing="0.06em">INFERENCE TABLES (UC DELTA)</text>
+
+        <!-- LAYER 3: Async -->
+        <rect x="50" y="310" width="760" height="150" rx="12" fill="rgba(0,191,165,0.02)" stroke="rgba(0,191,165,0.12)" stroke-width="0.5"/>
+
+        <line x1="180" y1="236" x2="180" y2="336" stroke="var(--text-muted)" stroke-width="0.6" stroke-dasharray="4 3" marker-end="url(#arr-full)"/>
+
+        <rect x="80" y="338" width="200" height="56" rx="8" fill="rgba(0,191,165,0.06)" stroke="var(--accent-teal)" stroke-width="0.8"/>
+        <text x="180" y="360" text-anchor="middle" fill="var(--accent-teal)" font-family="'IBM Plex Mono',monospace" font-size="11" font-weight="500">Registered scorers</text>
+        <text x="180" y="380" text-anchor="middle" fill="var(--text-muted)" font-family="'Syne',sans-serif" font-size="10">Safety · Correctness · Compliance</text>
+
+        <!-- Arrow from scorers to assessment_logs -->
+        <path d="M280 366 L360 366 L400 250" fill="none" stroke="var(--accent-teal)" stroke-width="0.8" marker-end="url(#arr-full)"/>
+        <text x="358" y="310" fill="var(--accent-teal)" font-family="'IBM Plex Mono',monospace" font-size="10">feedback</text>
+
+        <!-- Eval dataset -->
+        <rect x="380" y="338" width="200" height="56" rx="8" fill="rgba(168,85,247,0.06)" stroke="var(--accent-purple)" stroke-width="0.8"/>
+        <text x="480" y="360" text-anchor="middle" fill="var(--accent-purple)" font-family="'IBM Plex Mono',monospace" font-size="11" font-weight="500">Eval dataset (UC)</text>
+        <text x="480" y="380" text-anchor="middle" fill="var(--text-muted)" font-family="'Syne',sans-serif" font-size="10">merge_records(traces=...)</text>
+
+        <!-- Arrow from inference table to eval dataset -->
+        <path d="M180 236 L180 304 L380 304 L380 336" fill="none" stroke="var(--text-muted)" stroke-width="0.6" stroke-dasharray="4 3"/>
+
+        <!-- Feedback loop arrow -->
+        <rect x="660" y="338" width="120" height="56" rx="8" fill="rgba(255,107,53,0.06)" stroke="var(--accent-orange)" stroke-width="0.8"/>
+        <text x="720" y="358" text-anchor="middle" fill="var(--accent-orange)" font-family="'IBM Plex Mono',monospace" font-size="11" font-weight="500">evaluate()</text>
+        <text x="720" y="378" text-anchor="middle" fill="var(--text-muted)" font-family="'Syne',sans-serif" font-size="10">Dev / CI gate</text>
+
+        <line x1="580" y1="366" x2="658" y2="366" stroke="var(--text-muted)" stroke-width="1" marker-end="url(#arr-full)"/>
+
+        <!-- Feedback to dev label -->
+        <text x="480" y="440" text-anchor="middle" fill="var(--text-muted)" font-family="'Syne',sans-serif" font-size="11">Closed loop: prod traffic → eval dataset → improved scorers → better agent</text>
+      </svg>
+    </div>
+  </div>
+
+  <div class="insight">
+    <div class="insight-label">The complete picture</div>
+    <p>Three layers work together: <strong>AI Gateway</strong> (synchronous safety — blocks violations before they enter the pipeline), <strong>Inference Tables</strong> (storage — the audit trail and data source for everything downstream), and <strong>Registered Scorers</strong> (asynchronous quality — continuous background monitoring that detects degradation trends). The closed loop feeds production data back into eval datasets, which improve scorers, which improve the agent.</p>
+  </div>
+
+</section>
+
+
+<!-- ═══════════════════════════ MODULE OUTCOME ═══ -->
+<div class="outcome">
+  <div class="outcome-icon">🎯</div>
+  <div class="outcome-text">
+    <strong>Module 06 outcome:</strong> You understand the three layers of the Databricks production evaluation stack — AI Gateway guardrails for synchronous safety, Inference Tables as the automatic audit trail in Unity Catalog, and registered scorers for continuous async monitoring. You know that only LLM judges support <code>.register().start()</code>, how to configure sampling rates for cost-effective monitoring, and how the inference table closes the loop by feeding production traffic back into eval datasets for dev and CI.
+  </div>
+</div>
+
+</main>
+
+<script>
+var sections = document.querySelectorAll('.section');
+var navItems = document.querySelectorAll('.nav-item');
+
+var observer = new IntersectionObserver(function(entries) {
+  entries.forEach(function(entry) {
+    if (entry.isIntersecting) {
+      var id = entry.target.getAttribute('id');
+      navItems.forEach(function(item) {
+        item.classList.toggle('active', item.getAttribute('href') === '#' + id);
+      });
+    }
+  });
+}, { rootMargin: '-20% 0px -60% 0px' });
+
+sections.forEach(function(s) { observer.observe(s); });
+
+document.querySelectorAll('.gw-node').forEach(function(node) {
+  node.addEventListener('mouseenter', function() {
+    var tip = this.getAttribute('data-tip');
+    if (!tip) return;
+    document.getElementById('gw-tip-text').textContent = tip;
+    document.getElementById('gw-tip-text').setAttribute('opacity', '1');
+    document.getElementById('gw-tip-bg').setAttribute('opacity', '1');
+  });
+  node.addEventListener('mouseleave', function() {
+    document.getElementById('gw-tip-text').setAttribute('opacity', '0');
+    document.getElementById('gw-tip-bg').setAttribute('opacity', '0');
+  });
+});
+
+document.querySelectorAll('.inf-node').forEach(function(node) {
+  node.addEventListener('mouseenter', function() {
+    var tip = this.getAttribute('data-tip');
+    if (!tip) return;
+    document.getElementById('inf-tip-text').textContent = tip;
+    document.getElementById('inf-tip-text').setAttribute('opacity', '1');
+    document.getElementById('inf-tip-bg').setAttribute('opacity', '1');
+  });
+  node.addEventListener('mouseleave', function() {
+    document.getElementById('inf-tip-text').setAttribute('opacity', '0');
+    document.getElementById('inf-tip-bg').setAttribute('opacity', '0');
+  });
+});
+
+function selectLayer(idx) {
+  document.querySelectorAll('#layer-toggle .lt-panel').forEach(function(el, i) {
+    el.classList.toggle('active', i === idx);
+  });
+  document.getElementById('layer-detail-0').style.display = idx === 0 ? 'block' : 'none';
+  document.getElementById('layer-detail-1').style.display = idx === 1 ? 'block' : 'none';
+}
+</script>
+
+</body>
+</html>

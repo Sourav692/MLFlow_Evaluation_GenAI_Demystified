@@ -1,0 +1,2011 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 08 — Cost, Anti-Patterns &amp; LLMOps Governance</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=Syne:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #05080f;
+  --surface: #0b0f1a;
+  --surface2: #111827;
+  --surface3: #1a2235;
+  --border: #1e2d45;
+  --border2: #243550;
+  --accent-orange: #ff6b35;
+  --accent-teal: #00bfa5;
+  --accent-blue: #4a9eff;
+  --accent-purple: #a855f7;
+  --accent-yellow: #fbbf24;
+  --text: #e8edf5;
+  --text-dim: #8899bb;
+  --text-muted: #4a5878;
+  --green: #22c55e;
+  --amber: #f59e0b;
+  --red: #ef4444;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Syne', sans-serif;
+  font-weight: 400;
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+
+/* ── MODULE HEADER ── */
+.mod-hero {
+  position: relative;
+  padding: 64px 48px 52px;
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.mod-hero::before {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 60% 80% at 10% 50%, rgba(168,85,247,0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 50% at 90% 20%, rgba(255,107,53,0.06) 0%, transparent 55%);
+  pointer-events: none;
+}
+
+.hero-inner { max-width: 960px; margin: 0 auto; position: relative; }
+
+.breadcrumb {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 28px;
+}
+
+.bc-tag {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; font-weight: 500;
+  letter-spacing: 0.15em; text-transform: uppercase;
+  color: var(--accent-teal);
+  padding: 4px 12px;
+  border: 1px solid rgba(0,191,165,0.25);
+  border-radius: 2px;
+  background: rgba(0,191,165,0.06);
+}
+
+.bc-sep { color: var(--text-muted); font-size: 12px; }
+
+.bc-current {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: var(--text-muted);
+  letter-spacing: 0.1em; text-transform: uppercase;
+}
+
+.mod-eyebrow {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-orange);
+  margin-bottom: 14px;
+}
+
+.mod-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(34px, 4.5vw, 56px);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  margin-bottom: 16px;
+}
+
+.mod-title em { font-style: italic; color: var(--accent-purple); }
+
+.mod-desc {
+  font-size: 16px; color: var(--text-dim);
+  max-width: 640px; line-height: 1.75;
+  margin-bottom: 36px;
+}
+
+.mod-meta {
+  display: flex; gap: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  width: fit-content;
+}
+
+.meta-chip {
+  padding: 10px 20px;
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: 2px;
+}
+.meta-chip:last-child { border-right: none; }
+
+.meta-val {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 16px; font-weight: 500;
+  color: var(--accent-purple);
+}
+
+.meta-lbl {
+  font-size: 10px; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.1em;
+}
+
+/* ── PROGRESS NAV ── */
+.progress-nav {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 48px;
+  position: sticky; top: 0;
+  z-index: 100;
+}
+
+.nav-inner {
+  max-width: 960px; margin: 0 auto;
+  display: flex; gap: 0; align-items: stretch;
+  overflow-x: auto;
+}
+
+.nav-inner::-webkit-scrollbar { height: 0; }
+
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 20px;
+  border-right: 1px solid var(--border);
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.nav-item:hover { background: var(--surface2); }
+.nav-item.active { background: rgba(168,85,247,0.06); }
+.nav-item:last-child { border-right: none; }
+
+.nav-num {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: var(--text-muted);
+  letter-spacing: 0.1em;
+}
+
+.nav-label {
+  font-size: 12px; color: var(--text-dim);
+  font-weight: 500;
+}
+
+.nav-item.active .nav-label { color: var(--accent-purple); }
+.nav-item.active .nav-num { color: var(--accent-purple); }
+
+/* ── MAIN ── */
+main {
+  max-width: 960px; margin: 0 auto;
+  padding: 56px 48px 100px;
+}
+
+/* ── SECTION ── */
+.section {
+  margin-bottom: 80px;
+  scroll-margin-top: 60px;
+}
+
+.section-header {
+  display: flex; align-items: center; gap: 16px;
+  margin-bottom: 36px;
+}
+
+.section-marker {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: var(--accent-purple);
+  letter-spacing: 0.15em; text-transform: uppercase;
+  padding: 4px 12px;
+  border: 1px solid rgba(168,85,247,0.25);
+  border-radius: 2px;
+  background: rgba(168,85,247,0.06);
+  white-space: nowrap;
+}
+
+.section-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 28px; line-height: 1.2;
+}
+
+.section-rule { flex: 1; height: 1px; background: var(--border); }
+
+.sub-header {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px;
+  margin: 40px 0 16px;
+  color: var(--text);
+}
+
+/* ── CONCEPT PROSE ── */
+.prose {
+  font-size: 15px; color: var(--text-dim);
+  line-height: 1.8; max-width: 720px;
+  margin-bottom: 28px;
+}
+
+.prose strong { color: var(--text); font-weight: 600; }
+
+.prose em { color: var(--accent-teal); font-style: italic; }
+
+.prose code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12.5px;
+  color: var(--accent-blue);
+  background: rgba(74,158,255,0.08);
+  padding: 2px 7px;
+  border-radius: 3px;
+}
+
+/* ── KEY INSIGHT BOX ── */
+.insight {
+  padding: 20px 24px;
+  background: rgba(0,191,165,0.04);
+  border: 1px solid rgba(0,191,165,0.15);
+  border-left: 3px solid var(--accent-teal);
+  border-radius: 0 8px 8px 0;
+  margin-bottom: 28px;
+}
+
+.insight-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--accent-teal);
+  margin-bottom: 8px;
+}
+
+.insight p {
+  font-size: 14px; color: var(--text-dim); line-height: 1.7;
+}
+
+.insight p strong { color: var(--accent-teal); }
+
+.insight code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: var(--accent-blue);
+  background: rgba(74,158,255,0.08);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+/* ── WARNING BOX ── */
+.warning {
+  padding: 16px 20px;
+  background: rgba(245,158,11,0.04);
+  border: 1px solid rgba(245,158,11,0.15);
+  border-left: 3px solid var(--amber);
+  border-radius: 0 8px 8px 0;
+  margin-bottom: 28px;
+  font-size: 13.5px; color: var(--text-dim); line-height: 1.65;
+}
+
+.warning::before {
+  content: 'The trap  ';
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--amber);
+}
+
+.warning code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: var(--accent-blue);
+  background: rgba(74,158,255,0.08);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+/* ── COST MATH BLOCK ── */
+.cost-math {
+  background: #020509;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--red);
+  border-radius: 0 6px 6px 0;
+  padding: 18px 22px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12.5px;
+  line-height: 1.9;
+  color: var(--text-dim);
+  margin-bottom: 28px;
+}
+
+.cost-math .cm-label {
+  display: block;
+  font-size: 10px;
+  color: var(--red);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.cost-math .cm-final { color: var(--red); font-weight: 500; }
+.cost-math .cm-num { color: var(--accent-orange); }
+
+/* ── CONCEPT CARDS ── */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+  margin-bottom: 36px;
+}
+
+.concept-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 22px;
+  transition: border-color 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+.concept-card::before {
+  content: '';
+  position: absolute; left: 0; top: 0; bottom: 0;
+  width: 3px;
+}
+
+.concept-card.teal::before { background: var(--accent-teal); }
+.concept-card.orange::before { background: var(--accent-orange); }
+.concept-card.purple::before { background: var(--accent-purple); }
+.concept-card.blue::before { background: var(--accent-blue); }
+.concept-card.amber::before { background: var(--amber); }
+.concept-card.red::before { background: var(--red); }
+.concept-card.green::before { background: var(--green); }
+
+.concept-card:hover { border-color: var(--border2); }
+
+.card-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.concept-card.teal .card-label { color: var(--accent-teal); }
+.concept-card.orange .card-label { color: var(--accent-orange); }
+.concept-card.purple .card-label { color: var(--accent-purple); }
+.concept-card.blue .card-label { color: var(--accent-blue); }
+.concept-card.amber .card-label { color: var(--amber); }
+.concept-card.red .card-label { color: var(--red); }
+.concept-card.green .card-label { color: var(--green); }
+
+.card-title {
+  font-size: 15px; font-weight: 600;
+  color: var(--text); margin-bottom: 8px;
+  line-height: 1.3;
+}
+
+.card-body {
+  font-size: 13px; color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.card-body code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11.5px;
+  color: var(--accent-blue);
+  background: rgba(74,158,255,0.08);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+/* ── COMPARISON TABLE ── */
+.compare-wrap { overflow-x: auto; margin-bottom: 36px; }
+
+.compare-table {
+  width: 100%; border-collapse: collapse;
+  font-size: 13.5px;
+}
+
+.compare-table thead tr {
+  border-bottom: 1px solid var(--border2);
+}
+
+.compare-table th {
+  padding: 12px 16px; text-align: left;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--text-muted);
+  font-weight: 500;
+}
+
+.compare-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-dim);
+  vertical-align: top;
+  line-height: 1.55;
+}
+
+.compare-table tr:last-child td { border-bottom: none; }
+.compare-table tr:hover td { background: rgba(255,255,255,0.012); }
+
+.compare-table td:first-child {
+  font-weight: 500; color: var(--text);
+}
+
+.compare-table td code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11.5px;
+  color: var(--accent-blue);
+  background: rgba(74,158,255,0.08);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+/* ── CODE BLOCK ── */
+.code-block {
+  background: #020509;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent-blue);
+  border-radius: 0 6px 6px 0;
+  padding: 14px 18px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11.5px;
+  line-height: 1.8;
+  overflow-x: auto;
+  white-space: pre;
+  margin-bottom: 28px;
+}
+
+.kw { color: #c792ea; }
+.fn { color: #82aaff; }
+.st { color: #c3e88d; }
+.cm { color: var(--text-muted); }
+.nm { color: var(--accent-orange); }
+.nu { color: #f78c6c; }
+
+/* ── DIAGRAM CONTAINER ── */
+.diagram-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 36px;
+}
+
+.diagram-header {
+  padding: 14px 20px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+}
+
+.diagram-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: var(--text-muted);
+  letter-spacing: 0.08em; text-transform: uppercase;
+}
+
+.diagram-hint {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  padding: 2px 8px;
+  border-radius: 2px;
+  color: var(--text-muted);
+  background: rgba(136,153,187,0.08);
+  border: 1px solid rgba(136,153,187,0.2);
+}
+
+.diagram-body {
+  padding: 32px 24px;
+  display: flex;
+  justify-content: center;
+}
+
+.diagram-body svg { max-width: 100%; height: auto; }
+
+/* ── INTERACTIVE NODE STYLES ── */
+.node-box {
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.node-box:hover { filter: brightness(1.3); }
+.node-box.dim { opacity: 0.3; }
+
+/* ── ANTI-PATTERN CARDS ── */
+.antipattern-list {
+  display: flex; flex-direction: column;
+  gap: 2px;
+  margin-bottom: 36px;
+}
+
+.ap-item {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--surface);
+  transition: border-color 0.15s;
+}
+
+.ap-item:hover { border-color: var(--border2); }
+
+.ap-header {
+  display: grid;
+  grid-template-columns: 60px 1fr auto;
+  align-items: center;
+  padding: 16px 20px;
+  cursor: pointer;
+  user-select: none;
+  gap: 16px;
+}
+
+.ap-num {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; color: var(--red);
+  letter-spacing: 0.1em;
+  padding: 4px 10px;
+  background: rgba(239,68,68,0.08);
+  border: 1px solid rgba(239,68,68,0.2);
+  border-radius: 2px;
+  text-align: center;
+}
+
+.ap-title {
+  font-size: 15px; color: var(--text);
+  font-weight: 600;
+}
+
+.ap-toggle {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 14px; color: var(--text-muted);
+  transition: transform 0.2s;
+  width: 18px;
+  text-align: center;
+}
+
+.ap-item.open .ap-toggle { transform: rotate(45deg); }
+
+.ap-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+
+.ap-item.open .ap-body { max-height: 800px; }
+
+.ap-inner {
+  padding: 0 20px 20px;
+  border-top: 1px solid var(--border);
+}
+
+.ap-row {
+  padding: 16px 0;
+  display: grid;
+  grid-template-columns: 90px 1fr;
+  gap: 16px;
+  font-size: 13px;
+  color: var(--text-dim);
+  line-height: 1.65;
+}
+
+.ap-row + .ap-row { border-top: 1px solid var(--border); }
+
+.ap-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.ap-label.bug { color: var(--red); }
+.ap-label.why { color: var(--amber); }
+.ap-label.fix { color: var(--green); }
+
+.ap-row code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11.5px;
+  color: var(--accent-blue);
+  background: rgba(74,158,255,0.08);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+/* ── RUBRIC CONTRAST ── */
+.rubric-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin: 16px 0;
+}
+
+.rubric-card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  background: var(--surface);
+}
+
+.rubric-card.bad { border-left: 3px solid var(--red); }
+.rubric-card.good { border-left: 3px solid var(--green); }
+
+.rubric-tag {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.rubric-card.bad .rubric-tag { color: var(--red); }
+.rubric-card.good .rubric-tag { color: var(--green); }
+
+.rubric-list {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11.5px;
+  color: var(--text-dim);
+  line-height: 1.8;
+  white-space: pre-wrap;
+}
+
+/* ── ARCHITECTURE LAYER STACK ── */
+.arch-stack {
+  display: flex; flex-direction: column;
+  gap: 8px;
+  margin-bottom: 36px;
+}
+
+.arch-layer {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  transition: all 0.2s;
+}
+
+.arch-layer:hover { border-color: var(--border2); }
+
+.arch-layer.layer-dev { border-left: 4px solid var(--accent-purple); }
+.arch-layer.layer-ci { border-left: 4px solid var(--amber); }
+.arch-layer.layer-prod { border-left: 4px solid var(--accent-teal); }
+.arch-layer.layer-loop { border-left: 4px solid var(--accent-orange); }
+
+.arch-row {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  align-items: stretch;
+}
+
+.arch-tag {
+  padding: 18px 18px;
+  background: var(--surface2);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+}
+
+.arch-tag .arch-tag-num {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+}
+
+.arch-tag .arch-tag-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.arch-layer.layer-dev .arch-tag-name { color: var(--accent-purple); }
+.arch-layer.layer-ci .arch-tag-name { color: var(--amber); }
+.arch-layer.layer-prod .arch-tag-name { color: var(--accent-teal); }
+.arch-layer.layer-loop .arch-tag-name { color: var(--accent-orange); }
+
+.arch-content {
+  padding: 16px 20px;
+  background: var(--surface);
+}
+
+.arch-pillars {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.arch-pillar {
+  font-size: 12.5px;
+  color: var(--text-dim);
+  padding: 10px 12px;
+  background: var(--surface2);
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+
+.arch-pillar .arch-p-name {
+  display: block;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+  font-size: 13px;
+}
+
+.arch-pillar code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-blue);
+  background: rgba(74,158,255,0.08);
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+.arch-summary {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  padding-top: 12px;
+  border-top: 1px dashed var(--border);
+  line-height: 1.6;
+}
+
+.arch-summary code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-blue);
+  background: rgba(74,158,255,0.08);
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+/* ── GOVERNANCE RULE CALLOUT ── */
+.gov-rule {
+  background: linear-gradient(135deg, rgba(168,85,247,0.06), rgba(0,191,165,0.04));
+  border: 1px solid rgba(168,85,247,0.2);
+  border-radius: 12px;
+  padding: 28px 32px;
+  margin-bottom: 36px;
+  text-align: center;
+}
+
+.gov-rule-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--accent-purple);
+  margin-bottom: 14px;
+}
+
+.gov-rule-text {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-size: 22px;
+  color: var(--text);
+  line-height: 1.4;
+}
+
+/* ── CHECKLIST ── */
+.checklist {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 22px 26px;
+  margin-bottom: 36px;
+}
+
+.checklist-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-orange);
+  margin-bottom: 16px;
+}
+
+.checklist-item {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  align-items: start;
+  gap: 10px;
+  padding: 10px 0;
+  font-size: 13.5px;
+  color: var(--text-dim);
+  line-height: 1.6;
+  border-bottom: 1px dashed var(--border);
+}
+
+.checklist-item:last-child { border-bottom: none; }
+
+.checklist-item .ci-mark {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--green);
+  font-weight: 600;
+}
+
+.checklist-item code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11.5px;
+  color: var(--accent-blue);
+  background: rgba(74,158,255,0.08);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+/* ── OUTCOME ── */
+.outcome {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent-purple);
+  border-radius: 0 10px 10px 0;
+  padding: 28px 32px;
+  display: flex; gap: 16px; align-items: start;
+}
+
+.outcome-icon { font-size: 20px; padding-top: 2px; }
+
+.outcome-text {
+  font-size: 14px; color: var(--text-dim); line-height: 1.7;
+}
+
+.outcome-text strong { color: var(--text); }
+
+.outcome-text code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11.5px;
+  color: var(--accent-blue);
+  background: rgba(74,158,255,0.08);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 768px) {
+  .mod-hero { padding: 40px 20px 36px; }
+  main { padding: 36px 20px 60px; }
+  .progress-nav { padding: 0 20px; }
+  .card-grid { grid-template-columns: 1fr; }
+  .arch-pillars { grid-template-columns: 1fr; }
+  .arch-row { grid-template-columns: 1fr; }
+  .arch-tag { border-right: none; border-bottom: 1px solid var(--border); }
+  .rubric-grid { grid-template-columns: 1fr; }
+  .ap-header { grid-template-columns: 50px 1fr auto; gap: 12px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── HERO ── -->
+<header class="mod-hero">
+  <div class="hero-inner">
+    <div class="breadcrumb">
+      <span class="bc-tag">Databricks · MLflow 3 · GenAI</span>
+      <span class="bc-sep">/</span>
+      <span class="bc-current">Module 08 · Cost, Anti-Patterns &amp; LLMOps</span>
+    </div>
+    <div class="mod-eyebrow">Module 08 · Advanced · ~3h</div>
+    <h1 class="mod-title">Scaling Eval — <em>Cost, Pitfalls &amp; Governance</em></h1>
+    <p class="mod-desc">Run evaluation comprehensively without burning the budget, avoid the five most common expert mistakes, and govern the full LLMOps stack on Databricks — versioning, lineage, deployment gates.</p>
+    <div class="mod-meta">
+      <div class="meta-chip"><span class="meta-val">4</span><span class="meta-lbl">Theory topics</span></div>
+      <div class="meta-chip"><span class="meta-val">1</span><span class="meta-lbl">Lab</span></div>
+      <div class="meta-chip"><span class="meta-val">3h</span><span class="meta-lbl">Duration</span></div>
+      <div class="meta-chip"><span class="meta-val">Adv</span><span class="meta-lbl">Level</span></div>
+    </div>
+  </div>
+</header>
+
+<!-- ── NAV ── -->
+<nav class="progress-nav">
+  <div class="nav-inner">
+    <a href="#topic-8-1" class="nav-item active">
+      <span class="nav-num">8.1</span>
+      <span class="nav-label">Cost management</span>
+    </a>
+    <a href="#topic-8-2" class="nav-item">
+      <span class="nav-num">8.2</span>
+      <span class="nav-label">Anti-patterns</span>
+    </a>
+    <a href="#topic-8-3" class="nav-item">
+      <span class="nav-num">8.3</span>
+      <span class="nav-label">Reference architecture</span>
+    </a>
+    <a href="#topic-8-4" class="nav-item">
+      <span class="nav-num">8.4</span>
+      <span class="nav-label">LLMOps governance</span>
+    </a>
+  </div>
+</nav>
+
+<!-- ── MAIN ── -->
+<main>
+
+<!-- ════════════════════════════════════════════ SECTION 8.1 -->
+<section class="section" id="topic-8-1">
+
+  <div class="section-header">
+    <span class="section-marker">8.1 · Theory</span>
+    <h2 class="section-title">Evaluation Cost Management at Scale</h2>
+    <span class="section-rule"></span>
+  </div>
+
+  <p class="prose">
+    When GenAI evaluation runs against real production traffic, costs explode silently. Every evaluation call is itself an LLM call — and naïve setups run <em>every</em> judge on <em>every</em> trace. This module is about keeping evaluation <strong>comprehensive but affordable</strong>.
+  </p>
+
+  <div class="warning">
+    Naïve evaluation runs every judge on every trace. The math compounds fast — your evaluation bill can exceed your inference bill within weeks.
+  </div>
+
+  <div class="cost-math">
+    <span class="cm-label">The cost multiplication trap</span>
+<span class="cm-num">5</span> judges  ×  <span class="cm-num">10,000</span> traces/day  =  <span class="cm-num">50,000</span> LLM calls/day
+                              =  <span class="cm-num">~1.5M</span> calls/month
+                              =  <span class="cm-final">$$$ before you've shipped a feature</span>
+  </div>
+
+  <p class="prose">
+    The fix is three layered strategies: <strong>tiering</strong>, <strong>sampling</strong>, and <strong>judge model selection</strong>. Used together, mature setups run evaluation at 5–10% of inference cost. Above 25% means you're over-judging.
+  </p>
+
+  <!-- ── STRATEGY 1: TIERED ── -->
+  <h3 class="sub-header">Strategy 1 — Tiered evaluation</h3>
+
+  <p class="prose">
+    Run the <strong>cheapest scorers first</strong>, escalate to expensive ones only when needed. Code-based scorers (regex, latency checks, schema validation) are essentially free and deterministic — let them do the heavy lifting. Reserve frontier LLM judges for cases where semantic reasoning is genuinely required.
+  </p>
+
+  <div class="diagram-wrap">
+    <div class="diagram-header">
+      <span class="diagram-label">Interactive: tiered evaluation funnel</span>
+      <span class="diagram-hint">Hover each tier</span>
+    </div>
+    <div class="diagram-body">
+      <svg viewBox="0 0 680 200" xmlns="http://www.w3.org/2000/svg" id="funnel-svg">
+        <defs>
+          <marker id="arr1" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M2 1L8 5L2 9" fill="none" stroke="#4a5878" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </marker>
+        </defs>
+
+        <!-- Traces in -->
+        <g class="node-box" data-tier="0">
+          <rect x="30" y="50" width="130" height="56" rx="8" fill="rgba(136,153,187,0.06)" stroke="rgba(136,153,187,0.3)" stroke-width="1"/>
+          <text x="95" y="74" text-anchor="middle" font-family="Syne, sans-serif" font-size="13" font-weight="600" fill="#e8edf5">Traces in</text>
+          <text x="95" y="92" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#8899bb">10K daily</text>
+        </g>
+
+        <!-- Tier 1: Code rules -->
+        <g class="node-box" data-tier="1">
+          <rect x="195" y="50" width="130" height="56" rx="8" fill="rgba(0,191,165,0.08)" stroke="rgba(0,191,165,0.3)" stroke-width="1"/>
+          <text x="260" y="74" text-anchor="middle" font-family="Syne, sans-serif" font-size="13" font-weight="600" fill="#00bfa5">Code rules</text>
+          <text x="260" y="92" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#8899bb">Regex · time</text>
+        </g>
+
+        <!-- Tier 2: LLM judges -->
+        <g class="node-box" data-tier="2">
+          <rect x="360" y="50" width="130" height="56" rx="8" fill="rgba(245,158,11,0.08)" stroke="rgba(245,158,11,0.3)" stroke-width="1"/>
+          <text x="425" y="74" text-anchor="middle" font-family="Syne, sans-serif" font-size="13" font-weight="600" fill="#f59e0b">LLM judges</text>
+          <text x="425" y="92" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#8899bb">Cheap models</text>
+        </g>
+
+        <!-- Tier 3: Top judges -->
+        <g class="node-box" data-tier="3">
+          <rect x="525" y="50" width="130" height="56" rx="8" fill="rgba(239,68,68,0.08)" stroke="rgba(239,68,68,0.3)" stroke-width="1"/>
+          <text x="590" y="74" text-anchor="middle" font-family="Syne, sans-serif" font-size="13" font-weight="600" fill="#ef4444">Top judges</text>
+          <text x="590" y="92" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#8899bb">Frontier LLM</text>
+        </g>
+
+        <line x1="160" y1="78" x2="195" y2="78" stroke="#4a5878" stroke-width="1.2" marker-end="url(#arr1)"/>
+        <line x1="325" y1="78" x2="360" y2="78" stroke="#4a5878" stroke-width="1.2" marker-end="url(#arr1)"/>
+        <line x1="490" y1="78" x2="525" y2="78" stroke="#4a5878" stroke-width="1.2" marker-end="url(#arr1)"/>
+
+        <text x="95" y="135" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#8899bb">100% · $0</text>
+        <text x="260" y="135" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#8899bb">100% · $0</text>
+        <text x="425" y="135" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#8899bb">30% · low $</text>
+        <text x="590" y="135" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#8899bb">5% · high $</text>
+
+        <text x="340" y="175" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#4a5878">deterministic &amp; free  →  semantic &amp; expensive</text>
+      </svg>
+    </div>
+  </div>
+
+  <!-- ── STRATEGY 2: SAMPLING ── -->
+  <h3 class="sub-header">Strategy 2 — Smart sampling</h3>
+
+  <p class="prose">
+    Not every quality dimension needs the same coverage. <strong>Safety must run on every trace</strong> (zero tolerance for missed violations), but quality drift only needs a representative sample to surface trends. Sampling rates are configured directly in <code>ScorerSamplingConfig(sample_rate=...)</code> when you call <code>.register().start()</code>.
+  </p>
+
+  <div class="diagram-wrap">
+    <div class="diagram-header">
+      <span class="diagram-label">Interactive: sampling fan-out</span>
+      <span class="diagram-hint">Hover a stream</span>
+    </div>
+    <div class="diagram-body">
+      <svg viewBox="0 0 680 260" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arr2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M2 1L8 5L2 9" fill="none" stroke="#4a5878" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </marker>
+        </defs>
+
+        <!-- Source -->
+        <g class="node-box">
+          <rect x="30" y="100" width="200" height="80" rx="8" fill="rgba(136,153,187,0.06)" stroke="rgba(136,153,187,0.3)" stroke-width="1"/>
+          <text x="130" y="130" text-anchor="middle" font-family="Syne, sans-serif" font-size="14" font-weight="600" fill="#e8edf5">Inference table</text>
+          <text x="130" y="152" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#8899bb">10K traces daily</text>
+        </g>
+
+        <!-- Safety stream -->
+        <g class="node-box">
+          <rect x="400" y="30" width="240" height="60" rx="8" fill="rgba(239,68,68,0.08)" stroke="rgba(239,68,68,0.3)" stroke-width="1"/>
+          <text x="520" y="54" text-anchor="middle" font-family="Syne, sans-serif" font-size="13" font-weight="600" fill="#ef4444">Safety judge</text>
+          <text x="520" y="74" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#8899bb">100% · zero tolerance</text>
+        </g>
+
+        <!-- Quality stream -->
+        <g class="node-box">
+          <rect x="400" y="110" width="240" height="60" rx="8" fill="rgba(245,158,11,0.08)" stroke="rgba(245,158,11,0.3)" stroke-width="1"/>
+          <text x="520" y="134" text-anchor="middle" font-family="Syne, sans-serif" font-size="13" font-weight="600" fill="#f59e0b">Quality judges</text>
+          <text x="520" y="154" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#8899bb">30% · trend tracking</text>
+        </g>
+
+        <!-- Full suite stream -->
+        <g class="node-box">
+          <rect x="400" y="190" width="240" height="60" rx="8" fill="rgba(0,191,165,0.08)" stroke="rgba(0,191,165,0.3)" stroke-width="1"/>
+          <text x="520" y="214" text-anchor="middle" font-family="Syne, sans-serif" font-size="13" font-weight="600" fill="#00bfa5">Full suite</text>
+          <text x="520" y="234" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#8899bb">10% · deep analysis</text>
+        </g>
+
+        <path d="M230 130 L 320 130 L 320 60 L 400 60" fill="none" stroke="#4a5878" stroke-width="1.2" marker-end="url(#arr2)"/>
+        <line x1="230" y1="140" x2="400" y2="140" stroke="#4a5878" stroke-width="1.2" marker-end="url(#arr2)"/>
+        <path d="M230 150 L 320 150 L 320 220 L 400 220" fill="none" stroke="#4a5878" stroke-width="1.2" marker-end="url(#arr2)"/>
+      </svg>
+    </div>
+  </div>
+
+  <p class="prose">
+    The three streams run independently in the background — each sampled trace gets feedback attached, visible in the MLflow UI.
+  </p>
+
+  <!-- ── STRATEGY 3: MODEL SELECTION ── -->
+  <h3 class="sub-header">Strategy 3 — Judge model selection</h3>
+
+  <p class="prose">
+    The judge LLM itself is a cost dial. Match the model to the job. A common pattern: same judge logic, two registered instances — one cheap-model variant for monitoring, one frontier-model variant for the CI gate.
+  </p>
+
+  <div class="card-grid">
+    <div class="concept-card teal">
+      <div class="card-label">High-volume monitoring</div>
+      <div class="card-title">Cheap model · 24/7 prod</div>
+      <div class="card-body">Use <code>databricks-claude-haiku-4-5</code> for always-on sampled judges. Acceptable variance, low cost per call.</div>
+    </div>
+    <div class="concept-card red">
+      <div class="card-label">Pre-deployment gate</div>
+      <div class="card-title">Frontier · CI only</div>
+      <div class="card-body">Use <code>databricks-claude-opus-4-7</code> at the quality gate. Runs once per release, cost is bounded, accuracy is highest.</div>
+    </div>
+    <div class="concept-card purple">
+      <div class="card-label">Custom domain</div>
+      <div class="card-title">Calibrate first</div>
+      <div class="card-body">Sometimes a cheap model with a good rubric beats a frontier model with a vague one. Measure Pearson against humans before choosing.</div>
+    </div>
+  </div>
+
+  <!-- ── COST TRACKING ── -->
+  <h3 class="sub-header">Cost tracking on Databricks</h3>
+
+  <p class="prose">
+    Two visibility surfaces matter: the <strong>AI Gateway usage metrics</strong> (request count, blocked requests, cost per model, latency P95 — visible in the serving endpoint UI) and the <strong>MLflow assessment pane</strong> (when LiteLLM is configured as the judge backend, individual judge cost appears alongside each scored trace).
+  </p>
+
+  <!-- ── CHECKLIST ── -->
+  <div class="checklist">
+    <div class="checklist-title">The cost-control checklist</div>
+    <div class="checklist-item">
+      <span class="ci-mark">01</span>
+      <span>Push every check possible into <strong>code-based scorers</strong> with <code>@scorer</code> — they're free and deterministic.</span>
+    </div>
+    <div class="checklist-item">
+      <span class="ci-mark">02</span>
+      <span>Use <strong>sampling rates that match risk</strong>: 100% for safety, ~30% for quality, ~10% for the full suite.</span>
+    </div>
+    <div class="checklist-item">
+      <span class="ci-mark">03</span>
+      <span>Pick the <strong>cheapest judge model</strong> that still passes calibration (Pearson ≥ 0.7 vs human ratings).</span>
+    </div>
+    <div class="checklist-item">
+      <span class="ci-mark">04</span>
+      <span>Route both inference and evaluation traffic through <strong>AI Gateway</strong> so cost is one queryable number.</span>
+    </div>
+    <div class="checklist-item">
+      <span class="ci-mark">05</span>
+      <span>Treat the eval bill as a <strong>first-class metric</strong> — review it weekly alongside quality scores.</span>
+    </div>
+  </div>
+
+  <div class="insight">
+    <div class="insight-label">Target ratio</div>
+    <p>A mature setup typically runs evaluation at <strong>5–10% of inference cost</strong>. Anything above 25% means you're over-judging and should re-tier.</p>
+  </div>
+
+</section>
+
+
+<!-- ════════════════════════════════════════════ SECTION 8.2 -->
+<section class="section" id="topic-8-2">
+
+  <div class="section-header">
+    <span class="section-marker">8.2 · Theory</span>
+    <h2 class="section-title">Expert Anti-Patterns &amp; How to Fix Them</h2>
+    <span class="section-rule"></span>
+  </div>
+
+  <p class="prose">
+    Five mistakes that quietly poison evaluation results — even in mature pipelines. Each one feels reasonable when written, then produces misleading numbers for months until someone notices the gap between scores and reality.
+  </p>
+
+  <div class="antipattern-list" id="ap-list">
+
+    <!-- AP 1 -->
+    <div class="ap-item open">
+      <div class="ap-header" onclick="toggleAP(this)">
+        <div class="ap-num">AP·01</div>
+        <div class="ap-title">Self-evaluation bias</div>
+        <div class="ap-toggle">+</div>
+      </div>
+      <div class="ap-body">
+        <div class="ap-inner">
+          <div class="ap-row">
+            <div class="ap-label bug">The bug</div>
+            <div>Using the same model family to both generate output and judge it (e.g. Sonnet generates, Sonnet judges).</div>
+          </div>
+          <div class="ap-row">
+            <div class="ap-label why">Why it fails</div>
+            <div>A model rates its own writing style, length conventions, and reasoning patterns favorably. Scores inflate by roughly <strong style="color:var(--red)">0.3–0.5 points</strong> compared to a neutral judge — so your dashboard looks healthier than reality.</div>
+          </div>
+          <div class="ap-row">
+            <div class="ap-label fix">The fix</div>
+            <div>Pick a judge from a different vendor or model family. Then run alignment — Pearson ≥ 0.7 against human ratings before trusting it.
+              <div class="diagram-wrap" style="margin-top:14px; margin-bottom:0;">
+                <div class="diagram-body" style="padding:24px 16px;">
+                  <svg viewBox="0 0 680 180" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                      <marker id="arr3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                        <path d="M2 1L8 5L2 9" fill="none" stroke="#4a5878" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                      </marker>
+                    </defs>
+                    <line x1="338" y1="10" x2="338" y2="170" stroke="#1e2d45" stroke-width="0.5" stroke-dasharray="4 4"/>
+                    <text x="170" y="30" text-anchor="middle" font-family="Syne, sans-serif" font-size="13" font-weight="600" fill="#ef4444">Anti-pattern</text>
+                    <text x="500" y="30" text-anchor="middle" font-family="Syne, sans-serif" font-size="13" font-weight="600" fill="#22c55e">Recommended</text>
+
+                    <rect x="40" y="60" width="130" height="50" rx="8" fill="rgba(168,85,247,0.08)" stroke="rgba(168,85,247,0.3)"/>
+                    <text x="105" y="80" text-anchor="middle" font-family="Syne, sans-serif" font-size="12" font-weight="600" fill="#a855f7">Generator</text>
+                    <text x="105" y="96" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#8899bb">Sonnet</text>
+
+                    <rect x="195" y="60" width="130" height="50" rx="8" fill="rgba(168,85,247,0.08)" stroke="rgba(168,85,247,0.3)"/>
+                    <text x="260" y="80" text-anchor="middle" font-family="Syne, sans-serif" font-size="12" font-weight="600" fill="#a855f7">Judge</text>
+                    <text x="260" y="96" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#8899bb">Sonnet (same)</text>
+
+                    <line x1="170" y1="85" x2="193" y2="85" stroke="#4a5878" stroke-width="1.2" marker-end="url(#arr3)"/>
+
+                    <rect x="350" y="60" width="130" height="50" rx="8" fill="rgba(168,85,247,0.08)" stroke="rgba(168,85,247,0.3)"/>
+                    <text x="415" y="80" text-anchor="middle" font-family="Syne, sans-serif" font-size="12" font-weight="600" fill="#a855f7">Generator</text>
+                    <text x="415" y="96" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#8899bb">Sonnet</text>
+
+                    <rect x="505" y="60" width="130" height="50" rx="8" fill="rgba(245,158,11,0.08)" stroke="rgba(245,158,11,0.3)"/>
+                    <text x="570" y="80" text-anchor="middle" font-family="Syne, sans-serif" font-size="12" font-weight="600" fill="#f59e0b">Judge</text>
+                    <text x="570" y="96" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#8899bb">Haiku</text>
+
+                    <line x1="480" y1="85" x2="503" y2="85" stroke="#4a5878" stroke-width="1.2" marker-end="url(#arr3)"/>
+
+                    <text x="170" y="148" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#ef4444">Score inflates ~0.4</text>
+                    <text x="500" y="148" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#22c55e">Score calibrated</text>
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AP 2 -->
+    <div class="ap-item">
+      <div class="ap-header" onclick="toggleAP(this)">
+        <div class="ap-num">AP·02</div>
+        <div class="ap-title">One judge for everything</div>
+        <div class="ap-toggle">+</div>
+      </div>
+      <div class="ap-body">
+        <div class="ap-inner">
+          <div class="ap-row">
+            <div class="ap-label bug">The bug</div>
+            <div>A single "Quality" judge whose rubric tries to cover correctness, safety, style, and latency all at once.</div>
+          </div>
+          <div class="ap-row">
+            <div class="ap-label why">Why it fails</div>
+            <div>A score of 3.5 tells you nothing actionable. Did safety drop? Did formatting break? You can't write an alert on it, and you can't fix what you can't see.</div>
+          </div>
+          <div class="ap-row">
+            <div class="ap-label fix">The fix</div>
+            <div>Decompose into one scorer per orthogonal dimension. Use code scorers for deterministic axes (latency, format) and LLM judges only for semantic ones (correctness, safety, tone).
+              <div class="diagram-wrap" style="margin-top:14px; margin-bottom:0;">
+                <div class="diagram-body" style="padding:24px 16px;">
+                  <svg viewBox="0 0 680 200" xmlns="http://www.w3.org/2000/svg">
+                    <line x1="338" y1="10" x2="338" y2="190" stroke="#1e2d45" stroke-width="0.5" stroke-dasharray="4 4"/>
+                    <text x="170" y="30" text-anchor="middle" font-family="Syne, sans-serif" font-size="13" font-weight="600" fill="#ef4444">Monolithic</text>
+                    <text x="500" y="30" text-anchor="middle" font-family="Syne, sans-serif" font-size="13" font-weight="600" fill="#22c55e">Decomposed</text>
+
+                    <rect x="90" y="70" width="160" height="80" rx="8" fill="rgba(239,68,68,0.08)" stroke="rgba(239,68,68,0.3)"/>
+                    <text x="170" y="100" text-anchor="middle" font-family="Syne, sans-serif" font-size="13" font-weight="600" fill="#ef4444">Quality judge</text>
+                    <text x="170" y="120" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#8899bb">Single 1–5 score</text>
+
+                    <rect x="350" y="70" width="135" height="32" rx="6" fill="rgba(0,191,165,0.08)" stroke="rgba(0,191,165,0.3)"/>
+                    <text x="417" y="86" text-anchor="middle" font-family="Syne, sans-serif" font-size="11" font-weight="600" fill="#00bfa5">Safety</text>
+
+                    <rect x="505" y="70" width="135" height="32" rx="6" fill="rgba(0,191,165,0.08)" stroke="rgba(0,191,165,0.3)"/>
+                    <text x="572" y="86" text-anchor="middle" font-family="Syne, sans-serif" font-size="11" font-weight="600" fill="#00bfa5">Correctness</text>
+
+                    <rect x="350" y="112" width="135" height="32" rx="6" fill="rgba(0,191,165,0.08)" stroke="rgba(0,191,165,0.3)"/>
+                    <text x="417" y="128" text-anchor="middle" font-family="Syne, sans-serif" font-size="11" font-weight="600" fill="#00bfa5">Format</text>
+
+                    <rect x="505" y="112" width="135" height="32" rx="6" fill="rgba(0,191,165,0.08)" stroke="rgba(0,191,165,0.3)"/>
+                    <text x="572" y="128" text-anchor="middle" font-family="Syne, sans-serif" font-size="11" font-weight="600" fill="#00bfa5">Latency</text>
+
+                    <text x="170" y="175" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#ef4444">One score, no signal</text>
+                    <text x="500" y="175" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#22c55e">Per-axis, actionable</text>
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AP 3 -->
+    <div class="ap-item">
+      <div class="ap-header" onclick="toggleAP(this)">
+        <div class="ap-num">AP·03</div>
+        <div class="ap-title">Vague rubrics</div>
+        <div class="ap-toggle">+</div>
+      </div>
+      <div class="ap-body">
+        <div class="ap-inner">
+          <div class="ap-row">
+            <div class="ap-label bug">The bug</div>
+            <div>"Score 1–5 based on quality."</div>
+          </div>
+          <div class="ap-row">
+            <div class="ap-label why">Why it fails</div>
+            <div>With no anchors, judge scores become essentially random run-to-run. You'll see swings of <strong style="color:var(--red)">±1.0</strong> between identical evaluation runs of the same data.</div>
+          </div>
+          <div class="ap-row">
+            <div class="ap-label fix">The fix</div>
+            <div>Anchor every level concretely. The good rubric is reproducible. The bad one is a coin flip dressed up as a metric.
+              <div class="rubric-grid">
+                <div class="rubric-card bad">
+                  <div class="rubric-tag">Bad rubric</div>
+                  <div class="rubric-list">"Rate 1–5 based on quality"</div>
+                </div>
+                <div class="rubric-card good">
+                  <div class="rubric-tag">Good rubric</div>
+                  <div class="rubric-list">5 = Precise, correct, includes caveats
+4 = Mostly correct, minor omissions
+3 = Partially correct, concept incomplete
+2 = Significant inaccuracy
+1 = Fundamentally wrong / misleading</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AP 4 -->
+    <div class="ap-item">
+      <div class="ap-header" onclick="toggleAP(this)">
+        <div class="ap-num">AP·04</div>
+        <div class="ap-title">Static eval dataset</div>
+        <div class="ap-toggle">+</div>
+      </div>
+      <div class="ap-body">
+        <div class="ap-inner">
+          <div class="ap-row">
+            <div class="ap-label bug">The bug</div>
+            <div>Same 50 examples, evaluated for six months, while production reveals new failure modes weekly.</div>
+          </div>
+          <div class="ap-row">
+            <div class="ap-label why">Why it fails</div>
+            <div>Your benchmark goes stale. Real regressions never surface in pre-deployment evals — you ship them, then discover them from user complaints.</div>
+          </div>
+          <div class="ap-row">
+            <div class="ap-label fix">The fix</div>
+            <div>Treat the dataset as a living UC asset. Every interesting production failure becomes a new row. <strong>Practical rule:</strong> if the dataset hasn't grown in 30 days, it's probably stale.
+              <div class="diagram-wrap" style="margin-top:14px; margin-bottom:0;">
+                <div class="diagram-body" style="padding:24px 16px;">
+                  <svg viewBox="0 0 680 200" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                      <marker id="arr4" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                        <path d="M2 1L8 5L2 9" fill="none" stroke="#4a5878" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                      </marker>
+                    </defs>
+
+                    <text x="340" y="40" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#8899bb">CONTINUOUS LOOP</text>
+
+                    <rect x="40" y="110" width="120" height="56" rx="8" fill="rgba(136,153,187,0.06)" stroke="rgba(136,153,187,0.3)"/>
+                    <text x="100" y="132" text-anchor="middle" font-family="Syne, sans-serif" font-size="12" font-weight="600" fill="#e8edf5">Prod traces</text>
+                    <text x="100" y="150" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#8899bb">Production</text>
+
+                    <rect x="200" y="110" width="120" height="56" rx="8" fill="rgba(245,158,11,0.08)" stroke="rgba(245,158,11,0.3)"/>
+                    <text x="260" y="132" text-anchor="middle" font-family="Syne, sans-serif" font-size="12" font-weight="600" fill="#f59e0b">Find fails</text>
+                    <text x="260" y="150" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#8899bb">Low scores</text>
+
+                    <rect x="360" y="110" width="120" height="56" rx="8" fill="rgba(0,191,165,0.08)" stroke="rgba(0,191,165,0.3)"/>
+                    <text x="420" y="132" text-anchor="middle" font-family="Syne, sans-serif" font-size="12" font-weight="600" fill="#00bfa5">Save to UC</text>
+                    <text x="420" y="150" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#8899bb">Eval dataset</text>
+
+                    <rect x="520" y="110" width="120" height="56" rx="8" fill="rgba(168,85,247,0.08)" stroke="rgba(168,85,247,0.3)"/>
+                    <text x="580" y="132" text-anchor="middle" font-family="Syne, sans-serif" font-size="12" font-weight="600" fill="#a855f7">Re-eval</text>
+                    <text x="580" y="150" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#8899bb">Catch drift</text>
+
+                    <line x1="160" y1="138" x2="198" y2="138" stroke="#4a5878" stroke-width="1.2" marker-end="url(#arr4)"/>
+                    <line x1="320" y1="138" x2="358" y2="138" stroke="#4a5878" stroke-width="1.2" marker-end="url(#arr4)"/>
+                    <line x1="480" y1="138" x2="518" y2="138" stroke="#4a5878" stroke-width="1.2" marker-end="url(#arr4)"/>
+
+                    <path d="M 580 110 V 70 H 100 V 108" fill="none" stroke="#4a5878" stroke-width="1.2" marker-end="url(#arr4)"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AP 5 -->
+    <div class="ap-item">
+      <div class="ap-header" onclick="toggleAP(this)">
+        <div class="ap-num">AP·05</div>
+        <div class="ap-title">Skipping code scorers</div>
+        <div class="ap-toggle">+</div>
+      </div>
+      <div class="ap-body">
+        <div class="ap-inner">
+          <div class="ap-row">
+            <div class="ap-label bug">The bug</div>
+            <div>Using LLM judges to check things a regex can answer — JSON validity, response length, citation presence.</div>
+          </div>
+          <div class="ap-row">
+            <div class="ap-label why">Why it fails</div>
+            <div>Wastes evaluation budget <em>and</em> introduces variance. An LLM judge will sometimes say "yes, valid JSON" for malformed output. <code>json.loads()</code> won't.</div>
+          </div>
+          <div class="ap-row">
+            <div class="ap-label fix">The fix</div>
+            <div>Code scorers for anything deterministic; LLM judges only when semantic understanding is genuinely required.
+              <div class="compare-wrap" style="margin-top:14px;">
+                <table class="compare-table">
+                  <thead>
+                    <tr>
+                      <th>Use a code scorer when…</th>
+                      <th>Use an LLM judge when…</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>Checking format or schema</td>
+                      <td>Checking factual correctness</td>
+                    </tr>
+                    <tr>
+                      <td>Measuring latency or length</td>
+                      <td>Evaluating tone or relevance</td>
+                    </tr>
+                    <tr>
+                      <td>Verifying required fields exist</td>
+                      <td>Detecting subtle hallucination</td>
+                    </tr>
+                    <tr>
+                      <td>Comparing exact strings</td>
+                      <td>Assessing reasoning quality</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── SANITY CHECKLIST ── -->
+  <div class="checklist">
+    <div class="checklist-title">Quick sanity checklist</div>
+    <div class="checklist-item">
+      <span class="ci-mark">?</span>
+      <span>Could a <strong>regex</strong> check this? → use a code scorer, not an LLM</span>
+    </div>
+    <div class="checklist-item">
+      <span class="ci-mark">?</span>
+      <span>Is the judge model the <strong>same family</strong> as the generator? → swap it</span>
+    </div>
+    <div class="checklist-item">
+      <span class="ci-mark">?</span>
+      <span>Could one bad row score 3.5 and look fine? → <strong>decompose</strong></span>
+    </div>
+    <div class="checklist-item">
+      <span class="ci-mark">?</span>
+      <span>Has the dataset <strong>grown</strong> in the last 30 days? → it should</span>
+    </div>
+    <div class="checklist-item">
+      <span class="ci-mark">?</span>
+      <span>Does each rubric level have a <strong>concrete description</strong>? → required</span>
+    </div>
+  </div>
+
+  <p class="prose" style="margin-bottom:0;">
+    If any answer is "no", that's technical debt that will surface later as a quality regression you didn't see coming.
+  </p>
+
+</section>
+
+
+<!-- ════════════════════════════════════════════ SECTION 8.3 -->
+<section class="section" id="topic-8-3">
+
+  <div class="section-header">
+    <span class="section-marker">8.3 · Theory</span>
+    <h2 class="section-title">The Complete Enterprise Eval Architecture</h2>
+    <span class="section-rule"></span>
+  </div>
+
+  <p class="prose">
+    Every piece you've learned across Modules 1–7 fits into a single operating system. Mature Databricks GenAI evaluation runs as <strong>four layers in a closed loop</strong>: Dev builds, CI gates, Production monitors, and Feedback flows the truth back into Dev. Each layer hands off cleanly to the next, and the final layer feeds back to the first — that's what makes it a loop, not a one-way pipeline.
+  </p>
+
+  <!-- ── REFERENCE DIAGRAM ── -->
+  <div class="diagram-wrap">
+    <div class="diagram-header">
+      <span class="diagram-label">Reference: four-layer eval architecture</span>
+      <span class="diagram-hint">End-to-end</span>
+    </div>
+    <div class="diagram-body">
+      <svg viewBox="0 0 680 360" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arr5" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M2 1L8 5L2 9" fill="none" stroke="#4a5878" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </marker>
+        </defs>
+
+        <!-- Layer tags -->
+        <rect x="20" y="34" width="100" height="28" rx="14" fill="rgba(168,85,247,0.1)" stroke="rgba(168,85,247,0.3)"/>
+        <text x="70" y="52" text-anchor="middle" font-family="Syne, sans-serif" font-size="12" font-weight="600" fill="#a855f7">1 · Dev</text>
+
+        <rect x="20" y="114" width="100" height="28" rx="14" fill="rgba(245,158,11,0.1)" stroke="rgba(245,158,11,0.3)"/>
+        <text x="70" y="132" text-anchor="middle" font-family="Syne, sans-serif" font-size="12" font-weight="600" fill="#f59e0b">2 · CI</text>
+
+        <rect x="20" y="194" width="100" height="28" rx="14" fill="rgba(0,191,165,0.1)" stroke="rgba(0,191,165,0.3)"/>
+        <text x="70" y="212" text-anchor="middle" font-family="Syne, sans-serif" font-size="12" font-weight="600" fill="#00bfa5">3 · Prod</text>
+
+        <rect x="20" y="274" width="100" height="28" rx="14" fill="rgba(255,107,53,0.1)" stroke="rgba(255,107,53,0.3)"/>
+        <text x="70" y="292" text-anchor="middle" font-family="Syne, sans-serif" font-size="12" font-weight="600" fill="#ff6b35">4 · Loop</text>
+
+        <!-- Layer 1: Dev -->
+        <rect x="130" y="20" width="145" height="56" rx="8" fill="rgba(168,85,247,0.08)" stroke="rgba(168,85,247,0.3)"/>
+        <text x="202" y="42" text-anchor="middle" font-family="Syne, sans-serif" font-size="12" font-weight="600" fill="#a855f7">Build dataset</text>
+        <text x="202" y="60" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#8899bb">UC + synthetic</text>
+
+        <rect x="305" y="20" width="145" height="56" rx="8" fill="rgba(168,85,247,0.08)" stroke="rgba(168,85,247,0.3)"/>
+        <text x="377" y="42" text-anchor="middle" font-family="Syne, sans-serif" font-size="12" font-weight="600" fill="#a855f7">evaluate()</text>
+        <text x="377" y="60" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#8899bb">Local agent</text>
+
+        <rect x="480" y="20" width="145" height="56" rx="8" fill="rgba(168,85,247,0.08)" stroke="rgba(168,85,247,0.3)"/>
+        <text x="552" y="42" text-anchor="middle" font-family="Syne, sans-serif" font-size="12" font-weight="600" fill="#a855f7">Experiment</text>
+        <text x="552" y="60" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#8899bb">Compare runs</text>
+
+        <line x1="275" y1="48" x2="303" y2="48" stroke="#4a5878" stroke-width="1.2" marker-end="url(#arr5)"/>
+        <line x1="450" y1="48" x2="478" y2="48" stroke="#4a5878" stroke-width="1.2" marker-end="url(#arr5)"/>
+
+        <!-- Layer 2: CI -->
+        <rect x="130" y="100" width="145" height="56" rx="8" fill="rgba(245,158,11,0.08)" stroke="rgba(245,158,11,0.3)"/>
+        <text x="202" y="122" text-anchor="middle" font-family="Syne, sans-serif" font-size="12" font-weight="600" fill="#f59e0b">UC dataset</text>
+        <text x="202" y="140" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#8899bb">Versioned</text>
+
+        <rect x="305" y="100" width="145" height="56" rx="8" fill="rgba(245,158,11,0.08)" stroke="rgba(245,158,11,0.3)"/>
+        <text x="377" y="122" text-anchor="middle" font-family="Syne, sans-serif" font-size="12" font-weight="600" fill="#f59e0b">Endpoint eval</text>
+        <text x="377" y="140" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#8899bb">to_predict_fn</text>
+
+        <rect x="480" y="100" width="145" height="56" rx="8" fill="rgba(245,158,11,0.08)" stroke="rgba(245,158,11,0.3)"/>
+        <text x="552" y="122" text-anchor="middle" font-family="Syne, sans-serif" font-size="12" font-weight="600" fill="#f59e0b">Quality gate</text>
+        <text x="552" y="140" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#8899bb">Block / pass</text>
+
+        <line x1="275" y1="128" x2="303" y2="128" stroke="#4a5878" stroke-width="1.2" marker-end="url(#arr5)"/>
+        <line x1="450" y1="128" x2="478" y2="128" stroke="#4a5878" stroke-width="1.2" marker-end="url(#arr5)"/>
+
+        <!-- Layer 3: Prod -->
+        <rect x="130" y="180" width="145" height="56" rx="8" fill="rgba(0,191,165,0.08)" stroke="rgba(0,191,165,0.3)"/>
+        <text x="202" y="202" text-anchor="middle" font-family="Syne, sans-serif" font-size="12" font-weight="600" fill="#00bfa5">AI Gateway</text>
+        <text x="202" y="220" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#8899bb">Guardrails</text>
+
+        <rect x="305" y="180" width="145" height="56" rx="8" fill="rgba(0,191,165,0.08)" stroke="rgba(0,191,165,0.3)"/>
+        <text x="377" y="202" text-anchor="middle" font-family="Syne, sans-serif" font-size="12" font-weight="600" fill="#00bfa5">Inf. table</text>
+        <text x="377" y="220" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#8899bb">Delta + UC</text>
+
+        <rect x="480" y="180" width="145" height="56" rx="8" fill="rgba(0,191,165,0.08)" stroke="rgba(0,191,165,0.3)"/>
+        <text x="552" y="202" text-anchor="middle" font-family="Syne, sans-serif" font-size="12" font-weight="600" fill="#00bfa5">Live monitors</text>
+        <text x="552" y="220" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#8899bb">Reg. scorers</text>
+
+        <line x1="275" y1="208" x2="303" y2="208" stroke="#4a5878" stroke-width="1.2" marker-end="url(#arr5)"/>
+        <line x1="450" y1="208" x2="478" y2="208" stroke="#4a5878" stroke-width="1.2" marker-end="url(#arr5)"/>
+
+        <!-- Layer 4: Loop -->
+        <rect x="130" y="260" width="145" height="56" rx="8" fill="rgba(255,107,53,0.08)" stroke="rgba(255,107,53,0.3)"/>
+        <text x="202" y="282" text-anchor="middle" font-family="Syne, sans-serif" font-size="12" font-weight="600" fill="#ff6b35">User feedback</text>
+        <text x="202" y="300" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#8899bb">log_feedback()</text>
+
+        <rect x="305" y="260" width="145" height="56" rx="8" fill="rgba(255,107,53,0.08)" stroke="rgba(255,107,53,0.3)"/>
+        <text x="377" y="282" text-anchor="middle" font-family="Syne, sans-serif" font-size="12" font-weight="600" fill="#ff6b35">Review App</text>
+        <text x="377" y="300" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#8899bb">Expert labels</text>
+
+        <rect x="480" y="260" width="145" height="56" rx="8" fill="rgba(255,107,53,0.08)" stroke="rgba(255,107,53,0.3)"/>
+        <text x="552" y="282" text-anchor="middle" font-family="Syne, sans-serif" font-size="12" font-weight="600" fill="#ff6b35">Alignment</text>
+        <text x="552" y="300" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#8899bb">Pearson ≥ 0.7</text>
+
+        <line x1="275" y1="288" x2="303" y2="288" stroke="#4a5878" stroke-width="1.2" marker-end="url(#arr5)"/>
+        <line x1="450" y1="288" x2="478" y2="288" stroke="#4a5878" stroke-width="1.2" marker-end="url(#arr5)"/>
+
+        <!-- Promotion arrows between layers -->
+        <line x1="377" y1="78" x2="377" y2="98" stroke="#4a5878" stroke-width="1.2" marker-end="url(#arr5)"/>
+        <line x1="377" y1="158" x2="377" y2="178" stroke="#4a5878" stroke-width="1.2" marker-end="url(#arr5)"/>
+        <line x1="377" y1="238" x2="377" y2="258" stroke="#4a5878" stroke-width="1.2" marker-end="url(#arr5)"/>
+
+        <!-- Closing loop -->
+        <path d="M 625 288 H 660 V 48 H 627" fill="none" stroke="#ff6b35" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arr5)"/>
+        <text x="668" y="170" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="9" fill="#ff6b35" transform="rotate(90 668 170)">CLOSED LOOP</text>
+      </svg>
+    </div>
+  </div>
+
+  <!-- ── LAYER STACK ── -->
+  <div class="arch-stack">
+
+    <div class="arch-layer layer-dev">
+      <div class="arch-row">
+        <div class="arch-tag">
+          <span class="arch-tag-num">LAYER · 1</span>
+          <span class="arch-tag-name">Dev</span>
+        </div>
+        <div class="arch-content">
+          <div class="arch-pillars">
+            <div class="arch-pillar">
+              <span class="arch-p-name">Build dataset</span>
+              <code>generate_eval_df</code> + curated edge cases + prod traces. Saved as versioned UC asset.
+            </div>
+            <div class="arch-pillar">
+              <span class="arch-p-name">evaluate()</span>
+              Run against local <code>predict_fn</code>. Mix code scorers (cheap) with LLM judges (semantic).
+            </div>
+            <div class="arch-pillar">
+              <span class="arch-p-name">Experiment</span>
+              Compare runs side-by-side in MLflow UI. Iterate prompt, model, retrieval until bar is cleared.
+            </div>
+          </div>
+          <div class="arch-summary">
+            <strong>Output:</strong> a <code>model_id</code> + a passing scorer suite, ready for promotion.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="arch-layer layer-ci">
+      <div class="arch-row">
+        <div class="arch-tag">
+          <span class="arch-tag-num">LAYER · 2</span>
+          <span class="arch-tag-name">CI</span>
+        </div>
+        <div class="arch-content">
+          <div class="arch-pillars">
+            <div class="arch-pillar">
+              <span class="arch-p-name">UC dataset</span>
+              Same versioned asset from Layer 1 — governance and lineage carried through.
+            </div>
+            <div class="arch-pillar">
+              <span class="arch-p-name">Endpoint eval</span>
+              <code>to_predict_fn("endpoints:/...")</code> hits deployed candidate, no code changes.
+            </div>
+            <div class="arch-pillar">
+              <span class="arch-p-name">Quality gate</span>
+              Threshold logic. <code>dbutils.notebook.exit("FAILED")</code> blocks deploy task.
+            </div>
+          </div>
+          <div class="arch-summary">
+            <strong>Effect:</strong> regressions can't ship — humans don't have to remember to check.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="arch-layer layer-prod">
+      <div class="arch-row">
+        <div class="arch-tag">
+          <span class="arch-tag-num">LAYER · 3</span>
+          <span class="arch-tag-name">Production</span>
+        </div>
+        <div class="arch-content">
+          <div class="arch-pillars">
+            <div class="arch-pillar">
+              <span class="arch-p-name">AI Gateway</span>
+              Synchronous guardrails — PII, toxicity, topic limits — block bad I/O before the model.
+            </div>
+            <div class="arch-pillar">
+              <span class="arch-p-name">Inference table</span>
+              Every request + response + full trace JSON lands in a UC Delta table — the audit trail.
+            </div>
+            <div class="arch-pillar">
+              <span class="arch-p-name">Live monitors</span>
+              Registered scorers sample traces in background and attach feedback. Drift surfaces in UI.
+            </div>
+          </div>
+          <div class="arch-summary">
+            <strong>Pattern:</strong> Gateway is fast-and-blocking, registered scorers are async-and-analytical — layered defense.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="arch-layer layer-loop">
+      <div class="arch-row">
+        <div class="arch-tag">
+          <span class="arch-tag-num">LAYER · 4</span>
+          <span class="arch-tag-name">Feedback</span>
+        </div>
+        <div class="arch-content">
+          <div class="arch-pillars">
+            <div class="arch-pillar">
+              <span class="arch-p-name">User feedback</span>
+              Thumbs-up/down via <code>log_feedback()</code>, attached to trace by <code>client_request_id</code>.
+            </div>
+            <div class="arch-pillar">
+              <span class="arch-p-name">Review App</span>
+              Domain experts label sampled traces. Labels stored as Feedback objects.
+            </div>
+            <div class="arch-pillar">
+              <span class="arch-p-name">Alignment</span>
+              Calibrate automated judges vs human ratings. <strong>Pearson ≥ 0.7</strong> before trusting them.
+            </div>
+          </div>
+          <div class="arch-summary">
+            <strong>The layer most teams skip</strong> — and the reason most eval systems decay. Improvements flow back to Layer 1.
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── WHY THE LOOP MATTERS ── -->
+  <h3 class="sub-header">Why the loop matters</h3>
+
+  <div class="card-grid">
+    <div class="concept-card teal">
+      <div class="card-label">At every stage</div>
+      <div class="card-title">Quality is measurable</div>
+      <div class="card-body">Same scorer logic, three contexts — local eval, CI gate, production monitor.</div>
+    </div>
+    <div class="concept-card amber">
+      <div class="card-label">Mechanically enforced</div>
+      <div class="card-title">Regressions can't ship</div>
+      <div class="card-body">Layer 2 blocks them automatically against the same dataset Layer 1 used.</div>
+    </div>
+    <div class="concept-card orange">
+      <div class="card-label">Closed loop</div>
+      <div class="card-title">Reality flows back</div>
+      <div class="card-body">Layer 4 keeps the dataset and judges honest as user behavior shifts.</div>
+    </div>
+    <div class="concept-card purple">
+      <div class="card-label">Governed</div>
+      <div class="card-title">Lineage end-to-end</div>
+      <div class="card-body">UC ties dataset, model, endpoint, inference table, eval runs into one auditable graph.</div>
+    </div>
+  </div>
+
+  <div class="insight">
+    <div class="insight-label">The maturity test</div>
+    <p>A team can adopt one layer at a time, but the compounding value comes from running all four. <strong>That's the difference between <em style="color:var(--text)">evaluating</em> a GenAI system and <em style="color:var(--text)">operating</em> one.</strong></p>
+  </div>
+
+</section>
+
+
+<!-- ════════════════════════════════════════════ SECTION 8.4 -->
+<section class="section" id="topic-8-4">
+
+  <div class="section-header">
+    <span class="section-marker">8.4 · Theory</span>
+    <h2 class="section-title">LLMOps — Versioning, Lineage &amp; Governance</h2>
+    <span class="section-rule"></span>
+  </div>
+
+  <p class="prose">
+    In LLMOps, "ship the model" is too narrow. What you actually ship is a <strong>bundle</strong> — model + prompt + dataset + scorer suite — all versioned, lineage-tracked, and gated by a passing evaluation. This module is about treating evaluation as a first-class governance object, not a sidecar log.
+  </p>
+
+  <!-- ── VERSIONING ── -->
+  <h3 class="sub-header">Versioning: artifacts that move together</h3>
+
+  <p class="prose">
+    A model version on its own is meaningless. Without the prompt that drives it, the dataset it was scored against, and the scorers that approved it, you can't reproduce or audit anything. MLflow 3 ties these into a single bundle keyed by <code>model_id</code> — a stable identifier like <code>models:/agent/3</code> that all related artifacts point to.
+  </p>
+
+  <div class="diagram-wrap">
+    <div class="diagram-header">
+      <span class="diagram-label">Versioned artifact bundle</span>
+      <span class="diagram-hint">Bound by model_id</span>
+    </div>
+    <div class="diagram-body">
+      <svg viewBox="0 0 680 220" xmlns="http://www.w3.org/2000/svg">
+        <rect x="40" y="30" width="130" height="56" rx="8" fill="rgba(168,85,247,0.08)" stroke="rgba(168,85,247,0.3)"/>
+        <text x="105" y="52" text-anchor="middle" font-family="Syne, sans-serif" font-size="13" font-weight="600" fill="#a855f7">Prompt v.7</text>
+        <text x="105" y="70" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#8899bb">Registry</text>
+
+        <rect x="196" y="30" width="130" height="56" rx="8" fill="rgba(168,85,247,0.08)" stroke="rgba(168,85,247,0.3)"/>
+        <text x="261" y="52" text-anchor="middle" font-family="Syne, sans-serif" font-size="13" font-weight="600" fill="#a855f7">Dataset v.2</text>
+        <text x="261" y="70" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#8899bb">UC asset</text>
+
+        <rect x="352" y="30" width="130" height="56" rx="8" fill="rgba(168,85,247,0.08)" stroke="rgba(168,85,247,0.3)"/>
+        <text x="417" y="52" text-anchor="middle" font-family="Syne, sans-serif" font-size="13" font-weight="600" fill="#a855f7">Scorer v.1</text>
+        <text x="417" y="70" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#8899bb">Code + LLM</text>
+
+        <rect x="508" y="30" width="130" height="56" rx="8" fill="rgba(168,85,247,0.08)" stroke="rgba(168,85,247,0.3)"/>
+        <text x="573" y="52" text-anchor="middle" font-family="Syne, sans-serif" font-size="13" font-weight="600" fill="#a855f7">Eval run</text>
+        <text x="573" y="70" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#8899bb">MLflow exp</text>
+
+        <line x1="105" y1="86" x2="340" y2="133" stroke="#4a5878" stroke-width="0.7"/>
+        <line x1="261" y1="86" x2="340" y2="133" stroke="#4a5878" stroke-width="0.7"/>
+        <line x1="417" y1="86" x2="340" y2="133" stroke="#4a5878" stroke-width="0.7"/>
+        <line x1="573" y1="86" x2="340" y2="133" stroke="#4a5878" stroke-width="0.7"/>
+
+        <rect x="240" y="135" width="200" height="56" rx="8" fill="rgba(0,191,165,0.08)" stroke="rgba(0,191,165,0.4)" stroke-width="1.5"/>
+        <text x="340" y="157" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="600" fill="#00bfa5">models:/agent/3</text>
+        <text x="340" y="175" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#8899bb">model_id binds all</text>
+      </svg>
+    </div>
+  </div>
+
+  <p class="prose">What's versioned, and where:</p>
+
+  <div class="card-grid">
+    <div class="concept-card purple">
+      <div class="card-label">Models</div>
+      <div class="card-title">Logged Models</div>
+      <div class="card-body">Immutable artifact in MLflow, addressable as <code>models:/agent/N</code>.</div>
+    </div>
+    <div class="concept-card blue">
+      <div class="card-label">Prompts</div>
+      <div class="card-title">Prompt Registry</div>
+      <div class="card-body">Versions and compares prompts alongside model versions.</div>
+    </div>
+    <div class="concept-card teal">
+      <div class="card-label">Datasets</div>
+      <div class="card-title">UC-backed Delta</div>
+      <div class="card-body">Attached to experiment, with <code>merge_records</code> history for additions.</div>
+    </div>
+    <div class="concept-card orange">
+      <div class="card-label">Scorers</div>
+      <div class="card-title">Registered suites</div>
+      <div class="card-body">Each scorer named uniquely (<code>prod_safety_v1</code>) and independently versioned.</div>
+    </div>
+    <div class="concept-card amber">
+      <div class="card-label">Eval runs</div>
+      <div class="card-title">Bound to model_id</div>
+      <div class="card-body">Every <code>evaluate()</code> call passes <code>model_id=...</code>, linking scores to the bundle.</div>
+    </div>
+  </div>
+
+  <!-- ── LINEAGE ── -->
+  <h3 class="sub-header">Lineage: the UC chain</h3>
+
+  <p class="prose">
+    Unity Catalog stitches the bundle into a <strong>queryable graph</strong>. From any node you can walk forward (what depends on this?) or backward (what produced this?). No manual logging — UC captures lineage automatically when you read or write a tracked asset.
+  </p>
+
+  <div class="diagram-wrap">
+    <div class="diagram-header">
+      <span class="diagram-label">Unity Catalog lineage chain</span>
+      <span class="diagram-hint">Walk either direction</span>
+    </div>
+    <div class="diagram-body">
+      <svg viewBox="0 0 680 200" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arr6" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M2 1L8 5L2 9" fill="none" stroke="#4a5878" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </marker>
+        </defs>
+
+        <text x="340" y="40" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#8899bb">UNITY CATALOG TRACKS EVERY LINK</text>
+
+        <rect x="40" y="80" width="105" height="56" rx="8" fill="rgba(136,153,187,0.06)" stroke="rgba(136,153,187,0.3)"/>
+        <text x="92" y="102" text-anchor="middle" font-family="Syne, sans-serif" font-size="12" font-weight="600" fill="#e8edf5">UC dataset</text>
+        <text x="92" y="120" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#8899bb">Versioned</text>
+
+        <rect x="163" y="80" width="105" height="56" rx="8" fill="rgba(0,191,165,0.08)" stroke="rgba(0,191,165,0.3)"/>
+        <text x="215" y="102" text-anchor="middle" font-family="Syne, sans-serif" font-size="12" font-weight="600" fill="#00bfa5">Model</text>
+        <text x="215" y="120" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#8899bb">Logged</text>
+
+        <rect x="286" y="80" width="105" height="56" rx="8" fill="rgba(0,191,165,0.08)" stroke="rgba(0,191,165,0.3)"/>
+        <text x="338" y="102" text-anchor="middle" font-family="Syne, sans-serif" font-size="12" font-weight="600" fill="#00bfa5">Endpoint</text>
+        <text x="338" y="120" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#8899bb">Serving</text>
+
+        <rect x="409" y="80" width="105" height="56" rx="8" fill="rgba(136,153,187,0.06)" stroke="rgba(136,153,187,0.3)"/>
+        <text x="461" y="102" text-anchor="middle" font-family="Syne, sans-serif" font-size="12" font-weight="600" fill="#e8edf5">Inf. table</text>
+        <text x="461" y="120" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#8899bb">UC Delta</text>
+
+        <rect x="532" y="80" width="105" height="56" rx="8" fill="rgba(136,153,187,0.06)" stroke="rgba(136,153,187,0.3)"/>
+        <text x="584" y="102" text-anchor="middle" font-family="Syne, sans-serif" font-size="12" font-weight="600" fill="#e8edf5">Eval run</text>
+        <text x="584" y="120" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#8899bb">Tracked</text>
+
+        <line x1="145" y1="108" x2="161" y2="108" stroke="#4a5878" stroke-width="1.2" marker-end="url(#arr6)"/>
+        <line x1="268" y1="108" x2="284" y2="108" stroke="#4a5878" stroke-width="1.2" marker-end="url(#arr6)"/>
+        <line x1="391" y1="108" x2="407" y2="108" stroke="#4a5878" stroke-width="1.2" marker-end="url(#arr6)"/>
+        <line x1="514" y1="108" x2="530" y2="108" stroke="#4a5878" stroke-width="1.2" marker-end="url(#arr6)"/>
+
+        <text x="340" y="170" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#4a5878">walk forward · what depends on this   ←→   walk backward · what produced this</text>
+      </svg>
+    </div>
+  </div>
+
+  <p class="prose">Audit questions that become trivial SQL queries against UC:</p>
+
+  <div class="code-block"><span class="cm"># Which model versions were evaluated against this dataset?</span>
+<span class="kw">SELECT</span> model_id, run_id, metrics
+<span class="kw">FROM</span>   uc.lineage.eval_runs
+<span class="kw">WHERE</span>  dataset_name = <span class="st">'tutorial_eval_v1'</span>;
+
+<span class="cm"># Which prod traces fed evaluation run exp_id=42?</span>
+<span class="kw">SELECT</span> request_id, response, trace
+<span class="kw">FROM</span>   uc.lineage.inference_tables
+<span class="kw">WHERE</span>  evaluation_run_id = <span class="nu">42</span>;
+
+<span class="cm"># What scorer suite approved models:/agent/3 for promotion?</span>
+<span class="kw">SELECT</span> scorer_name, version, threshold, last_score
+<span class="kw">FROM</span>   uc.lineage.model_approvals
+<span class="kw">WHERE</span>  model_id = <span class="st">'models:/agent/3'</span>;</div>
+
+  <p class="prose">
+    When a regulator, a compliance team, or a curious engineer asks these questions, the answer lives in the catalog — not in someone's notebook history.
+  </p>
+
+  <!-- ── GOVERNANCE RULE ── -->
+  <h3 class="sub-header">Governance: evaluation as a checkpoint</h3>
+
+  <p class="prose">The single most important rule of mature LLMOps:</p>
+
+  <div class="gov-rule">
+    <div class="gov-rule-label">The promotion rule</div>
+    <div class="gov-rule-text">"No model version reaches production without a passing evaluation run attached to it."</div>
+  </div>
+
+  <p class="prose">
+    This rule is enforced <strong>mechanically, not by convention</strong>. UC tags each model version with its last passing eval. The deployment task in the Workflow checks for that tag before pushing. If the eval is missing, stale, or below threshold, the deploy fails — no human needs to remember to check.
+  </p>
+
+  <div class="insight">
+    <div class="insight-label">The cultural shift</div>
+    <p>Evaluation stops being <em style="color:var(--text)">"something we should do"</em> and becomes <strong>the thing that lets us ship</strong>.</p>
+  </div>
+
+  <!-- ── DEPLOYMENT JOBS ── -->
+  <h3 class="sub-header">Deployment Jobs in MLflow 3</h3>
+
+  <p class="prose">
+    MLflow 3 introduces a managed deployment lifecycle — a single object that orchestrates four stages and logs each transition as a tagged event on the model version. Each stage is visible in the UC lineage graph, so <em>"when did v.3 go live, who approved it, against which dataset?"</em> is one query away.
+  </p>
+
+  <div class="card-grid">
+    <div class="concept-card amber">
+      <div class="card-label">Stage 1</div>
+      <div class="card-title">Evaluate</div>
+      <div class="card-body">Runs the registered scorer suite against the candidate <code>model_id</code>.</div>
+    </div>
+    <div class="concept-card purple">
+      <div class="card-label">Stage 2</div>
+      <div class="card-title">Approve</div>
+      <div class="card-body">Auto-approve on clean thresholds, or route to human reviewer.</div>
+    </div>
+    <div class="concept-card teal">
+      <div class="card-label">Stage 3</div>
+      <div class="card-title">Deploy</div>
+      <div class="card-body">Pushes to Databricks Model Serving with AI Gateway pre-configured.</div>
+    </div>
+    <div class="concept-card orange">
+      <div class="card-label">Stage 4</div>
+      <div class="card-title">Monitor</div>
+      <div class="card-body">Registered scorers begin sampling live traffic immediately.</div>
+    </div>
+  </div>
+
+  <!-- ── DEMAND CHECKLIST ── -->
+  <div class="checklist">
+    <div class="checklist-title">What to demand from any LLMOps stack</div>
+    <div class="checklist-item">
+      <span class="ci-mark">✓</span>
+      <span>Every artifact is versioned: <strong>model, prompt, dataset, scorer suite</strong></span>
+    </div>
+    <div class="checklist-item">
+      <span class="ci-mark">✓</span>
+      <span>Every evaluation run links to a <code>model_id</code></span>
+    </div>
+    <div class="checklist-item">
+      <span class="ci-mark">✓</span>
+      <span>Lineage is queryable <strong>end-to-end</strong> via Unity Catalog</span>
+    </div>
+    <div class="checklist-item">
+      <span class="ci-mark">✓</span>
+      <span>No promotion path bypasses the <strong>evaluation gate</strong></span>
+    </div>
+    <div class="checklist-item">
+      <span class="ci-mark">✓</span>
+      <span>Deployment events are tagged on the <strong>model version</strong>, not in a sidecar log</span>
+    </div>
+  </div>
+
+  <div class="warning" style="margin-top:36px;">
+    If any of these is missing, you don't have LLMOps — you have manual ops with extra steps.
+  </div>
+
+</section>
+
+
+<!-- ═══════════════════════════ MODULE OUTCOME ═══ -->
+<div class="outcome">
+  <div class="outcome-icon">🎯</div>
+  <div class="outcome-text">
+    <strong>Module 08 outcome:</strong> You can keep evaluation costs at 5–10% of inference spend using <strong>tiered scorers, smart sampling, and judge-model selection</strong>. You can spot and fix the five expert anti-patterns — self-evaluation bias, monolithic judges, vague rubrics, static datasets, and skipping code scorers. You understand the <strong>four-layer enterprise architecture</strong> (Dev → CI → Prod → Feedback) as a closed loop where each layer feeds the next. You can govern the full LLMOps stack on Databricks: every artifact versioned, UC lineage queryable end-to-end, deployment gated by a passing evaluation tagged on the <code>model_id</code>.
+  </div>
+</div>
+
+</main>
+
+<script>
+// Active section in nav
+var sections = document.querySelectorAll('.section');
+var navItems = document.querySelectorAll('.nav-item');
+
+var observer = new IntersectionObserver(function(entries) {
+  entries.forEach(function(entry) {
+    if (entry.isIntersecting) {
+      var id = entry.target.getAttribute('id');
+      navItems.forEach(function(item) {
+        item.classList.toggle('active', item.getAttribute('href') === '#' + id);
+      });
+    }
+  });
+}, { rootMargin: '-20% 0px -60% 0px' });
+
+sections.forEach(function(s) { observer.observe(s); });
+
+// Anti-pattern accordion
+function toggleAP(headerEl) {
+  var item = headerEl.parentElement;
+  item.classList.toggle('open');
+}
+
+// Funnel: hover one tier to highlight
+(function() {
+  var svg = document.getElementById('funnel-svg');
+  if (!svg) return;
+  var tiers = svg.querySelectorAll('.node-box');
+  tiers.forEach(function(t) {
+    t.addEventListener('mouseenter', function() {
+      tiers.forEach(function(o) {
+        if (o !== t) o.classList.add('dim');
+      });
+    });
+    t.addEventListener('mouseleave', function() {
+      tiers.forEach(function(o) { o.classList.remove('dim'); });
+    });
+  });
+})();
+</script>
+
+</body>
+</html>

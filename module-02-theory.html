@@ -1,0 +1,1628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 02 — Evaluation Datasets in MLflow 3</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=Syne:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #05080f;
+  --surface: #0b0f1a;
+  --surface2: #111827;
+  --surface3: #1a2235;
+  --border: #1e2d45;
+  --border2: #243550;
+  --accent-orange: #ff6b35;
+  --accent-teal: #00bfa5;
+  --accent-blue: #4a9eff;
+  --accent-purple: #a855f7;
+  --accent-yellow: #fbbf24;
+  --text: #e8edf5;
+  --text-dim: #8899bb;
+  --text-muted: #4a5878;
+  --green: #22c55e;
+  --amber: #f59e0b;
+  --red: #ef4444;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Syne', sans-serif;
+  font-weight: 400;
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+
+/* ── MODULE HEADER ── */
+.mod-hero {
+  position: relative;
+  padding: 64px 48px 52px;
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.mod-hero::before {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 60% 80% at 10% 50%, rgba(255,107,53,0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 50% at 90% 20%, rgba(0,191,165,0.05) 0%, transparent 55%);
+  pointer-events: none;
+}
+
+.hero-inner { max-width: 960px; margin: 0 auto; position: relative; }
+
+.breadcrumb {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 28px;
+}
+
+.bc-tag {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; font-weight: 500;
+  letter-spacing: 0.15em; text-transform: uppercase;
+  color: var(--accent-teal);
+  padding: 4px 12px;
+  border: 1px solid rgba(0,191,165,0.25);
+  border-radius: 2px;
+  background: rgba(0,191,165,0.06);
+}
+
+.bc-sep { color: var(--text-muted); font-size: 12px; }
+
+.bc-current {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: var(--text-muted);
+  letter-spacing: 0.1em; text-transform: uppercase;
+}
+
+.mod-eyebrow {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-orange);
+  margin-bottom: 14px;
+}
+
+.mod-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(34px, 4.5vw, 56px);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  margin-bottom: 16px;
+}
+
+.mod-title em { font-style: italic; color: var(--accent-orange); }
+
+.mod-desc {
+  font-size: 16px; color: var(--text-dim);
+  max-width: 620px; line-height: 1.75;
+  margin-bottom: 36px;
+}
+
+.mod-meta {
+  display: flex; gap: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  width: fit-content;
+}
+
+.meta-chip {
+  padding: 10px 20px;
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: 2px;
+}
+.meta-chip:last-child { border-right: none; }
+
+.meta-val {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 16px; font-weight: 500;
+  color: var(--accent-teal);
+}
+
+.meta-lbl {
+  font-size: 10px; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.1em;
+}
+
+/* ── PROGRESS NAV ── */
+.progress-nav {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 48px;
+  position: sticky; top: 0;
+  z-index: 100;
+}
+
+.nav-inner {
+  max-width: 960px; margin: 0 auto;
+  display: flex; gap: 0; align-items: stretch;
+  overflow-x: auto;
+}
+
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 20px;
+  border-right: 1px solid var(--border);
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.nav-item:hover { background: var(--surface2); }
+.nav-item.active { background: rgba(255,107,53,0.06); }
+.nav-item:last-child { border-right: none; }
+
+.nav-num {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: var(--text-muted);
+  letter-spacing: 0.1em;
+}
+
+.nav-label {
+  font-size: 12px; color: var(--text-dim);
+  font-weight: 500;
+}
+
+.nav-item.active .nav-label { color: var(--accent-orange); }
+.nav-item.active .nav-num { color: var(--accent-orange); }
+
+/* ── MAIN ── */
+main {
+  max-width: 960px; margin: 0 auto;
+  padding: 56px 48px 100px;
+}
+
+/* ── SECTION ── */
+.section {
+  margin-bottom: 80px;
+  scroll-margin-top: 60px;
+}
+
+.section-header {
+  display: flex; align-items: center; gap: 16px;
+  margin-bottom: 36px;
+}
+
+.section-marker {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: var(--accent-orange);
+  letter-spacing: 0.15em; text-transform: uppercase;
+  padding: 4px 12px;
+  border: 1px solid rgba(255,107,53,0.25);
+  border-radius: 2px;
+  background: rgba(255,107,53,0.06);
+  white-space: nowrap;
+}
+
+.section-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 28px; line-height: 1.2;
+}
+
+.section-rule { flex: 1; height: 1px; background: var(--border); }
+
+/* ── CONCEPT PROSE ── */
+.prose {
+  font-size: 15px; color: var(--text-dim);
+  line-height: 1.8; max-width: 720px;
+  margin-bottom: 28px;
+}
+
+.prose strong { color: var(--text); font-weight: 600; }
+
+.prose code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12.5px;
+  color: var(--accent-blue);
+  background: rgba(74,158,255,0.08);
+  padding: 2px 7px;
+  border-radius: 3px;
+}
+
+/* ── KEY INSIGHT BOX ── */
+.insight {
+  padding: 20px 24px;
+  background: rgba(0,191,165,0.04);
+  border: 1px solid rgba(0,191,165,0.15);
+  border-left: 3px solid var(--accent-teal);
+  border-radius: 0 8px 8px 0;
+  margin-bottom: 28px;
+}
+
+.insight-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--accent-teal);
+  margin-bottom: 8px;
+}
+
+.insight p {
+  font-size: 14px; color: var(--text-dim); line-height: 1.7;
+}
+
+.insight p strong { color: var(--accent-teal); }
+
+/* ── WARNING BOX ── */
+.warning {
+  padding: 16px 20px;
+  background: rgba(245,158,11,0.04);
+  border: 1px solid rgba(245,158,11,0.15);
+  border-left: 3px solid var(--amber);
+  border-radius: 0 8px 8px 0;
+  margin-bottom: 28px;
+  font-size: 13.5px; color: var(--text-dim); line-height: 1.6;
+}
+
+.warning::before {
+  content: 'Note  ';
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--amber);
+}
+
+/* ── CONCEPT CARDS GRID ── */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+  margin-bottom: 36px;
+}
+
+.concept-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 22px;
+  transition: border-color 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+.concept-card::before {
+  content: '';
+  position: absolute; left: 0; top: 0; bottom: 0;
+  width: 3px;
+}
+
+.concept-card.teal::before { background: var(--accent-teal); }
+.concept-card.orange::before { background: var(--accent-orange); }
+.concept-card.purple::before { background: var(--accent-purple); }
+.concept-card.blue::before { background: var(--accent-blue); }
+.concept-card.amber::before { background: var(--amber); }
+.concept-card.red::before { background: var(--red); }
+.concept-card.green::before { background: var(--green); }
+
+.concept-card:hover { border-color: var(--border2); }
+
+.card-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.concept-card.teal .card-label { color: var(--accent-teal); }
+.concept-card.orange .card-label { color: var(--accent-orange); }
+.concept-card.purple .card-label { color: var(--accent-purple); }
+.concept-card.blue .card-label { color: var(--accent-blue); }
+.concept-card.amber .card-label { color: var(--amber); }
+.concept-card.red .card-label { color: var(--red); }
+.concept-card.green .card-label { color: var(--green); }
+
+.card-title {
+  font-size: 15px; font-weight: 600;
+  color: var(--text); margin-bottom: 8px;
+  line-height: 1.3;
+}
+
+.card-body {
+  font-size: 13px; color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.card-body code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11.5px;
+  color: var(--accent-blue);
+  background: rgba(74,158,255,0.08);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+/* ── COMPARISON TABLE ── */
+.compare-wrap { overflow-x: auto; margin-bottom: 36px; }
+
+.compare-table {
+  width: 100%; border-collapse: collapse;
+  font-size: 13.5px;
+}
+
+.compare-table thead tr {
+  border-bottom: 1px solid var(--border2);
+}
+
+.compare-table th {
+  padding: 12px 16px; text-align: left;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--text-muted);
+  font-weight: 500;
+}
+
+.compare-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-dim);
+  vertical-align: top;
+  line-height: 1.55;
+}
+
+.compare-table tr:last-child td { border-bottom: none; }
+.compare-table tr:hover td { background: rgba(255,255,255,0.012); }
+
+.compare-table td:first-child {
+  font-weight: 500; color: var(--text);
+  white-space: nowrap;
+}
+
+.compare-table td code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11.5px;
+  color: var(--accent-blue);
+  background: rgba(74,158,255,0.08);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.badge {
+  display: inline-block;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; padding: 2px 8px;
+  border-radius: 2px; font-weight: 500;
+  letter-spacing: 0.04em;
+  border: 1px solid;
+}
+
+.badge-fail { color: var(--red); background: rgba(239,68,68,0.08); border-color: rgba(239,68,68,0.2); }
+.badge-pass { color: var(--green); background: rgba(34,197,94,0.08); border-color: rgba(34,197,94,0.2); }
+.badge-partial { color: var(--amber); background: rgba(245,158,11,0.08); border-color: rgba(245,158,11,0.2); }
+.badge-new { color: var(--accent-orange); background: rgba(255,107,53,0.08); border-color: rgba(255,107,53,0.2); }
+
+/* ── STACK ARCHITECTURE ── */
+.stack-diagram {
+  display: flex; flex-direction: column;
+  gap: 3px;
+  margin-bottom: 36px;
+}
+
+.stack-layer {
+  display: grid;
+  grid-template-columns: 120px 1fr auto;
+  align-items: center;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  transition: border-color 0.15s;
+}
+
+.stack-layer:hover { border-color: var(--border2); }
+
+.stack-index {
+  padding: 16px 14px;
+  background: var(--surface2);
+  border-right: 1px solid var(--border);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--text-muted);
+  text-align: center;
+}
+
+.stack-content {
+  padding: 14px 20px;
+}
+
+.stack-title {
+  font-size: 14px; font-weight: 600; color: var(--text);
+  margin-bottom: 4px;
+}
+
+.stack-desc {
+  font-size: 12px; color: var(--text-muted); line-height: 1.5;
+}
+
+.stack-desc code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-blue);
+  background: rgba(74,158,255,0.08);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.stack-tag {
+  padding: 14px 18px;
+  background: var(--surface2);
+  border-left: 1px solid var(--border);
+}
+
+/* ── CODE BLOCK ── */
+.code-block {
+  background: #020509;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent-blue);
+  border-radius: 0 6px 6px 0;
+  padding: 14px 18px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11.5px;
+  line-height: 1.8;
+  overflow-x: auto;
+  white-space: pre;
+  margin-bottom: 28px;
+}
+
+.kw { color: #c792ea; }
+.fn { color: #82aaff; }
+.st { color: #c3e88d; }
+.cm { color: var(--text-muted); }
+.nm { color: var(--accent-orange); }
+.nu { color: #f78c6c; }
+
+/* ── INTERACTIVE DIAGRAM CONTAINER ── */
+.diagram-container {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 36px;
+}
+
+.diagram-header {
+  padding: 14px 20px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+}
+
+.diagram-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: var(--text-muted);
+  letter-spacing: 0.08em; text-transform: uppercase;
+}
+
+.diagram-badge {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px; padding: 2px 8px;
+  border-radius: 2px; font-weight: 500;
+  color: var(--accent-teal);
+  background: rgba(0,191,165,0.08);
+  border: 1px solid rgba(0,191,165,0.2);
+}
+
+.diagram-body {
+  padding: 28px 24px;
+  display: flex;
+  justify-content: center;
+}
+
+.diagram-body svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* ── LIFECYCLE PIPELINE ── */
+.pipeline-wrap {
+  display: flex; flex-direction: column;
+  gap: 2px; margin-bottom: 36px;
+}
+
+.pipe-stage {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: stretch;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.pipe-stage-inner {
+  padding: 16px 20px;
+}
+
+.pipe-stage-name {
+  font-size: 14px; font-weight: 600; color: var(--text);
+  margin-bottom: 4px;
+}
+
+.pipe-stage-detail {
+  font-size: 12.5px; color: var(--text-muted); line-height: 1.5;
+}
+
+.pipe-stage-detail code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-blue);
+  background: rgba(74,158,255,0.08);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.pipe-stage-api {
+  padding: 12px 16px;
+  background: var(--surface2);
+  border-left: 1px solid var(--border);
+  display: flex; align-items: center;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; color: var(--text-muted);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.stage-source { background: rgba(0,191,165,0.03); }
+.stage-transform { background: rgba(168,85,247,0.03); }
+.stage-store { background: rgba(74,158,255,0.03); }
+.stage-consume { background: rgba(255,107,53,0.03); }
+
+/* ── FORMAT COMPARISON INTERACTIVE ── */
+.format-cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 3px;
+  margin-bottom: 36px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.format-card {
+  background: var(--surface);
+  padding: 22px 16px;
+  cursor: pointer;
+  transition: background 0.2s;
+  border-right: 1px solid var(--border);
+  position: relative;
+}
+
+.format-card:last-child { border-right: none; }
+.format-card:hover { background: var(--surface2); }
+.format-card.active { background: rgba(255,107,53,0.04); }
+
+.format-card.active::after {
+  content: '';
+  position: absolute; bottom: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--accent-orange);
+}
+
+.format-num {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--text-muted);
+  margin-bottom: 10px;
+}
+
+.format-name {
+  font-size: 14px; font-weight: 600;
+  color: var(--text); margin-bottom: 6px;
+  line-height: 1.3;
+}
+
+.format-one-liner {
+  font-size: 12px; color: var(--text-muted);
+  line-height: 1.5; margin-bottom: 14px;
+}
+
+.format-props {
+  display: flex; flex-direction: column; gap: 6px;
+}
+
+.fmt-prop {
+  display: flex; justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+}
+
+.fmt-prop-label { color: var(--text-muted); }
+
+.fmt-prop-val {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  padding: 1px 7px;
+  border-radius: 2px;
+  font-weight: 500;
+}
+
+.val-yes { color: var(--green); background: rgba(34,197,94,0.08); }
+.val-no { color: var(--red); background: rgba(239,68,68,0.08); }
+.val-partial { color: var(--amber); background: rgba(245,158,11,0.08); }
+.val-neutral { color: var(--text-muted); background: var(--surface2); }
+
+/* ── OUTCOME BLOCK ── */
+.outcome {
+  margin-top: 60px;
+  padding: 28px 32px;
+  background: rgba(0,191,165,0.03);
+  border: 1px solid rgba(0,191,165,0.15);
+  border-radius: 10px;
+  display: flex; gap: 20px; align-items: flex-start;
+}
+
+.outcome-icon {
+  font-size: 22px; flex-shrink: 0; margin-top: 2px;
+}
+
+.outcome-text {
+  font-size: 14px; color: var(--text-dim); line-height: 1.75;
+}
+
+.outcome-text strong { color: var(--accent-teal); }
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 700px) {
+  .mod-hero, main { padding-left: 20px; padding-right: 20px; }
+  .progress-nav { padding: 0 20px; }
+  .format-cards { grid-template-columns: 1fr; }
+  .stack-layer { grid-template-columns: 1fr; }
+  .pipe-stage { grid-template-columns: 1fr; }
+  .card-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── HERO ── -->
+<header class="mod-hero">
+  <div class="hero-inner">
+    <div class="breadcrumb">
+      <span class="bc-tag">Databricks · MLflow 3 · GenAI</span>
+      <span class="bc-sep">/</span>
+      <span class="bc-current">Module 02 · Evaluation Datasets</span>
+    </div>
+    <div class="mod-eyebrow">Module 02 · Beginner–Intermediate · ~3h</div>
+    <h1 class="mod-title">Evaluation Datasets —<br><em>Build, Manage &amp; Version</em> in Unity Catalog</h1>
+    <p class="mod-desc">How to create, populate, and govern evaluation datasets as first-class UC assets — from scratch, from production traces, and synthetically. The foundation every scorer, judge, and quality gate depends on.</p>
+    <div class="mod-meta">
+      <div class="meta-chip"><span class="meta-val">3</span><span class="meta-lbl">Theory topics</span></div>
+      <div class="meta-chip"><span class="meta-val">3</span><span class="meta-lbl">Labs</span></div>
+      <div class="meta-chip"><span class="meta-val">3h</span><span class="meta-lbl">Duration</span></div>
+      <div class="meta-chip"><span class="meta-val">Beg–Int</span><span class="meta-lbl">Level</span></div>
+    </div>
+  </div>
+</header>
+
+<!-- ── NAV ── -->
+<nav class="progress-nav">
+  <div class="nav-inner">
+    <a href="#topic-2-1" class="nav-item active">
+      <span class="nav-num">2.1</span>
+      <span class="nav-label">Dataset architecture</span>
+    </a>
+    <a href="#topic-2-2" class="nav-item">
+      <span class="nav-num">2.2</span>
+      <span class="nav-label">Lab: Create UC dataset</span>
+    </a>
+    <a href="#topic-2-3" class="nav-item">
+      <span class="nav-num">2.3</span>
+      <span class="nav-label">Lab: From traces</span>
+    </a>
+    <a href="#topic-2-4" class="nav-item">
+      <span class="nav-num">2.4</span>
+      <span class="nav-label">Synthetic generation</span>
+    </a>
+    <a href="#topic-2-5" class="nav-item">
+      <span class="nav-num">2.5</span>
+      <span class="nav-label">Format comparison</span>
+    </a>
+  </div>
+</nav>
+
+<!-- ── MAIN ── -->
+<main>
+
+<!-- ════════════════════════════════════════════ SECTION 2.1 -->
+<section class="section" id="topic-2-1">
+
+  <div class="section-header">
+    <span class="section-marker">2.1 · Theory</span>
+    <h2 class="section-title">Evaluation Dataset Architecture in MLflow 3</h2>
+    <span class="section-rule"></span>
+  </div>
+
+  <p class="prose">
+    In Module 1 you learned that LLM evaluation requires running many examples and looking at score distributions. The evaluation dataset is where those examples live. MLflow 3 treats datasets as <strong>first-class, governed objects</strong> — not throwaway CSVs loaded into a notebook. This architectural choice enables versioning, lineage, cross-team sharing, and reproducible evaluations across the entire model lifecycle.
+  </p>
+
+  <!-- ── THE SCHEMA ── -->
+  <div class="section-header" style="margin-top:40px; margin-bottom:16px;">
+    <span class="section-marker" style="background:rgba(74,158,255,0.06); color:var(--accent-blue); border-color:rgba(74,158,255,0.2);">Schema</span>
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">The four-field dataset schema</h3>
+  </div>
+
+  <p class="prose">
+    Every evaluation dataset in MLflow 3 follows a strict four-field schema. This schema is the universal contract — every scorer, every judge, and the <code>evaluate()</code> function itself expects data in this exact shape. The consistency means any dataset from any source plugs directly into the evaluation pipeline with zero transformation.
+  </p>
+
+  <div class="card-grid">
+    <div class="concept-card orange">
+      <div class="card-label">Field 1 · Required</div>
+      <div class="card-title">inputs</div>
+      <div class="card-body">A dictionary containing the data sent to your agent. The keys must <em>exactly match</em> your <code>predict_fn</code> parameter names. For example: <code>{"question": "What is Delta Live Tables?"}</code> pairs with <code>def predict_fn(question: str)</code>.</div>
+    </div>
+    <div class="concept-card teal">
+      <div class="card-label">Field 2 · Optional</div>
+      <div class="card-title">outputs</div>
+      <div class="card-body">The agent's generated response. Can be pre-populated if you've already run the agent, or left empty for <code>evaluate()</code> to fill at runtime via <code>predict_fn</code>. Pre-populated outputs skip the predict step — useful for evaluating cached responses.</div>
+    </div>
+    <div class="concept-card purple">
+      <div class="card-label">Field 3 · Optional</div>
+      <div class="card-title">expectations</div>
+      <div class="card-body">Ground truth that judges use to score the output. The most common sub-field is <code>expected_facts</code>, which <code>Correctness</code> compares against the agent's response. Example: <code>{"expected_facts": ["declarative pipeline", "streaming"]}</code>.</div>
+    </div>
+    <div class="concept-card blue">
+      <div class="card-label">Field 4 · Optional</div>
+      <div class="card-title">tags</div>
+      <div class="card-body">Metadata for filtering, grouping, and organizing rows. Use tags to slice evaluation results by category, difficulty level, or domain — for example <code>{"domain": "delta_lake", "difficulty": "hard"}</code>.</div>
+    </div>
+  </div>
+
+  <div class="insight">
+    <div class="insight-label">Critical contract</div>
+    <p>The keys inside <code>inputs</code> must exactly match the parameter names of your <code>predict_fn</code>. If your dataset has <code>inputs.question</code>, your function signature must be <code>def predict_fn(question: str)</code>. A mismatch causes a silent failure — MLflow will not raise an error, but your agent won't receive the data it expects. <strong>Always verify this mapping first.</strong></p>
+  </div>
+
+  <!-- ── INTERACTIVE: SCHEMA TO PIPELINE MAPPING ── -->
+  <div class="diagram-container">
+    <div class="diagram-header">
+      <span class="diagram-label">Interactive · Schema field mapping</span>
+      <span class="diagram-badge">Hover for details</span>
+    </div>
+    <div class="diagram-body">
+      <svg viewBox="0 0 780 340" style="max-width:780px;">
+        <defs>
+          <marker id="arw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </marker>
+        </defs>
+
+        <!-- Dataset box -->
+        <rect x="20" y="20" width="310" height="300" rx="16" fill="var(--surface)" stroke="var(--border)" stroke-width="1"/>
+        <text x="175" y="50" text-anchor="middle" fill="var(--text-muted)" font-family="IBM Plex Mono,monospace" font-size="10" letter-spacing="0.1em" text-transform="uppercase">EVALUATION DATASET</text>
+
+        <!-- Schema fields -->
+        <rect class="schema-field" id="sf-inputs" x="40" y="72" width="270" height="44" rx="8" fill="rgba(255,107,53,0.06)" stroke="rgba(255,107,53,0.25)" stroke-width="1" style="cursor:pointer;transition:all 0.2s"/>
+        <text x="60" y="98" fill="var(--accent-orange)" font-family="IBM Plex Mono,monospace" font-size="13" font-weight="500" pointer-events="none">inputs</text>
+        <text x="150" y="98" fill="var(--text-muted)" font-family="IBM Plex Mono,monospace" font-size="11" pointer-events="none">{"question": "..."}</text>
+
+        <rect class="schema-field" id="sf-outputs" x="40" y="128" width="270" height="44" rx="8" fill="rgba(0,191,165,0.04)" stroke="rgba(0,191,165,0.2)" stroke-width="1" style="cursor:pointer;transition:all 0.2s"/>
+        <text x="60" y="154" fill="var(--accent-teal)" font-family="IBM Plex Mono,monospace" font-size="13" font-weight="500" pointer-events="none">outputs</text>
+        <text x="150" y="154" fill="var(--text-muted)" font-family="IBM Plex Mono,monospace" font-size="11" pointer-events="none">Agent response</text>
+
+        <rect class="schema-field" id="sf-expect" x="40" y="184" width="270" height="44" rx="8" fill="rgba(168,85,247,0.04)" stroke="rgba(168,85,247,0.2)" stroke-width="1" style="cursor:pointer;transition:all 0.2s"/>
+        <text x="60" y="210" fill="var(--accent-purple)" font-family="IBM Plex Mono,monospace" font-size="13" font-weight="500" pointer-events="none">expectations</text>
+        <text x="180" y="210" fill="var(--text-muted)" font-family="IBM Plex Mono,monospace" font-size="11" pointer-events="none">expected_facts</text>
+
+        <rect class="schema-field" id="sf-tags" x="40" y="240" width="270" height="44" rx="8" fill="rgba(74,158,255,0.04)" stroke="rgba(74,158,255,0.2)" stroke-width="1" style="cursor:pointer;transition:all 0.2s"/>
+        <text x="60" y="266" fill="var(--accent-blue)" font-family="IBM Plex Mono,monospace" font-size="13" font-weight="500" pointer-events="none">tags</text>
+        <text x="110" y="266" fill="var(--text-muted)" font-family="IBM Plex Mono,monospace" font-size="11" pointer-events="none">domain, difficulty</text>
+
+        <!-- Consumers on right side -->
+        <rect x="440" y="60" width="200" height="52" rx="8" fill="var(--surface2)" stroke="var(--border)" stroke-width="1"/>
+        <text x="540" y="83" text-anchor="middle" fill="var(--accent-orange)" font-family="IBM Plex Mono,monospace" font-size="12" font-weight="500">predict_fn()</text>
+        <text x="540" y="100" text-anchor="middle" fill="var(--text-muted)" font-family="Syne,sans-serif" font-size="11">Unpacks as kwargs</text>
+
+        <rect x="440" y="128" width="200" height="52" rx="8" fill="var(--surface2)" stroke="var(--border)" stroke-width="1"/>
+        <text x="540" y="151" text-anchor="middle" fill="var(--accent-teal)" font-family="IBM Plex Mono,monospace" font-size="12" font-weight="500">All scorers</text>
+        <text x="540" y="168" text-anchor="middle" fill="var(--text-muted)" font-family="Syne,sans-serif" font-size="11">Quality evaluation</text>
+
+        <rect x="440" y="196" width="200" height="52" rx="8" fill="var(--surface2)" stroke="var(--border)" stroke-width="1"/>
+        <text x="540" y="219" text-anchor="middle" fill="var(--accent-purple)" font-family="IBM Plex Mono,monospace" font-size="12" font-weight="500">Correctness judge</text>
+        <text x="540" y="236" text-anchor="middle" fill="var(--text-muted)" font-family="Syne,sans-serif" font-size="11">Fact comparison</text>
+
+        <rect x="440" y="264" width="200" height="52" rx="8" fill="var(--surface2)" stroke="var(--border)" stroke-width="1"/>
+        <text x="540" y="287" text-anchor="middle" fill="var(--accent-blue)" font-family="IBM Plex Mono,monospace" font-size="12" font-weight="500">Filter &amp; group</text>
+        <text x="540" y="304" text-anchor="middle" fill="var(--text-muted)" font-family="Syne,sans-serif" font-size="11">Slice by category</text>
+
+        <!-- Arrows -->
+        <line x1="310" y1="94" x2="438" y2="86" stroke="rgba(255,107,53,0.4)" stroke-width="1.5" marker-end="url(#arw)"/>
+        <line x1="310" y1="150" x2="438" y2="154" stroke="rgba(0,191,165,0.4)" stroke-width="1.5" marker-end="url(#arw)"/>
+        <line x1="310" y1="206" x2="438" y2="222" stroke="rgba(168,85,247,0.4)" stroke-width="1.5" marker-end="url(#arw)"/>
+        <line x1="310" y1="262" x2="438" y2="290" stroke="rgba(74,158,255,0.4)" stroke-width="1.5" marker-end="url(#arw)"/>
+
+        <!-- Labels on arrows -->
+        <text x="370" y="82" text-anchor="middle" fill="var(--text-muted)" font-family="Syne,sans-serif" font-size="10">feeds</text>
+        <text x="370" y="145" text-anchor="middle" fill="var(--text-muted)" font-family="Syne,sans-serif" font-size="10">scored by</text>
+        <text x="370" y="208" text-anchor="middle" fill="var(--text-muted)" font-family="Syne,sans-serif" font-size="10">compared by</text>
+        <text x="370" y="272" text-anchor="middle" fill="var(--text-muted)" font-family="Syne,sans-serif" font-size="10">used for</text>
+      </svg>
+    </div>
+  </div>
+
+  <!-- ── THREE SOURCES ── -->
+  <div class="section-header" style="margin-top:40px; margin-bottom:16px;">
+    <span class="section-marker" style="background:rgba(74,158,255,0.06); color:var(--accent-blue); border-color:rgba(74,158,255,0.2);">Sources</span>
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">Three sources for evaluation data</h3>
+  </div>
+
+  <p class="prose">
+    Where your evaluation data comes from determines what it tests. MLflow 3 supports three distinct sourcing strategies — each one covers different quality angles, and a mature evaluation system uses all three in combination.
+  </p>
+
+  <div class="pipeline-wrap">
+    <div class="pipe-stage stage-source">
+      <div class="pipe-stage-inner">
+        <div class="pipe-stage-name">Source 1 — Hand-curated</div>
+        <div class="pipe-stage-detail">Domain experts write specific Q&amp;A pairs targeting known edge cases, compliance requirements, and critical business scenarios. These are high-quality but expensive rows — you'll typically have 10–30 of them. They're essential for regression testing: ensuring your agent never breaks on cases you've already identified as important.</div>
+      </div>
+      <div class="pipe-stage-api">merge_records(records=[...])</div>
+    </div>
+    <div class="pipe-stage stage-transform">
+      <div class="pipe-stage-inner">
+        <div class="pipe-stage-name">Source 2 — From production traces</div>
+        <div class="pipe-stage-detail">Real user interactions extracted from your serving endpoint's trace log. Use <code>mlflow.search_traces()</code> to retrieve recent successful traces, then add them to your dataset. This gives you the most realistic evaluation data — real questions from real users — but ground truth labels must be added manually or via the Review App.</div>
+      </div>
+      <div class="pipe-stage-api">merge_records(traces=[...])</div>
+    </div>
+    <div class="pipe-stage stage-store">
+      <div class="pipe-stage-inner">
+        <div class="pipe-stage-name">Source 3 — Synthetically generated</div>
+        <div class="pipe-stage-detail">Use <code>generate_evals_df</code> from Databricks to auto-generate diverse Q&amp;A pairs from your documentation. The tool analyses your documents, identifies topics, and creates questions at varying difficulty levels — covering edge cases and phrasings you'd miss manually. Expected answers are grounded in the source text.</div>
+      </div>
+      <div class="pipe-stage-api">generate_evals_df(docs=[...])</div>
+    </div>
+  </div>
+
+  <div class="compare-wrap">
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>Dimension</th>
+          <th>Hand-curated</th>
+          <th>Production traces</th>
+          <th>Synthetic</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Quality</td>
+          <td>Highest precision — expert-verified</td>
+          <td>Real-world realistic</td>
+          <td>Good, LLM-bounded</td>
+        </tr>
+        <tr>
+          <td>Diversity</td>
+          <td><span class="badge badge-fail">Low</span> human bias</td>
+          <td><span class="badge badge-partial">Medium</span> user bias</td>
+          <td><span class="badge badge-pass">Highest</span> systematic</td>
+        </tr>
+        <tr>
+          <td>Ground truth</td>
+          <td>Expert-verified facts</td>
+          <td>Needs labelling after</td>
+          <td>Auto-generated from docs</td>
+        </tr>
+        <tr>
+          <td>Cost</td>
+          <td>Expensive (expert time)</td>
+          <td>Free (already exists)</td>
+          <td>Cheap (LLM calls)</td>
+        </tr>
+        <tr>
+          <td>Typical volume</td>
+          <td>10–30 rows</td>
+          <td>Unbounded</td>
+          <td>50–100 rows</td>
+        </tr>
+        <tr>
+          <td>Best for</td>
+          <td>Regression testing, edge cases</td>
+          <td>Production baseline</td>
+          <td>Broad coverage, gap filling</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="insight">
+    <div class="insight-label">Recommended strategy</div>
+    <p>Start with synthetic generation to get broad coverage quickly (50 rows), add 10–20 hand-curated rows targeting specific failure modes you care about, and continuously enrich from production traces as real usage patterns emerge. <strong>The dataset is a living artifact — not a static file written once.</strong></p>
+  </div>
+
+  <!-- ── INTERACTIVE: DATASET LIFECYCLE ── -->
+  <div class="section-header" style="margin-top:40px; margin-bottom:16px;">
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">The dataset lifecycle</h3>
+  </div>
+
+  <p class="prose">
+    Evaluation datasets in MLflow 3 follow a continuous lifecycle. New rows flow in from all three sources, get versioned in Unity Catalog, feed into <code>evaluate()</code> calls, and — critically — evaluation failures get added back as new test cases. This closed loop is what separates a production evaluation system from one-off testing.
+  </p>
+
+  <div class="diagram-container">
+    <div class="diagram-header">
+      <span class="diagram-label">Interactive · Dataset lifecycle</span>
+      <span class="diagram-badge">Click stages for detail</span>
+    </div>
+    <div class="diagram-body">
+      <svg id="lifecycle-svg" viewBox="0 0 780 420" style="max-width:780px;">
+        <defs>
+          <marker id="arw2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </marker>
+        </defs>
+
+        <!-- Row 1: Three sources -->
+        <g class="lifecycle-node" data-tip="Domain experts write golden Q&amp;A pairs with verified expected_facts" style="cursor:pointer">
+          <rect x="40" y="30" width="200" height="52" rx="8" fill="rgba(0,191,165,0.06)" stroke="rgba(0,191,165,0.25)" stroke-width="1"/>
+          <text x="140" y="52" text-anchor="middle" fill="var(--accent-teal)" font-family="IBM Plex Mono,monospace" font-size="12" font-weight="500">Hand-curated</text>
+          <text x="140" y="70" text-anchor="middle" fill="var(--text-muted)" font-family="Syne,sans-serif" font-size="11">Edge cases &amp; compliance</text>
+        </g>
+
+        <g class="lifecycle-node" data-tip="search_traces() → filter by status='OK' → merge_records(traces=...)" style="cursor:pointer">
+          <rect x="290" y="30" width="200" height="52" rx="8" fill="rgba(168,85,247,0.06)" stroke="rgba(168,85,247,0.25)" stroke-width="1"/>
+          <text x="390" y="52" text-anchor="middle" fill="var(--accent-purple)" font-family="IBM Plex Mono,monospace" font-size="12" font-weight="500">Production traces</text>
+          <text x="390" y="70" text-anchor="middle" fill="var(--text-muted)" font-family="Syne,sans-serif" font-size="11">Real user traffic</text>
+        </g>
+
+        <g class="lifecycle-node" data-tip="generate_evals_df(docs=..., num_evals=50) → Spark DataFrame in eval schema" style="cursor:pointer">
+          <rect x="540" y="30" width="200" height="52" rx="8" fill="rgba(255,107,53,0.06)" stroke="rgba(255,107,53,0.25)" stroke-width="1"/>
+          <text x="640" y="52" text-anchor="middle" fill="var(--accent-orange)" font-family="IBM Plex Mono,monospace" font-size="12" font-weight="500">Synthetic</text>
+          <text x="640" y="70" text-anchor="middle" fill="var(--text-muted)" font-family="Syne,sans-serif" font-size="11">generate_evals_df</text>
+        </g>
+
+        <!-- Arrows down -->
+        <line x1="140" y1="82" x2="140" y2="120" stroke="rgba(0,191,165,0.3)" stroke-width="1.5" marker-end="url(#arw2)"/>
+        <line x1="390" y1="82" x2="390" y2="120" stroke="rgba(168,85,247,0.3)" stroke-width="1.5" marker-end="url(#arw2)"/>
+        <line x1="640" y1="82" x2="640" y2="120" stroke="rgba(255,107,53,0.3)" stroke-width="1.5" marker-end="url(#arw2)"/>
+
+        <!-- merge_records bar -->
+        <rect x="60" y="125" width="660" height="42" rx="8" fill="rgba(245,158,11,0.06)" stroke="rgba(245,158,11,0.25)" stroke-width="1"/>
+        <text x="390" y="150" text-anchor="middle" fill="var(--amber)" font-family="IBM Plex Mono,monospace" font-size="12" font-weight="500">eval_dataset.merge_records()</text>
+
+        <!-- Arrow down -->
+        <line x1="390" y1="167" x2="390" y2="200" stroke="rgba(245,158,11,0.3)" stroke-width="1.5" marker-end="url(#arw2)"/>
+
+        <!-- UC Dataset (central) -->
+        <g class="lifecycle-node" data-tip="Unity Catalog Delta table — versioned, governed, shared across teams" style="cursor:pointer">
+          <rect x="160" y="205" width="460" height="56" rx="12" fill="rgba(74,158,255,0.06)" stroke="rgba(74,158,255,0.3)" stroke-width="1.5"/>
+          <text x="390" y="228" text-anchor="middle" fill="var(--accent-blue)" font-family="IBM Plex Mono,monospace" font-size="13" font-weight="500">UC-Backed Evaluation Dataset</text>
+          <text x="390" y="248" text-anchor="middle" fill="var(--text-muted)" font-family="Syne,sans-serif" font-size="11">Versioned · Governed · catalog.schema.dataset_name</text>
+        </g>
+
+        <!-- Arrow down -->
+        <line x1="390" y1="261" x2="390" y2="300" stroke="rgba(74,158,255,0.3)" stroke-width="1.5" marker-end="url(#arw2)"/>
+
+        <!-- evaluate() -->
+        <g class="lifecycle-node" data-tip="Runs predict_fn on each row, runs scorers, generates Feedback objects and aggregate metrics" style="cursor:pointer">
+          <rect x="200" y="305" width="380" height="50" rx="8" fill="rgba(255,107,53,0.06)" stroke="rgba(255,107,53,0.3)" stroke-width="1.5"/>
+          <text x="390" y="327" text-anchor="middle" fill="var(--accent-orange)" font-family="IBM Plex Mono,monospace" font-size="13" font-weight="500">mlflow.genai.evaluate()</text>
+          <text x="390" y="345" text-anchor="middle" fill="var(--text-muted)" font-family="Syne,sans-serif" font-size="11">predict_fn + scorers → results</text>
+        </g>
+
+        <!-- Feedback loop arrow -->
+        <path d="M580 330 C680 330, 720 280, 720 232 C720 185, 680 155, 620 167" fill="none" stroke="rgba(239,68,68,0.35)" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#arw2)"/>
+        <text x="735" y="240" fill="var(--red)" font-family="Syne,sans-serif" font-size="10" writing-mode="vertical-rl" text-orientation="mixed">failures added back</text>
+
+        <!-- Tooltip area -->
+        <rect id="tip-bg" x="40" y="380" width="700" height="30" rx="6" fill="var(--surface2)" stroke="var(--border)" stroke-width="0.5" opacity="0"/>
+        <text id="tip-text" x="390" y="400" text-anchor="middle" fill="var(--text-dim)" font-family="Syne,sans-serif" font-size="12" opacity="0"></text>
+      </svg>
+    </div>
+  </div>
+
+  <!-- ── UC-BACKED DATASETS ── -->
+  <div class="section-header" style="margin-top:40px; margin-bottom:16px;">
+    <span class="section-marker" style="background:rgba(74,158,255,0.06); color:var(--accent-blue); border-color:rgba(74,158,255,0.2);">Governance</span>
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">Why Unity Catalog–backed datasets matter</h3>
+  </div>
+
+  <p class="prose">
+    The UC-backed <code>EvaluationDataset</code> is the centerpiece of the architecture for enterprise teams. Four properties distinguish it from simply loading data into a Pandas DataFrame.
+  </p>
+
+  <div class="card-grid">
+    <div class="concept-card amber">
+      <div class="card-label">Property 1</div>
+      <div class="card-title">Automatic versioning</div>
+      <div class="card-body">Every <code>merge_records()</code> call creates a new immutable version backed by Delta Lake time travel. You can always reproduce a past evaluation by pinning to a specific version — essential for audit trails and debugging regressions months later.</div>
+    </div>
+    <div class="concept-card blue">
+      <div class="card-label">Property 2</div>
+      <div class="card-title">End-to-end lineage</div>
+      <div class="card-body">Unity Catalog tracks which model version was evaluated against which dataset version, which scorers were used, and what results were produced. This chain of evidence is critical for regulated industries and enterprise compliance.</div>
+    </div>
+    <div class="concept-card teal">
+      <div class="card-label">Property 3</div>
+      <div class="card-title">Sharing &amp; governance</div>
+      <div class="card-body">Datasets live in a three-level namespace (<code>catalog.schema.name</code>). Access controls follow UC's permission model — one team can own the golden eval set while others consume it read-only, with full ACL enforcement.</div>
+    </div>
+    <div class="concept-card purple">
+      <div class="card-label">Property 4</div>
+      <div class="card-title">Experiment binding</div>
+      <div class="card-body">Each dataset is bound to an MLflow experiment namespace. Evaluation runs, traces, and scorer results are all linked in a single lineage chain — one pane of glass for all quality data about an application.</div>
+    </div>
+  </div>
+
+  <div class="warning">The experiment binding means one dataset per experiment namespace. If you need separate datasets for different evaluation scenarios (e.g., regression vs. stress testing), create separate experiments or use tags within a single dataset to segment them.</div>
+
+</section>
+
+<!-- ════════════════════════════════════════════ SECTION 2.4 -->
+<section class="section" id="topic-2-4">
+
+  <div class="section-header">
+    <span class="section-marker">2.4 · Theory + Lab</span>
+    <h2 class="section-title">generate_eval_df — Synthetic Dataset Generation</h2>
+    <span class="section-rule"></span>
+  </div>
+
+  <p class="prose">
+    Humans are bad at imagining all the ways users will ask questions. We write clean, obvious queries and miss the messy, ambiguous, edge-case phrasings that cause real production failures. <code>generate_evals_df</code> uses an LLM to systematically generate diverse evaluation pairs from your source documents — covering topics and phrasings you'd never think to write manually.
+  </p>
+
+  <!-- ── HOW IT WORKS ── -->
+  <div class="section-header" style="margin-top:40px; margin-bottom:16px;">
+    <span class="section-marker" style="background:rgba(74,158,255,0.06); color:var(--accent-blue); border-color:rgba(74,158,255,0.2);">Pipeline</span>
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">The internal generation pipeline</h3>
+  </div>
+
+  <p class="prose">
+    The function reads your documentation, analyses it for distinct topics and concepts, generates questions at varying complexity levels, and produces expected answers grounded in the source text. The output is a Spark DataFrame already in the MLflow evaluation schema — ready for <code>evaluate()</code> with zero transformation.
+  </p>
+
+  <div class="stack-diagram">
+    <div class="stack-layer">
+      <div class="stack-index">Input</div>
+      <div class="stack-content">
+        <div class="stack-title">Your documents</div>
+        <div class="stack-desc">A list of document strings or a Unity Catalog Volume path. Each chunk should be a self-contained passage (a few paragraphs), not an entire book.</div>
+      </div>
+      <div class="stack-tag"><span class="badge badge-new">list or UC volume</span></div>
+    </div>
+    <div class="stack-layer">
+      <div class="stack-index">Stage 1</div>
+      <div class="stack-content">
+        <div class="stack-title">Topic extraction</div>
+        <div class="stack-desc">LLM reads all documents and identifies distinct topics, concepts, entities, and relationships between them.</div>
+      </div>
+      <div class="stack-tag"><span class="badge badge-pass">automated</span></div>
+    </div>
+    <div class="stack-layer">
+      <div class="stack-index">Stage 2</div>
+      <div class="stack-content">
+        <div class="stack-title">Question generation</div>
+        <div class="stack-desc">Generates diverse questions: factual lookups, multi-hop reasoning, edge cases, and varied phrasings — formal, conversational, adversarial.</div>
+      </div>
+      <div class="stack-tag"><span class="badge badge-pass">diverse</span></div>
+    </div>
+    <div class="stack-layer">
+      <div class="stack-index">Stage 3</div>
+      <div class="stack-content">
+        <div class="stack-title">Answer grounding</div>
+        <div class="stack-desc">Produces <code>expected_facts</code> extracted from the source documents — giving you built-in ground truth for the <code>Correctness</code> judge.</div>
+      </div>
+      <div class="stack-tag"><span class="badge badge-pass">grounded</span></div>
+    </div>
+    <div class="stack-layer">
+      <div class="stack-index">Output</div>
+      <div class="stack-content">
+        <div class="stack-title">Spark DataFrame in evaluation schema</div>
+        <div class="stack-desc">Ready for <code>mlflow.genai.evaluate(data=synthetic_eval_df, predict_fn=..., scorers=[...])</code> — zero transformation needed.</div>
+      </div>
+      <div class="stack-tag"><span class="badge badge-new">eval-ready</span></div>
+    </div>
+  </div>
+
+  <!-- ── KEY PARAMETERS ── -->
+  <div class="section-header" style="margin-top:40px; margin-bottom:16px;">
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">Key parameters</h3>
+  </div>
+
+  <div class="code-block"><span class="kw">from</span> databricks.agents.evals <span class="kw">import</span> generate_evals_df
+
+<span class="cm"># Your documentation chunks (from Delta Lake docs, UC docs, etc.)</span>
+docs = [
+    <span class="st">"Delta Lake is an open-source storage layer that provides ACID transactions..."</span>,
+    <span class="st">"VACUUM removes files no longer referenced by a Delta table..."</span>,
+    <span class="st">"Z-ordering optimizes data layout for multi-dimensional clustering..."</span>,
+]
+
+<span class="cm"># Generate synthetic eval dataset</span>
+synthetic_eval_df = <span class="fn">generate_evals_df</span>(
+    docs=docs,
+    num_evals=<span class="nu">20</span>,          <span class="cm"># Q&A pairs to generate (50-100 for prod)</span>
+    agent_description=<span class="st">"A Q&A assistant for Databricks and Delta Lake topics"</span>
+)
+
+synthetic_eval_df.<span class="fn">display</span>()  <span class="cm"># inspect in Databricks notebook</span></div>
+
+  <p class="prose">
+    The <code>num_evals</code> parameter is your primary lever for balancing coverage against cost. Each eval requires LLM calls to generate, so 100 evals costs roughly 5× what 20 evals costs. During development, 10–20 is sufficient for quick iteration; for production use, 50–100 gives enough diversity to catch non-obvious failure modes.
+  </p>
+
+  <p class="prose">
+    The <code>agent_description</code> parameter shapes the style and scope of generated questions. A vague description like "a helpful assistant" produces generic questions. A specific description like "A Databricks support agent answering questions about Delta Lake maintenance and Unity Catalog governance using official documentation" produces targeted, domain-relevant questions that actually test your agent's capabilities.
+  </p>
+
+  <!-- ── DIVERSITY DIMENSIONS ── -->
+  <div class="section-header" style="margin-top:40px; margin-bottom:16px;">
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">What makes synthetic generation valuable</h3>
+  </div>
+
+  <p class="prose">
+    The real power isn't automation — it's the <strong>diversity of questions</strong> that humans typically miss. Consider hand-curating an eval dataset about Delta Lake: you'll write "What is Delta Lake?" and "How does VACUUM work?" But real users ask things like "why is my table getting bigger even after deletes?", "can I undo a VACUUM?", or "what happens if two writers conflict?" These are the questions that reveal agent weaknesses.
+  </p>
+
+  <div class="diagram-container">
+    <div class="diagram-header">
+      <span class="diagram-label">Interactive · Question diversity spectrum</span>
+      <span class="diagram-badge">Hover to explore</span>
+    </div>
+    <div class="diagram-body">
+      <svg id="diversity-svg" viewBox="0 0 780 300" style="max-width:780px;">
+        <defs>
+          <marker id="arw3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </marker>
+        </defs>
+
+        <!-- Axis -->
+        <line x1="60" y1="140" x2="720" y2="140" stroke="var(--border2)" stroke-width="1"/>
+        <text x="60" y="170" fill="var(--text-muted)" font-family="Syne,sans-serif" font-size="11">Simple lookup</text>
+        <text x="720" y="170" fill="var(--text-muted)" font-family="Syne,sans-serif" font-size="11" text-anchor="end">Multi-hop reasoning</text>
+
+        <!-- Question bubbles along the axis -->
+        <g class="q-bubble" style="cursor:pointer" data-example="What does VACUUM do?">
+          <circle cx="110" cy="100" r="30" fill="rgba(34,197,94,0.1)" stroke="rgba(34,197,94,0.3)" stroke-width="1"/>
+          <text x="110" y="96" text-anchor="middle" fill="var(--green)" font-family="IBM Plex Mono,monospace" font-size="10" font-weight="500">Factual</text>
+          <text x="110" y="110" text-anchor="middle" fill="var(--text-muted)" font-family="Syne,sans-serif" font-size="9">lookup</text>
+        </g>
+
+        <g class="q-bubble" style="cursor:pointer" data-example="Explain the difference between OPTIMIZE and Z-ORDER">
+          <circle cx="250" cy="90" r="34" fill="rgba(74,158,255,0.1)" stroke="rgba(74,158,255,0.3)" stroke-width="1"/>
+          <text x="250" y="86" text-anchor="middle" fill="var(--accent-blue)" font-family="IBM Plex Mono,monospace" font-size="10" font-weight="500">Compare</text>
+          <text x="250" y="100" text-anchor="middle" fill="var(--text-muted)" font-family="Syne,sans-serif" font-size="9">concepts</text>
+        </g>
+
+        <g class="q-bubble" style="cursor:pointer" data-example="Why is my table bigger after deletes and VACUUM?">
+          <circle cx="400" cy="85" r="38" fill="rgba(245,158,11,0.1)" stroke="rgba(245,158,11,0.3)" stroke-width="1"/>
+          <text x="400" y="81" text-anchor="middle" fill="var(--amber)" font-family="IBM Plex Mono,monospace" font-size="10" font-weight="500">Diagnostic</text>
+          <text x="400" y="95" text-anchor="middle" fill="var(--text-muted)" font-family="Syne,sans-serif" font-size="9">troubleshoot</text>
+        </g>
+
+        <g class="q-bubble" style="cursor:pointer" data-example="If I Z-ORDER a table, then run VACUUM with 0h retention, do I lose the Z-ORDER benefit?">
+          <circle cx="560" cy="80" r="42" fill="rgba(255,107,53,0.1)" stroke="rgba(255,107,53,0.3)" stroke-width="1"/>
+          <text x="560" y="76" text-anchor="middle" fill="var(--accent-orange)" font-family="IBM Plex Mono,monospace" font-size="10" font-weight="500">Multi-hop</text>
+          <text x="560" y="90" text-anchor="middle" fill="var(--text-muted)" font-family="Syne,sans-serif" font-size="9">cross-topic</text>
+        </g>
+
+        <g class="q-bubble" style="cursor:pointer" data-example="wait so delta lake has transactions? like a database?">
+          <circle cx="680" cy="90" r="32" fill="rgba(239,68,68,0.1)" stroke="rgba(239,68,68,0.3)" stroke-width="1"/>
+          <text x="680" y="86" text-anchor="middle" fill="var(--red)" font-family="IBM Plex Mono,monospace" font-size="10" font-weight="500">Casual</text>
+          <text x="680" y="100" text-anchor="middle" fill="var(--text-muted)" font-family="Syne,sans-serif" font-size="9">phrasing</text>
+        </g>
+
+        <!-- Coverage bars below axis -->
+        <rect x="80" y="190" width="120" height="6" rx="3" fill="rgba(34,197,94,0.25)"/>
+        <text x="140" y="212" text-anchor="middle" fill="var(--text-muted)" font-family="Syne,sans-serif" font-size="10">Hand-curated covers here</text>
+
+        <rect x="80" y="235" width="640" height="6" rx="3" fill="rgba(255,107,53,0.25)"/>
+        <text x="400" y="257" text-anchor="middle" fill="var(--text-muted)" font-family="Syne,sans-serif" font-size="10">Synthetic generation covers the full spectrum</text>
+
+        <!-- Hover tooltip -->
+        <rect id="div-tip-bg" x="140" y="270" width="500" height="26" rx="6" fill="var(--surface2)" stroke="var(--border)" stroke-width="0.5" opacity="0"/>
+        <text id="div-tip-text" x="390" y="288" text-anchor="middle" fill="var(--text-dim)" font-family="IBM Plex Mono,monospace" font-size="11" opacity="0"></text>
+      </svg>
+    </div>
+  </div>
+
+  <!-- ── PRACTICAL GUIDELINES ── -->
+  <div class="section-header" style="margin-top:40px; margin-bottom:16px;">
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">Practical guidelines</h3>
+  </div>
+
+  <p class="prose">
+    <strong>Review before using.</strong> Synthetic generation isn't perfect — you may get duplicate questions, questions outside your domain, or questions too easy to be useful. Always run <code>synthetic_eval_df.display()</code> and scan the output. Remove weak rows and note topic gaps to fill manually.
+  </p>
+
+  <p class="prose">
+    <strong>Persist into a UC dataset.</strong> The output of <code>generate_evals_df</code> is an in-memory Spark DataFrame. To make it durable and versioned, merge it into your UC-backed evaluation dataset:
+  </p>
+
+  <div class="code-block">eval_dataset = mlflow.genai.datasets.<span class="fn">get_dataset</span>(<span class="st">"main.genai_eval.tutorial_eval_v1"</span>)
+eval_dataset.<span class="fn">merge_records</span>(data=synthetic_eval_df)
+<span class="cm"># Now synthetic evals are versioned alongside hand-curated rows</span></div>
+
+  <p class="prose">
+    <strong>Regenerate as docs evolve.</strong> When you add new documentation or update existing content, re-run <code>generate_evals_df</code> to catch questions about the new material. A stale evaluation dataset misses new failure modes.
+  </p>
+
+</section>
+
+<!-- ════════════════════════════════════════════ SECTION 2.5 -->
+<section class="section" id="topic-2-5">
+
+  <div class="section-header">
+    <span class="section-marker">2.5 · Theory</span>
+    <h2 class="section-title">Dataset Formats: List vs. Pandas vs. Spark vs. UC Dataset</h2>
+    <span class="section-rule"></span>
+  </div>
+
+  <p class="prose">
+    MLflow 3's <code>evaluate()</code> accepts evaluation data in four formats. Each represents a different point on the tradeoff between convenience and enterprise capability. Choosing the right one depends on where you are in the development lifecycle, your dataset size, and whether you need governance and reproducibility.
+  </p>
+
+  <!-- ── INTERACTIVE FORMAT COMPARISON ── -->
+  <div class="format-cards" id="format-selector">
+    <div class="format-card active" data-idx="0" onclick="selectFormat(0)">
+      <div class="format-num">Format 1</div>
+      <div class="format-name">List of dicts</div>
+      <div class="format-one-liner">Fastest for prototyping</div>
+      <div class="format-props">
+        <div class="fmt-prop"><span class="fmt-prop-label">Persistence</span><span class="fmt-prop-val val-no">None</span></div>
+        <div class="fmt-prop"><span class="fmt-prop-label">Versioned</span><span class="fmt-prop-val val-no">No</span></div>
+        <div class="fmt-prop"><span class="fmt-prop-label">Governed</span><span class="fmt-prop-val val-no">No</span></div>
+        <div class="fmt-prop"><span class="fmt-prop-label">Scale</span><span class="fmt-prop-val val-neutral">Small</span></div>
+      </div>
+    </div>
+    <div class="format-card" data-idx="1" onclick="selectFormat(1)">
+      <div class="format-num">Format 2</div>
+      <div class="format-name">Pandas DF</div>
+      <div class="format-one-liner">CSV / Excel bridge</div>
+      <div class="format-props">
+        <div class="fmt-prop"><span class="fmt-prop-label">Persistence</span><span class="fmt-prop-val val-partial">In-mem</span></div>
+        <div class="fmt-prop"><span class="fmt-prop-label">Versioned</span><span class="fmt-prop-val val-no">No</span></div>
+        <div class="fmt-prop"><span class="fmt-prop-label">Governed</span><span class="fmt-prop-val val-no">No</span></div>
+        <div class="fmt-prop"><span class="fmt-prop-label">Scale</span><span class="fmt-prop-val val-neutral">Med</span></div>
+      </div>
+    </div>
+    <div class="format-card" data-idx="2" onclick="selectFormat(2)">
+      <div class="format-num">Format 3</div>
+      <div class="format-name">Spark DF</div>
+      <div class="format-one-liner">Large-scale Delta</div>
+      <div class="format-props">
+        <div class="fmt-prop"><span class="fmt-prop-label">Persistence</span><span class="fmt-prop-val val-yes">Delta</span></div>
+        <div class="fmt-prop"><span class="fmt-prop-label">Versioned</span><span class="fmt-prop-val val-partial">Via DL</span></div>
+        <div class="fmt-prop"><span class="fmt-prop-label">Governed</span><span class="fmt-prop-val val-partial">Partial</span></div>
+        <div class="fmt-prop"><span class="fmt-prop-label">Scale</span><span class="fmt-prop-val val-yes">Large</span></div>
+      </div>
+    </div>
+    <div class="format-card" data-idx="3" onclick="selectFormat(3)">
+      <div class="format-num">Format 4</div>
+      <div class="format-name">UC Dataset</div>
+      <div class="format-one-liner">Enterprise standard</div>
+      <div class="format-props">
+        <div class="fmt-prop"><span class="fmt-prop-label">Persistence</span><span class="fmt-prop-val val-yes">UC</span></div>
+        <div class="fmt-prop"><span class="fmt-prop-label">Versioned</span><span class="fmt-prop-val val-yes">Auto</span></div>
+        <div class="fmt-prop"><span class="fmt-prop-label">Governed</span><span class="fmt-prop-val val-yes">Full</span></div>
+        <div class="fmt-prop"><span class="fmt-prop-label">Scale</span><span class="fmt-prop-val val-yes">Large</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── FORMAT DETAIL PANELS ── -->
+  <div id="format-details">
+    <div class="format-detail" data-panel="0">
+      <div class="code-block">eval_data = [
+    {<span class="st">"inputs"</span>: {<span class="st">"question"</span>: <span class="st">"What is Delta Live Tables?"</span>},
+     <span class="st">"expectations"</span>: {<span class="st">"expected_facts"</span>: [<span class="st">"declarative pipeline"</span>, <span class="st">"streaming"</span>]}},
+]
+
+results = mlflow.genai.<span class="fn">evaluate</span>(
+    data=eval_data,
+    predict_fn=my_agent,
+    scorers=[<span class="fn">Correctness</span>()]
+)</div>
+      <p class="prose">The fastest way to get an evaluation running. Write test cases directly in a notebook cell, pass them to <code>evaluate()</code>, and get results in seconds. Nothing is saved — if the kernel restarts, data is gone. Use when iterating on a prompt with 5–10 test cases, running a one-off sanity check, or debugging a specific failure with a minimal reproduction case.</p>
+    </div>
+
+    <div class="format-detail" data-panel="1" style="display:none;">
+      <div class="code-block"><span class="kw">import</span> pandas <span class="kw">as</span> pd, json
+
+eval_df = pd.<span class="fn">DataFrame</span>([
+    {<span class="st">"question"</span>: <span class="st">"What is Delta Live Tables?"</span>,
+     <span class="st">"expected_facts"</span>: <span class="st">'["declarative pipeline", "streaming"]'</span>},
+])
+
+<span class="cm"># Transform into MLflow schema</span>
+eval_data = [
+    {<span class="st">"inputs"</span>: {<span class="st">"question"</span>: row[<span class="st">"question"</span>]},
+     <span class="st">"expectations"</span>: {<span class="st">"expected_facts"</span>: json.<span class="fn">loads</span>(row[<span class="st">"expected_facts"</span>])}}
+    <span class="kw">for</span> _, row <span class="kw">in</span> eval_df.<span class="fn">iterrows</span>()
+]</div>
+      <p class="prose">When your evaluation data already exists as a CSV or Excel export, Pandas is the natural bridge. Handles hundreds to low thousands of rows, but no built-in versioning. Use when migrating from a legacy system, collaborating with non-engineering stakeholders who maintain eval cases in spreadsheets, or when you need Pandas groupby/pivot analysis on results.</p>
+    </div>
+
+    <div class="format-detail" data-panel="2" style="display:none;">
+      <div class="code-block"><span class="cm"># Load from a Delta table in Unity Catalog</span>
+eval_spark_df = spark.<span class="fn">table</span>(<span class="st">"main.genai_eval.curated_eval_cases"</span>)
+
+<span class="cm"># Or filter a large pool down to a focused eval set</span>
+eval_spark_df = (
+    spark.<span class="fn">table</span>(<span class="st">"main.genai_eval.all_eval_cases"</span>)
+    .<span class="fn">filter</span>(<span class="st">"difficulty = 'hard'"</span>)
+    .<span class="fn">filter</span>(<span class="st">"domain = 'delta_lake'"</span>)
+    .<span class="fn">limit</span>(<span class="nu">200</span>)
+)</div>
+      <p class="prose">The right choice when evaluation data exceeds driver memory or already lives in a Delta Lake table. Gives you full Spark manipulation — filtering, sampling, joining with other lakehouse tables — before passing to <code>evaluate()</code>. You get Delta Lake time travel for historical queries, but you're managing versioning yourself rather than through MLflow's dataset API.</p>
+    </div>
+
+    <div class="format-detail" data-panel="3" style="display:none;">
+      <div class="code-block"><span class="kw">import</span> mlflow.genai.datasets
+
+<span class="cm"># Create (one-time setup)</span>
+eval_dataset = mlflow.genai.datasets.<span class="fn">create_dataset</span>(
+    name=<span class="st">"main.genai_eval.tutorial_eval_v1"</span>
+)
+
+<span class="cm"># Add rows — each call creates a new version</span>
+eval_dataset = eval_dataset.<span class="fn">merge_records</span>(records=[
+    {<span class="st">"inputs"</span>: {<span class="st">"question"</span>: <span class="st">"What is Delta Live Tables?"</span>},
+     <span class="st">"expectations"</span>: {<span class="st">"expected_facts"</span>: [<span class="st">"declarative pipeline"</span>]}},
+])
+
+<span class="cm"># Retrieve by name (from any notebook)</span>
+eval_dataset = mlflow.genai.datasets.<span class="fn">get_dataset</span>(
+    <span class="st">"main.genai_eval.tutorial_eval_v1"</span>
+)</div>
+      <p class="prose">The only format purpose-built for evaluation workflows. Wraps a Delta table with MLflow-specific APIs for creating, versioning, and retrieving data. Every <code>merge_records()</code> creates an immutable version. The dataset binds to an MLflow experiment, linking runs, traces, and results in a single lineage chain. Use for any evaluation that matters — CI gates, production baselines, cross-team datasets.</p>
+    </div>
+  </div>
+
+  <!-- ── MATURITY JOURNEY ── -->
+  <div class="section-header" style="margin-top:40px; margin-bottom:16px;">
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">The maturity journey</h3>
+  </div>
+
+  <p class="prose">
+    Most teams follow the same progression. <strong>List of dicts</strong> during early development when you're iterating on prompts. <strong>Pandas</strong> as an intermediate step when loading from CSV or doing ad-hoc analysis. <strong>Spark DataFrame</strong> when scale demands it or the data engineering team maintains the eval table. <strong>UC-backed dataset</strong> once you need governance, versioning, and cross-team sharing — which is any evaluation that feeds into a release decision.
+  </p>
+
+  <div class="compare-wrap">
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>Capability</th>
+          <th>List</th>
+          <th>Pandas</th>
+          <th>Spark</th>
+          <th>UC dataset</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Create</td>
+          <td><code>[{...}]</code></td>
+          <td><code>pd.DataFrame</code></td>
+          <td><code>spark.table()</code></td>
+          <td><code>create_dataset()</code></td>
+        </tr>
+        <tr>
+          <td>Retrieve</td>
+          <td>Re-run cell</td>
+          <td>Re-load CSV</td>
+          <td><code>spark.table()</code></td>
+          <td><code>get_dataset()</code></td>
+        </tr>
+        <tr>
+          <td>Add rows</td>
+          <td><code>.append()</code></td>
+          <td><code>pd.concat()</code></td>
+          <td><code>.union()</code></td>
+          <td><code>merge_records()</code></td>
+        </tr>
+        <tr>
+          <td>Version pinning</td>
+          <td><span class="badge badge-fail">None</span></td>
+          <td><span class="badge badge-fail">None</span></td>
+          <td><span class="badge badge-partial">DL time travel</span></td>
+          <td><span class="badge badge-pass">Automatic</span></td>
+        </tr>
+        <tr>
+          <td>Eval run lineage</td>
+          <td><span class="badge badge-fail">None</span></td>
+          <td><span class="badge badge-fail">None</span></td>
+          <td><span class="badge badge-fail">Manual</span></td>
+          <td><span class="badge badge-pass">Automatic</span></td>
+        </tr>
+        <tr>
+          <td>Team sharing</td>
+          <td>Copy-paste</td>
+          <td>Share CSV file</td>
+          <td>UC table access</td>
+          <td>UC ACLs + lineage</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── CONVERTING BETWEEN FORMATS ── -->
+  <div class="section-header" style="margin-top:40px; margin-bottom:16px;">
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">Converting between formats</h3>
+  </div>
+
+  <p class="prose">
+    Moving data between formats is straightforward. The most common upgrade path is list → UC dataset as your project matures:
+  </p>
+
+  <div class="code-block"><span class="cm"># List → UC dataset (most common upgrade)</span>
+eval_data = [{<span class="st">"inputs"</span>: {<span class="st">"question"</span>: <span class="st">"What is Delta Lake?"</span>},
+              <span class="st">"expectations"</span>: {<span class="st">"expected_facts"</span>: [<span class="st">"ACID"</span>, <span class="st">"open-source"</span>]}}]
+
+eval_dataset = mlflow.genai.datasets.<span class="fn">create_dataset</span>(name=<span class="st">"main.genai_eval.my_eval_v1"</span>)
+eval_dataset.<span class="fn">merge_records</span>(records=eval_data)
+
+<span class="cm"># Spark → UC dataset</span>
+spark_df = spark.<span class="fn">table</span>(<span class="st">"main.analytics.curated_eval_cases"</span>)
+eval_dataset.<span class="fn">merge_records</span>(data=spark_df)
+
+<span class="cm"># UC dataset → queryable via Spark</span>
+spark.<span class="fn">table</span>(<span class="st">"main.genai_eval.my_eval_v1"</span>).<span class="fn">groupBy</span>(<span class="st">"tags.domain"</span>).<span class="fn">count</span>().<span class="fn">display</span>()</div>
+
+  <div class="insight">
+    <div class="insight-label">Decision framework</div>
+    <p>Two questions determine the right format: <strong>does this evaluation need to be reproducible?</strong> and <strong>does it need to be shared?</strong> If both are no — use a list. If reproducibility matters but not sharing — Spark on a versioned Delta table. If both matter — and they do for anything entering a quality gate or shared with another person — use the UC-backed EvaluationDataset.</p>
+  </div>
+
+</section>
+
+<!-- ════════════════════════════════════════════ LAB STUBS ── -->
+<section class="section" id="topic-2-2">
+  <div class="section-header">
+    <span class="section-marker" style="background:rgba(168,85,247,0.06); color:var(--accent-purple); border-color:rgba(168,85,247,0.2);">2.2 · Hands-On Lab</span>
+    <h2 class="section-title">Lab: Create a UC-Backed Dataset from Scratch</h2>
+    <span class="section-rule"></span>
+  </div>
+  <p class="prose">
+    Build your tutorial's golden dataset — 10 Q&amp;A rows about Databricks/Delta Lake — stored as a Delta table in Unity Catalog. You'll use <code>create_dataset()</code> to initialise, <code>merge_records()</code> to add rows with <code>expected_facts</code> for Correctness judge compatibility, then verify the dataset in Unity Catalog Explorer and query it via Spark. Lab content is in the companion notebook.
+  </p>
+  <div class="card-grid">
+    <div class="concept-card teal">
+      <div class="card-label">Step 1</div>
+      <div class="card-title">Create the dataset</div>
+      <div class="card-body"><code>mlflow.genai.datasets.create_dataset(name="catalog.schema.tutorial_eval")</code> — creates an empty UC-backed dataset as a Delta table.</div>
+    </div>
+    <div class="concept-card orange">
+      <div class="card-label">Step 2</div>
+      <div class="card-title">Add golden rows</div>
+      <div class="card-body"><code>eval_dataset.merge_records(records=my_list)</code> — each row includes <code>inputs</code> and <code>expectations</code> with <code>expected_facts</code> arrays.</div>
+    </div>
+    <div class="concept-card blue">
+      <div class="card-label">Step 3</div>
+      <div class="card-title">Verify in UC Explorer</div>
+      <div class="card-body">Navigate to Unity Catalog Explorer and confirm the dataset appears as a Delta table with the correct schema and row count.</div>
+    </div>
+    <div class="concept-card purple">
+      <div class="card-label">Step 4</div>
+      <div class="card-title">Query via Spark</div>
+      <div class="card-body"><code>spark.table("catalog.schema.tutorial_eval").display()</code> — proves the data is accessible from any Databricks notebook.</div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="topic-2-3">
+  <div class="section-header">
+    <span class="section-marker" style="background:rgba(168,85,247,0.06); color:var(--accent-purple); border-color:rgba(168,85,247,0.2);">2.3 · Hands-On Lab</span>
+    <h2 class="section-title">Lab: Build Dataset from Production Traces</h2>
+    <span class="section-rule"></span>
+  </div>
+  <p class="prose">
+    Convert real production traces into evaluation data — the recommended path for enterprise deployments. You'll generate sample traces by calling your agent, query them with <code>mlflow.search_traces()</code> filtered by status and timestamp, and add them to your UC dataset via <code>merge_records(traces=...)</code>. The auto-extracted inputs and outputs become your production quality baseline. Lab content is in the companion notebook.
+  </p>
+  <div class="card-grid">
+    <div class="concept-card teal">
+      <div class="card-label">Step 1</div>
+      <div class="card-title">Generate traces</div>
+      <div class="card-body">Call your traced agent 10 times with representative queries to simulate production traffic.</div>
+    </div>
+    <div class="concept-card orange">
+      <div class="card-label">Step 2</div>
+      <div class="card-title">Search &amp; filter</div>
+      <div class="card-body"><code>mlflow.search_traces(filter_string="attributes.status = 'OK'")</code> — only successful traces become eval rows.</div>
+    </div>
+    <div class="concept-card blue">
+      <div class="card-label">Step 3</div>
+      <div class="card-title">Merge into dataset</div>
+      <div class="card-body"><code>eval_dataset.merge_records(traces=traces)</code> — MLflow auto-extracts inputs/outputs from the trace structure.</div>
+    </div>
+    <div class="concept-card purple">
+      <div class="card-label">Step 4</div>
+      <div class="card-title">Inspect extraction</div>
+      <div class="card-body">Verify the auto-extracted inputs and outputs match what you expect in the dataset UI.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── MODULE OUTCOME ── -->
+<div class="outcome">
+  <div class="outcome-icon">🎯</div>
+  <div class="outcome-text">
+    <strong>Module 02 outcome:</strong> You understand the four-field evaluation dataset schema and why the key contract between <code>inputs</code> and <code>predict_fn</code> parameter names matters. You can source evaluation data from three origins — hand-curated, production traces, and synthetic generation via <code>generate_evals_df</code> — and you know the strengths of each. You understand the four data format options (list, Pandas, Spark, UC dataset), when to use each, and the maturity path from prototyping to enterprise governance. You have a working UC-backed evaluation dataset populated from multiple sources, ready for the scorers you'll build in Module 3 and beyond.
+  </div>
+</div>
+
+</main>
+
+<script>
+// ── PROGRESS NAV SCROLL TRACKING ──
+const sections = document.querySelectorAll('.section');
+const navItems = document.querySelectorAll('.nav-item');
+
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const id = entry.target.getAttribute('id');
+      navItems.forEach(item => {
+        item.classList.toggle('active', item.getAttribute('href') === '#' + id);
+      });
+    }
+  });
+}, { rootMargin: '-20% 0px -60% 0px' });
+
+sections.forEach(s => observer.observe(s));
+
+// ── FORMAT SELECTOR ──
+function selectFormat(idx) {
+  document.querySelectorAll('.format-card').forEach(c => c.classList.remove('active'));
+  document.querySelectorAll('.format-card')[idx].classList.add('active');
+
+  document.querySelectorAll('.format-detail').forEach(p => p.style.display = 'none');
+  document.querySelectorAll('.format-detail')[idx].style.display = 'block';
+}
+
+// ── LIFECYCLE DIAGRAM TOOLTIPS ──
+document.querySelectorAll('.lifecycle-node').forEach(node => {
+  node.addEventListener('mouseenter', function() {
+    const tip = this.getAttribute('data-tip');
+    if (!tip) return;
+    const bg = document.getElementById('tip-bg');
+    const txt = document.getElementById('tip-text');
+    txt.textContent = tip;
+    bg.setAttribute('opacity', '1');
+    txt.setAttribute('opacity', '1');
+  });
+  node.addEventListener('mouseleave', function() {
+    document.getElementById('tip-bg').setAttribute('opacity', '0');
+    document.getElementById('tip-text').setAttribute('opacity', '0');
+  });
+});
+
+// ── DIVERSITY DIAGRAM TOOLTIPS ──
+document.querySelectorAll('.q-bubble').forEach(bubble => {
+  bubble.addEventListener('mouseenter', function() {
+    const example = this.getAttribute('data-example');
+    if (!example) return;
+    const bg = document.getElementById('div-tip-bg');
+    const txt = document.getElementById('div-tip-text');
+    txt.textContent = '"' + example + '"';
+    bg.setAttribute('opacity', '1');
+    txt.setAttribute('opacity', '1');
+  });
+  bubble.addEventListener('mouseleave', function() {
+    document.getElementById('div-tip-bg').setAttribute('opacity', '0');
+    document.getElementById('div-tip-text').setAttribute('opacity', '0');
+  });
+});
+
+// ── SCHEMA FIELD HOVER HIGHLIGHTS ──
+document.querySelectorAll('.schema-field').forEach(field => {
+  field.addEventListener('mouseenter', function() {
+    this.setAttribute('stroke-width', '2');
+  });
+  field.addEventListener('mouseleave', function() {
+    this.setAttribute('stroke-width', '1');
+  });
+});
+</script>
+</body>
+</html>

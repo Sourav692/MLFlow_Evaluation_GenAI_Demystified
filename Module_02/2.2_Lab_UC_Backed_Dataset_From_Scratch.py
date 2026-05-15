@@ -79,9 +79,15 @@ print(f"Will create dataset: {DATASET_FQN}")
 import mlflow
 import mlflow.genai.datasets
 
-eval_dataset = mlflow.genai.datasets.create_dataset(name=DATASET_FQN)
-print(f"Dataset created: {eval_dataset.name}")
-
+try:
+    eval_dataset = mlflow.genai.datasets.create_dataset(name=DATASET_FQN)
+    print(f"Dataset created: {eval_dataset.name}")
+except Exception as e:
+    if "TABLE_ALREADY_EXISTS" in str(e):
+        eval_dataset = mlflow.genai.datasets.get_dataset(name=DATASET_FQN)
+        print(f"Dataset already exists, loaded: {eval_dataset.name}")
+    else:
+        raise
 
 # COMMAND ----------
 
@@ -296,6 +302,160 @@ results = mlflow.genai.evaluate(
 
 display(results.tables["eval_results"])
 
+
+# COMMAND ----------
+
+# DBTITLE 1,Step 8 — Group Traces into Sessions
+# MAGIC %md
+# MAGIC ---
+# MAGIC ## Step 8 — Group Traces into Sessions
+# MAGIC
+# MAGIC Within the same experiment, you can **aggregate traces into logical sessions** using `mlflow.trace.session` metadata. This is useful for:
+# MAGIC - **Multi-turn conversations** — group all turns of a chat into one session
+# MAGIC - **A/B testing** — separate traces by configuration or model variant
+# MAGIC - **User isolation** — each user's interaction forms its own session
+# MAGIC
+# MAGIC MLflow stores session metadata on each trace. You can then filter, search, and analyze traces by session in the UI or programmatically with `mlflow.search_traces()`.
+
+# COMMAND ----------
+
+# DBTITLE 1,Step 8 — Group Traces into Sessions
+# ============================================================================
+# 🔗 STEP 8 - GROUP TRACES INTO SESSIONS
+# ============================================================================
+# The MLflow Sessions tab groups traces by session_id. Two requirements:
+#   1. @mlflow.trace on predict_fn — creates the active trace context
+#   2. mlflow.update_current_trace(session_id=...) — sets the session_id field
+#      that the UI reads (dedicated parameter, not a generic tag)
+# ============================================================================
+
+import uuid
+import mlflow
+from mlflow.genai.scorers import Correctness
+from databricks.sdk import WorkspaceClient
+
+client = WorkspaceClient().serving_endpoints.get_open_ai_client()
+
+USER_EMAIL = (
+    dbutils.notebook.entry_point.getDbutils()
+    .notebook()
+    .getContext()
+    .userName()
+    .get()
+)
+mlflow.set_experiment(f"/Users/{USER_EMAIL}/genai-eval-tutorial")
+
+# --- Session A: Databricks Platform session ---
+session_a = f"session-platform-{uuid.uuid4().hex[:8]}"
+print(f"▶ Session A: {session_a}")
+
+# --- Session B: Delta Lake deep-dive session ---
+session_b = f"session-delta-{uuid.uuid4().hex[:8]}"
+print(f"▶ Session B: {session_b}")
+
+
+# --- Evaluation dataset split into two sessions ---
+# Session A questions (platform-focused)
+session_a_data = [
+    {
+        "inputs": {"question": "What is Delta Live Tables?"},
+        "expectations": {"expected_facts": ["declarative pipeline", "streaming", "batch"]},
+    },
+    {
+        "inputs": {"question": "How does Unity Catalog handle lineage?"},
+        "expectations": {"expected_facts": ["column-level lineage", "automated"]},
+    },
+    {
+        "inputs": {"question": "What is a Databricks SQL Warehouse?"},
+        "expectations": {"expected_facts": ["serverless or classic compute", "SQL workloads", "BI tools"]},
+    },
+]
+
+# Session B questions (Delta Lake focused)
+session_b_data = [
+    {
+        "inputs": {"question": "What is Z-ordering in Delta Lake?"},
+        "expectations": {"expected_facts": ["data skipping", "co-locates related data", "improves query performance"]},
+    },
+    {
+        "inputs": {"question": "Explain the VACUUM command in Delta Lake."},
+        "expectations": {"expected_facts": ["removes files no longer referenced", "retention period", "reclaims storage"]},
+    },
+    {
+        "inputs": {"question": "What guarantees does Delta Lake provide?"},
+        "expectations": {"expected_facts": ["ACID transactions", "schema enforcement", "time travel"]},
+    },
+]
+
+
+# --- Define predict functions that set session_id on the trace ---
+def make_predict_fn(user_id: str, session_id: str):
+    """Create a predict_fn with @mlflow.trace + session_id parameter."""
+    @mlflow.trace
+    def predict(question: str) -> str:
+        # session_id= is the dedicated parameter the MLflow Sessions UI reads
+        mlflow.update_current_trace(
+            session_id=session_id,
+            user=user_id,
+        )
+        resp = client.chat.completions.create(
+            model="databricks-claude-opus-4-6",
+            messages=[{"role": "user", "content": question}],
+        )
+        return resp.choices[0].message.content
+    return predict
+
+
+# --- Run evaluation for Session A ---
+print("\n📊 Running evaluation for Session A...")
+results_a = mlflow.genai.evaluate(
+    data=session_a_data,
+    predict_fn=make_predict_fn(user_id="learner-1", session_id=session_a),
+    scorers=[Correctness()],
+)
+
+# --- Run evaluation for Session B ---
+print("\n📊 Running evaluation for Session B...")
+results_b = mlflow.genai.evaluate(
+    data=session_b_data,
+    predict_fn=make_predict_fn(user_id="learner-2", session_id=session_b),
+    scorers=[Correctness()],
+)
+
+print(f"\n✅ Two sessions created with assessments:")
+print(f"   Session A ({session_a}): {len(session_a_data)} traces with Correctness scores")
+print(f"   Session B ({session_b}): {len(session_b_data)} traces with Correctness scores")
+print("\n🔍 Refresh the Sessions tab in the MLflow UI to see the grouped traces.")
+
+# COMMAND ----------
+
+# DBTITLE 1,Verify Session Grouping
+# ============================================================================
+# 🔍 VERIFY SESSION GROUPING — Search traces by session
+# ============================================================================
+
+import mlflow
+
+experiment = mlflow.get_experiment_by_name(f"/Users/{USER_EMAIL}/genai-eval-tutorial")
+
+# Search traces belonging to Session A (session_id is stored in metadata)
+traces_a = mlflow.search_traces(
+    experiment_ids=[experiment.experiment_id],
+    filter_string=f"metadata.`mlflow.trace.session` = '{session_a}'",
+)
+print(f"Session A traces: {len(traces_a)} (expect 3)")
+display(traces_a[["trace_id", "request_time", "state", "execution_duration"]].head())
+
+# Search traces belonging to Session B
+traces_b = mlflow.search_traces(
+    experiment_ids=[experiment.experiment_id],
+    filter_string=f"metadata.`mlflow.trace.session` = '{session_b}'",
+)
+print(f"\nSession B traces: {len(traces_b)} (expect 3)")
+display(traces_b[["trace_id", "request_time", "state", "execution_duration"]].head())
+
+print("\n💡 session_id= writes to trace_metadata (not tags).")
+print("   The MLflow Sessions tab reads from trace_metadata for grouping.")
 
 # COMMAND ----------
 

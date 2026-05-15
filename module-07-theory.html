@@ -1,0 +1,1663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 07 — Human Feedback Loop &amp; Judge Alignment</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=Syne:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #05080f;
+  --surface: #0b0f1a;
+  --surface2: #111827;
+  --surface3: #1a2235;
+  --border: #1e2d45;
+  --border2: #243550;
+  --accent-orange: #ff6b35;
+  --accent-teal: #00bfa5;
+  --accent-blue: #4a9eff;
+  --accent-purple: #a855f7;
+  --accent-yellow: #fbbf24;
+  --text: #e8edf5;
+  --text-dim: #8899bb;
+  --text-muted: #4a5878;
+  --green: #22c55e;
+  --amber: #f59e0b;
+  --red: #ef4444;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Syne', sans-serif;
+  font-weight: 400;
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+
+/* ── HERO ── */
+.mod-hero {
+  position: relative;
+  padding: 64px 48px 52px;
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.mod-hero::before {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 60% 80% at 10% 50%, rgba(168,85,247,0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 50% at 90% 20%, rgba(0,191,165,0.06) 0%, transparent 55%);
+  pointer-events: none;
+}
+
+.hero-inner { max-width: 960px; margin: 0 auto; position: relative; }
+
+.breadcrumb {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 28px;
+}
+
+.bc-tag {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; font-weight: 500;
+  letter-spacing: 0.15em; text-transform: uppercase;
+  color: var(--accent-teal);
+  padding: 4px 12px;
+  border: 1px solid rgba(0,191,165,0.25);
+  border-radius: 2px;
+  background: rgba(0,191,165,0.06);
+}
+
+.bc-sep { color: var(--text-muted); font-size: 12px; }
+
+.bc-current {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: var(--text-muted);
+  letter-spacing: 0.1em; text-transform: uppercase;
+}
+
+.mod-eyebrow {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-orange);
+  margin-bottom: 14px;
+}
+
+.mod-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(34px, 4.5vw, 56px);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  margin-bottom: 16px;
+}
+
+.mod-title em { font-style: italic; color: var(--accent-purple); }
+
+.mod-desc {
+  font-size: 16px; color: var(--text-dim);
+  max-width: 620px; line-height: 1.75;
+  margin-bottom: 36px;
+}
+
+.mod-meta {
+  display: flex; gap: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  width: fit-content;
+}
+
+.meta-chip {
+  padding: 10px 20px;
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: 2px;
+}
+.meta-chip:last-child { border-right: none; }
+
+.meta-val {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 16px; font-weight: 500;
+  color: var(--accent-purple);
+}
+
+.meta-lbl {
+  font-size: 10px; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.1em;
+}
+
+/* ── NAV ── */
+.progress-nav {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 48px;
+  position: sticky; top: 0;
+  z-index: 100;
+}
+
+.nav-inner {
+  max-width: 960px; margin: 0 auto;
+  display: flex; gap: 0; align-items: stretch;
+  overflow-x: auto;
+}
+
+.nav-inner::-webkit-scrollbar { height: 0; }
+
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 20px;
+  border-right: 1px solid var(--border);
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.nav-item:hover { background: var(--surface2); }
+.nav-item.active { background: rgba(168,85,247,0.07); }
+.nav-item:last-child { border-right: none; }
+
+.nav-num {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: var(--text-muted);
+  letter-spacing: 0.1em;
+}
+
+.nav-label { font-size: 12px; color: var(--text-dim); font-weight: 500; }
+
+.nav-item.active .nav-label { color: var(--accent-purple); }
+.nav-item.active .nav-num { color: var(--accent-purple); }
+
+/* ── MAIN ── */
+main {
+  max-width: 960px; margin: 0 auto;
+  padding: 56px 48px 100px;
+}
+
+/* ── SECTION ── */
+.section { margin-bottom: 80px; scroll-margin-top: 60px; }
+
+.section-header {
+  display: flex; align-items: center; gap: 16px;
+  margin-bottom: 36px;
+}
+
+.section-marker {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: var(--accent-orange);
+  letter-spacing: 0.15em; text-transform: uppercase;
+  padding: 4px 12px;
+  border: 1px solid rgba(255,107,53,0.25);
+  border-radius: 2px;
+  background: rgba(255,107,53,0.06);
+  white-space: nowrap;
+}
+
+.section-marker.purple {
+  color: var(--accent-purple);
+  border-color: rgba(168,85,247,0.25);
+  background: rgba(168,85,247,0.06);
+}
+
+.section-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 28px; line-height: 1.2;
+}
+
+.section-rule { flex: 1; height: 1px; background: var(--border); }
+
+/* ── PROSE ── */
+.prose {
+  font-size: 15px; color: var(--text-dim);
+  line-height: 1.8; max-width: 720px;
+  margin-bottom: 28px;
+}
+
+.prose strong { color: var(--text); font-weight: 600; }
+
+.prose code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12.5px;
+  color: var(--accent-blue);
+  background: rgba(74,158,255,0.08);
+  padding: 2px 7px;
+  border-radius: 3px;
+}
+
+/* ── INSIGHT BOX ── */
+.insight {
+  padding: 20px 24px;
+  background: rgba(0,191,165,0.04);
+  border: 1px solid rgba(0,191,165,0.15);
+  border-left: 3px solid var(--accent-teal);
+  border-radius: 0 8px 8px 0;
+  margin-bottom: 28px;
+}
+
+.insight-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--accent-teal);
+  margin-bottom: 8px;
+}
+
+.insight p { font-size: 14px; color: var(--text-dim); line-height: 1.7; }
+.insight p strong { color: var(--accent-teal); }
+.insight code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11.5px;
+  color: var(--accent-blue);
+  background: rgba(74,158,255,0.08);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+/* ── WARNING BOX ── */
+.warning {
+  padding: 16px 20px;
+  background: rgba(245,158,11,0.04);
+  border: 1px solid rgba(245,158,11,0.15);
+  border-left: 3px solid var(--amber);
+  border-radius: 0 8px 8px 0;
+  margin-bottom: 28px;
+  font-size: 13.5px; color: var(--text-dim); line-height: 1.6;
+}
+
+.warning::before {
+  content: 'Why this matters  ';
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--amber);
+}
+
+.warning code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: var(--accent-blue);
+  background: rgba(74,158,255,0.08);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+/* ── CONCEPT CARDS ── */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  margin-bottom: 36px;
+}
+
+.concept-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 22px;
+  transition: border-color 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+.concept-card::before {
+  content: '';
+  position: absolute; left: 0; top: 0; bottom: 0;
+  width: 3px;
+}
+
+.concept-card.teal::before { background: var(--accent-teal); }
+.concept-card.orange::before { background: var(--accent-orange); }
+.concept-card.purple::before { background: var(--accent-purple); }
+.concept-card.blue::before { background: var(--accent-blue); }
+.concept-card.amber::before { background: var(--amber); }
+.concept-card.red::before { background: var(--red); }
+.concept-card.green::before { background: var(--green); }
+
+.concept-card:hover { border-color: var(--border2); }
+
+.card-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.concept-card.teal .card-label { color: var(--accent-teal); }
+.concept-card.orange .card-label { color: var(--accent-orange); }
+.concept-card.purple .card-label { color: var(--accent-purple); }
+.concept-card.blue .card-label { color: var(--accent-blue); }
+.concept-card.amber .card-label { color: var(--amber); }
+.concept-card.red .card-label { color: var(--red); }
+.concept-card.green .card-label { color: var(--green); }
+
+.card-title {
+  font-size: 15px; font-weight: 600;
+  color: var(--text); margin-bottom: 8px;
+  line-height: 1.3;
+}
+
+.card-body { font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+
+.card-body code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11.5px;
+  color: var(--accent-blue);
+  background: rgba(74,158,255,0.08);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+/* ── COMPARE TABLE ── */
+.compare-wrap { overflow-x: auto; margin-bottom: 36px; }
+
+.compare-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+
+.compare-table thead tr { border-bottom: 1px solid var(--border2); }
+
+.compare-table th {
+  padding: 12px 16px; text-align: left;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--text-muted);
+  font-weight: 500;
+}
+
+.compare-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-dim);
+  vertical-align: top;
+  line-height: 1.55;
+}
+
+.compare-table tr:last-child td { border-bottom: none; }
+.compare-table tr:hover td { background: rgba(255,255,255,0.012); }
+
+.compare-table td:first-child {
+  font-weight: 500; color: var(--text);
+  white-space: nowrap;
+}
+
+.compare-table td code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11.5px;
+  color: var(--accent-blue);
+  background: rgba(74,158,255,0.08);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.threshold-cell { font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
+.threshold-cell.bad { color: var(--red); }
+.threshold-cell.mid { color: var(--amber); }
+.threshold-cell.good { color: var(--green); }
+
+/* ── CODE BLOCK ── */
+.code-block {
+  background: #020509;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent-blue);
+  border-radius: 0 6px 6px 0;
+  padding: 14px 18px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11.5px;
+  line-height: 1.8;
+  overflow-x: auto;
+  white-space: pre;
+  margin-bottom: 28px;
+}
+
+.kw { color: #c792ea; }
+.fn { color: #82aaff; }
+.st { color: #c3e88d; }
+.cm { color: var(--text-muted); }
+.nm { color: var(--accent-orange); }
+.nu { color: #f78c6c; }
+
+/* ── DIAGRAM CONTAINER ── */
+.diagram-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 36px;
+}
+
+.diagram-header {
+  padding: 14px 20px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+}
+
+.diagram-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: var(--text-muted);
+  letter-spacing: 0.08em; text-transform: uppercase;
+}
+
+.diagram-body {
+  padding: 32px 24px;
+  display: flex;
+  justify-content: center;
+}
+
+.diagram-body svg { max-width: 100%; height: auto; }
+
+/* ── PATH EXPLORER (sidebar+detail) ── */
+.path-explorer {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 36px;
+  background: var(--surface);
+  min-height: 360px;
+}
+
+.path-sidebar { border-right: 1px solid var(--border); background: var(--surface2); }
+
+.path-sidebar-title {
+  padding: 14px 16px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: var(--text-muted);
+  letter-spacing: 0.1em; text-transform: uppercase;
+  border-bottom: 1px solid var(--border);
+}
+
+.path-item {
+  padding: 14px 16px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+  transition: all 0.15s;
+  display: flex; align-items: center; gap: 10px;
+}
+
+.path-item:hover { background: var(--surface3); }
+.path-item.active { background: rgba(168,85,247,0.07); }
+
+.path-item .p-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.path-item .p-name { font-size: 13px; color: var(--text-dim); font-weight: 500; }
+.path-item.active .p-name { color: var(--accent-purple); }
+
+.path-detail { padding: 28px; display: none; }
+.path-detail.active { display: block; }
+
+.path-detail h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 22px; margin-bottom: 8px;
+}
+
+.path-detail .pd-type {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 3px 10px; border-radius: 2px;
+  display: inline-block;
+  margin-bottom: 18px;
+  border: 1px solid;
+}
+
+.pd-type.type-ui {
+  color: var(--accent-teal);
+  background: rgba(0,191,165,0.08);
+  border-color: rgba(0,191,165,0.2);
+}
+
+.pd-type.type-api {
+  color: var(--accent-purple);
+  background: rgba(168,85,247,0.08);
+  border-color: rgba(168,85,247,0.2);
+}
+
+.path-detail .pd-desc {
+  font-size: 14px; color: var(--text-dim); line-height: 1.7;
+  margin-bottom: 18px;
+}
+
+.pd-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+
+.pd-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+.pd-table td:first-child {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  width: 120px;
+}
+
+.pd-table td:last-child { color: var(--text-dim); }
+
+.pd-table td code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-blue);
+  background: rgba(74,158,255,0.08);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+/* ── PIPELINE STAGES ── */
+.pipeline-wrap {
+  display: flex; flex-direction: column;
+  gap: 2px; margin-bottom: 36px;
+}
+
+.pipe-stage {
+  display: grid;
+  grid-template-columns: 60px 1fr auto;
+  align-items: stretch;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  transition: border-color 0.15s;
+}
+
+.pipe-stage:hover { border-color: var(--border2); }
+
+.pipe-idx {
+  padding: 16px 14px;
+  background: var(--surface2);
+  border-right: 1px solid var(--border);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px; font-weight: 500;
+  color: var(--accent-purple);
+  text-align: center;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.pipe-inner { padding: 16px 20px; }
+
+.pipe-name {
+  font-size: 14px; font-weight: 600; color: var(--text);
+  margin-bottom: 4px;
+}
+
+.pipe-detail { font-size: 12.5px; color: var(--text-muted); line-height: 1.5; }
+
+.pipe-detail code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-blue);
+  background: rgba(74,158,255,0.08);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.pipe-api {
+  padding: 12px 16px;
+  background: var(--surface2);
+  border-left: 1px solid var(--border);
+  display: flex; align-items: center;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; color: var(--text-muted);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+/* ── ALIGNMENT SIMULATOR ── */
+.align-sim {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 36px;
+}
+
+.align-sim-header {
+  padding: 14px 20px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 12px;
+}
+
+.align-sim-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: var(--text-muted);
+  letter-spacing: 0.08em; text-transform: uppercase;
+}
+
+.toggle-group {
+  display: flex; border: 1px solid var(--border); border-radius: 4px; overflow: hidden;
+}
+
+.toggle-btn {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 6px 14px;
+  background: var(--surface2);
+  color: var(--text-muted);
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s;
+  border-right: 1px solid var(--border);
+}
+
+.toggle-btn:last-child { border-right: none; }
+.toggle-btn:hover { color: var(--text-dim); }
+.toggle-btn.active {
+  background: rgba(168,85,247,0.1);
+  color: var(--accent-purple);
+}
+
+.align-sim-body { padding: 32px 24px; }
+
+.align-scale {
+  position: relative;
+  height: 80px;
+  margin-bottom: 12px;
+}
+
+.align-scale-line {
+  position: absolute;
+  left: 6%; right: 6%; top: 38px;
+  height: 2px;
+  background: var(--border2);
+}
+
+.align-tick {
+  position: absolute;
+  top: 32px; width: 1px; height: 14px;
+  background: var(--text-muted);
+  opacity: 0.4;
+}
+
+.align-tick-lbl {
+  position: absolute;
+  top: 50px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; color: var(--text-muted);
+  transform: translateX(-50%);
+}
+
+.align-marker {
+  position: absolute;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  top: 30px;
+  transform: translateX(-50%);
+  transition: left 0.4s ease, background 0.3s;
+  cursor: grab;
+  box-shadow: 0 0 0 4px rgba(0,0,0,0.3);
+}
+
+.align-marker.human {
+  background: var(--green);
+}
+
+.align-marker.judge {
+  background: var(--red);
+}
+
+.align-marker-lbl {
+  position: absolute;
+  top: 0px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  transition: left 0.4s ease;
+}
+
+.align-marker-lbl.human { color: var(--green); }
+.align-marker-lbl.judge { color: var(--red); }
+
+.align-gap-line {
+  position: absolute;
+  top: 38px; height: 2px;
+  background: var(--amber);
+  opacity: 0.5;
+  transition: left 0.4s ease, width 0.4s ease;
+}
+
+.align-control {
+  display: flex; align-items: center; gap: 16px;
+  padding: 18px 0 6px;
+}
+
+.align-slider-lbl {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; color: var(--text-muted);
+  letter-spacing: 0.05em;
+  min-width: 130px;
+}
+
+.align-slider {
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  background: var(--border2);
+  border-radius: 2px;
+  outline: none;
+}
+
+.align-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px; height: 16px;
+  background: var(--accent-purple);
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid var(--bg);
+}
+
+.align-slider::-moz-range-thumb {
+  width: 16px; height: 16px;
+  background: var(--accent-purple);
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid var(--bg);
+}
+
+.align-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.align-stat {
+  padding: 14px 18px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.align-stat-lbl {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.align-stat-val {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 22px; font-weight: 500;
+  color: var(--text);
+}
+
+.align-stat-val.good { color: var(--green); }
+.align-stat-val.mid { color: var(--amber); }
+.align-stat-val.bad { color: var(--red); }
+
+.align-stat-desc {
+  font-size: 11px; color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.align-verdict {
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: var(--surface2);
+  border-radius: 6px;
+  border-left: 3px solid var(--accent-purple);
+  font-size: 13px; color: var(--text-dim);
+}
+
+.align-verdict strong { color: var(--text); }
+
+/* ── ARCHITECTURE SVG INTERACTION ── */
+.svg-node { cursor: pointer; transition: opacity 0.15s; }
+.svg-node:hover { opacity: 0.85; }
+
+/* ── OUTCOME ── */
+.outcome {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent-orange);
+  border-radius: 0 10px 10px 0;
+  padding: 28px 32px;
+  display: flex; gap: 16px; align-items: start;
+}
+
+.outcome-icon { font-size: 20px; padding-top: 2px; }
+.outcome-text { font-size: 14px; color: var(--text-dim); line-height: 1.7; }
+.outcome-text strong { color: var(--text); }
+
+.outcome-text code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11.5px;
+  color: var(--accent-blue);
+  background: rgba(74,158,255,0.08);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 768px) {
+  .mod-hero { padding: 40px 20px 36px; }
+  main { padding: 36px 20px 60px; }
+  .progress-nav { padding: 0 20px; }
+  .card-grid { grid-template-columns: 1fr; }
+  .path-explorer { grid-template-columns: 1fr; }
+  .path-sidebar { border-right: none; border-bottom: 1px solid var(--border); }
+  .pipe-stage { grid-template-columns: 50px 1fr; }
+  .pipe-api { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── HERO ── -->
+<header class="mod-hero">
+  <div class="hero-inner">
+    <div class="breadcrumb">
+      <span class="bc-tag">Databricks · MLflow 3 · GenAI</span>
+      <span class="bc-sep">/</span>
+      <span class="bc-current">Module 07 · Feedback &amp; Alignment</span>
+    </div>
+    <div class="mod-eyebrow">Module 07 · Advanced · ~3h</div>
+    <h1 class="mod-title">Human Feedback Loop &amp; <em>Judge Alignment</em></h1>
+    <p class="mod-desc">Close the quality loop — collect expert and end-user feedback, then calibrate automated judges to match human standards before trusting them in production gates.</p>
+    <div class="mod-meta">
+      <div class="meta-chip"><span class="meta-val">2</span><span class="meta-lbl">Theory topics</span></div>
+      <div class="meta-chip"><span class="meta-val">2</span><span class="meta-lbl">Labs</span></div>
+      <div class="meta-chip"><span class="meta-val">3h</span><span class="meta-lbl">Duration</span></div>
+      <div class="meta-chip"><span class="meta-val">Adv</span><span class="meta-lbl">Level</span></div>
+    </div>
+  </div>
+</header>
+
+<!-- ── NAV ── -->
+<nav class="progress-nav">
+  <div class="nav-inner">
+    <a href="#topic-7-1" class="nav-item active">
+      <span class="nav-num">7.1</span>
+      <span class="nav-label">Human feedback</span>
+    </a>
+    <a href="#topic-7-2" class="nav-item">
+      <span class="nav-num">7.2</span>
+      <span class="nav-label">Lab: feedback API</span>
+    </a>
+    <a href="#topic-7-3" class="nav-item">
+      <span class="nav-num">7.3</span>
+      <span class="nav-label">Judge alignment</span>
+    </a>
+    <a href="#topic-7-4" class="nav-item">
+      <span class="nav-num">7.4</span>
+      <span class="nav-label">Lab: CI gate</span>
+    </a>
+  </div>
+</nav>
+
+<!-- ── MAIN ── -->
+<main>
+
+<!-- ════════════════════════════════════ SECTION 7.1 ════ -->
+<section class="section" id="topic-7-1">
+
+  <div class="section-header">
+    <span class="section-marker">7.1 · Theory</span>
+    <h2 class="section-title">Human Feedback in MLflow — Review App &amp; log_feedback()</h2>
+    <span class="section-rule"></span>
+  </div>
+
+  <p class="prose">
+    Automated judges are fast, scalable, and cheap — but they are <strong>not automatically trustworthy</strong>. Without a steady stream of human signal flowing back into the system, judges drift from real domain standards, and there's no way to know which side of the gap your eval scores are on. Human feedback is the ground truth that keeps the whole evaluation pipeline honest.
+  </p>
+
+  <div class="insight">
+    <div class="insight-label">What human feedback unlocks</div>
+    <p>It <strong>calibrates</strong> automated judges (the input to alignment in §7.3), <strong>surfaces</strong> failure modes that scorers miss, <strong>builds trust</strong> with stakeholders before production rollout, and <strong>continuously improves</strong> the eval dataset with real-world signals. Skip it, and your release decisions ride on numbers that may have no connection to user experience.</p>
+  </div>
+
+  <!-- ── INTERACTIVE PATH EXPLORER ── -->
+  <div class="section-header" style="margin-top:48px; margin-bottom:16px;">
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">Two collection paths, one storage model</h3>
+  </div>
+
+  <p class="prose">
+    MLflow gives you two distinct ways to capture feedback, designed for two very different audiences. Both write to the same underlying schema, so downstream queries don't care which path the data came through. Click each path to inspect it.
+  </p>
+
+  <div class="path-explorer" id="path-explorer">
+    <div class="path-sidebar">
+      <div class="path-sidebar-title">Feedback paths</div>
+      <div class="path-item active" onclick="selectPath(0)">
+        <span class="p-dot" style="background:var(--accent-teal)"></span>
+        <span class="p-name">Review App</span>
+      </div>
+      <div class="path-item" onclick="selectPath(1)">
+        <span class="p-dot" style="background:var(--accent-purple)"></span>
+        <span class="p-name">log_feedback()</span>
+      </div>
+    </div>
+
+    <div>
+      <div class="path-detail active" data-path="0">
+        <h3>Review App</h3>
+        <span class="pd-type type-ui">UI-based · Batch labelling</span>
+        <p class="pd-desc">A Databricks web UI built for <strong>domain experts</strong> who systematically review traces. You send a batch of traces, experts open them in the app, read the input and response, and assign quality labels. Each label is written back as a <code>Feedback</code> object on the original trace.</p>
+        <table class="pd-table">
+          <tr><td>Audience</td><td>Subject-matter experts, internal reviewers, annotators</td></tr>
+          <tr><td>Interaction</td><td>Open trace in UI → read → rate → submit</td></tr>
+          <tr><td>Scale</td><td>Dozens to hundreds of traces per session</td></tr>
+          <tr><td>Best for</td><td>Judge alignment gold sets, eval dataset curation, deep quality reviews</td></tr>
+          <tr><td>Triggered by</td><td>Sending a labelling session: <code>mlflow.genai.create_labeling_session()</code></td></tr>
+        </table>
+      </div>
+
+      <div class="path-detail" data-path="1">
+        <h3>mlflow.log_feedback()</h3>
+        <span class="pd-type type-api">API-based · Real-time signals</span>
+        <p class="pd-desc">A lightweight Python API for capturing in-app reactions from <strong>end users</strong>. Your app exposes thumbs-up / thumbs-down (or a star rating) on every response. On click, your backend uses the trace's <code>client_request_id</code> to find it and call <code>log_feedback()</code> with the verdict.</p>
+        <table class="pd-table">
+          <tr><td>Audience</td><td>Real end users of your production app</td></tr>
+          <tr><td>Interaction</td><td>Click 👍/👎 → backend logs → assessment on trace</td></tr>
+          <tr><td>Scale</td><td>Thousands to millions of signals per day</td></tr>
+          <tr><td>Best for</td><td>Production telemetry, drift detection, large-scale helpfulness signals</td></tr>
+          <tr><td>Triggered by</td><td><code>mlflow.log_feedback(trace_id=..., name=..., value=..., source=...)</code></td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── ARCHITECTURE DIAGRAM ── -->
+  <div class="diagram-wrap">
+    <div class="diagram-header">
+      <span class="diagram-label">Architecture · how feedback lands on a trace</span>
+    </div>
+    <div class="diagram-body">
+      <svg viewBox="0 0 700 380" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arrow7" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </marker>
+        </defs>
+
+        <!-- Top labels -->
+        <text x="170" y="32" text-anchor="middle" fill="#8899bb" font-family="'IBM Plex Mono', monospace" font-size="11" letter-spacing="0.05em">DOMAIN EXPERTS</text>
+        <text x="530" y="32" text-anchor="middle" fill="#8899bb" font-family="'IBM Plex Mono', monospace" font-size="11" letter-spacing="0.05em">END USERS</text>
+
+        <!-- Path 1: Review App -->
+        <g class="svg-node">
+          <rect x="60" y="50" width="220" height="70" rx="10"
+            fill="rgba(0,191,165,0.08)" stroke="rgba(0,191,165,0.35)" stroke-width="1"/>
+          <text x="170" y="80" text-anchor="middle" fill="#00bfa5" font-family="'Playfair Display', serif" font-size="16" font-weight="700">Review App</text>
+          <text x="170" y="102" text-anchor="middle" fill="#8899bb" font-family="'Syne', sans-serif" font-size="12">Batch labelling UI</text>
+        </g>
+
+        <!-- Path 2: log_feedback -->
+        <g class="svg-node">
+          <rect x="420" y="50" width="220" height="70" rx="10"
+            fill="rgba(168,85,247,0.08)" stroke="rgba(168,85,247,0.35)" stroke-width="1"/>
+          <text x="530" y="80" text-anchor="middle" fill="#a855f7" font-family="'IBM Plex Mono', monospace" font-size="14" font-weight="500">log_feedback()</text>
+          <text x="530" y="102" text-anchor="middle" fill="#8899bb" font-family="'Syne', sans-serif" font-size="12">Inline reaction API</text>
+        </g>
+
+        <!-- Arrows down to trace -->
+        <path d="M 170 120 L 170 175 L 290 175 L 290 215" fill="none" stroke="#4a5878" stroke-width="1" marker-end="url(#arrow7)"/>
+        <path d="M 530 120 L 530 175 L 410 175 L 410 215" fill="none" stroke="#4a5878" stroke-width="1" marker-end="url(#arrow7)"/>
+
+        <!-- Unified writes label -->
+        <text x="350" y="158" text-anchor="middle" fill="#4a5878" font-family="'IBM Plex Mono', monospace" font-size="10" letter-spacing="0.08em">UNIFIED FEEDBACK SCHEMA</text>
+
+        <!-- Central Trace -->
+        <rect x="150" y="215" width="400" height="125" rx="12"
+          fill="rgba(255,107,53,0.05)" stroke="rgba(255,107,53,0.35)" stroke-width="1"/>
+        <text x="350" y="247" text-anchor="middle" fill="#ff6b35" font-family="'Playfair Display', serif" font-size="20" font-weight="700">MLflow Trace</text>
+        <text x="350" y="270" text-anchor="middle" fill="#8899bb" font-family="'IBM Plex Mono', monospace" font-size="11">+ Feedback assessments attached</text>
+
+        <!-- Schema fields inside -->
+        <rect x="180" y="285" width="100" height="22" rx="4" fill="rgba(74,158,255,0.08)" stroke="rgba(74,158,255,0.25)" stroke-width="0.5"/>
+        <text x="230" y="300" text-anchor="middle" fill="#4a9eff" font-family="'IBM Plex Mono', monospace" font-size="10">name</text>
+
+        <rect x="290" y="285" width="100" height="22" rx="4" fill="rgba(74,158,255,0.08)" stroke="rgba(74,158,255,0.25)" stroke-width="0.5"/>
+        <text x="340" y="300" text-anchor="middle" fill="#4a9eff" font-family="'IBM Plex Mono', monospace" font-size="10">value</text>
+
+        <rect x="400" y="285" width="100" height="22" rx="4" fill="rgba(74,158,255,0.08)" stroke="rgba(74,158,255,0.25)" stroke-width="0.5"/>
+        <text x="450" y="300" text-anchor="middle" fill="#4a9eff" font-family="'IBM Plex Mono', monospace" font-size="10">source</text>
+
+        <text x="350" y="328" text-anchor="middle" fill="#4a5878" font-family="'IBM Plex Mono', monospace" font-size="10">queryable as Delta · joinable across all sources</text>
+
+        <!-- Bottom note -->
+        <text x="350" y="370" text-anchor="middle" fill="#4a5878" font-family="'Syne', sans-serif" font-size="12" font-style="italic">Both paths produce the same Feedback shape — one query reads them all</text>
+      </svg>
+    </div>
+  </div>
+
+  <!-- ── FEEDBACK SCHEMA ── -->
+  <div class="section-header" style="margin-top:48px; margin-bottom:16px;">
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">The Feedback object — five fields, one schema</h3>
+  </div>
+
+  <p class="prose">
+    Every piece of feedback — a Review App label, a 👍 from a customer, an LLM judge verdict, a code scorer result — becomes a <code>Feedback</code> object with the same five fields. This is why the MLflow UI can show human and automated scores side by side without any extra plumbing.
+  </p>
+
+  <div class="card-grid">
+    <div class="concept-card orange">
+      <div class="card-label">Field 1 · Required</div>
+      <div class="card-title">name</div>
+      <div class="card-body">What is being assessed. Examples: <code>"user_helpful"</code>, <code>"correctness"</code>, <code>"safety"</code>. Stable across sources — the same name from a judge and a human is directly comparable.</div>
+    </div>
+    <div class="concept-card teal">
+      <div class="card-label">Field 2 · Required</div>
+      <div class="card-title">value</div>
+      <div class="card-body">The verdict. Type matches the assessment: <code>bool</code> for thumbs-style, <code>int</code> 1–5 for rubrics, <code>float</code> for similarity scores, <code>str</code> for category labels.</div>
+    </div>
+    <div class="concept-card purple">
+      <div class="card-label">Field 3 · Required</div>
+      <div class="card-title">source</div>
+      <div class="card-body">An <code>AssessmentSource</code> with <code>source_type</code> = <code>"HUMAN"</code>, <code>"LLM_JUDGE"</code>, or <code>"CODE"</code>. This is the field the UI uses to group and contrast scores.</div>
+    </div>
+    <div class="concept-card blue">
+      <div class="card-label">Field 4 · Recommended</div>
+      <div class="card-title">source_id</div>
+      <div class="card-body">Who or what produced the assessment — a user ID, judge name, or scorer version. Lets you filter by reviewer cohort or judge generation.</div>
+    </div>
+    <div class="concept-card amber">
+      <div class="card-label">Field 5 · Recommended</div>
+      <div class="card-title">rationale</div>
+      <div class="card-body">Free-text justification. For judges: the chain-of-thought. For humans: the comment they left. Critical for debugging why a score landed where it did.</div>
+    </div>
+  </div>
+
+  <div class="insight">
+    <div class="insight-label">Why the unified schema matters</div>
+    <p>Because all sources land in the same shape, you can write <strong>one query</strong> that returns the human score, the judge score, and the code-scorer score for every trace — and compute the gap between them. That gap is the input to <strong>judge alignment</strong> in §7.3.</p>
+  </div>
+
+  <!-- ── END-TO-END WORKFLOW ── -->
+  <div class="section-header" style="margin-top:48px; margin-bottom:16px;">
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">End-to-end workflow: log_feedback() in production</h3>
+  </div>
+
+  <p class="prose">
+    The typical flow when a real user clicks 👍 on a live response. The key requirement: every production trace must carry a stable <code>client_request_id</code> tag <strong>at the moment it is created</strong>, so the backend can find it later when feedback arrives.
+  </p>
+
+  <div class="pipeline-wrap">
+    <div class="pipe-stage">
+      <div class="pipe-idx">1</div>
+      <div class="pipe-inner">
+        <div class="pipe-name">Request handled, trace logged</div>
+        <div class="pipe-detail">User asks a question. Your traced agent handles it. Trace is written with a unique <code>client_request_id</code> tag your backend controls.</div>
+      </div>
+      <div class="pipe-api">@trace + tag</div>
+    </div>
+
+    <div class="pipe-stage">
+      <div class="pipe-idx">2</div>
+      <div class="pipe-inner">
+        <div class="pipe-name">Response delivered with feedback widget</div>
+        <div class="pipe-detail">Frontend shows the response alongside thumbs-up / thumbs-down buttons. The <code>client_request_id</code> is embedded in the widget state.</div>
+      </div>
+      <div class="pipe-api">UI</div>
+    </div>
+
+    <div class="pipe-stage">
+      <div class="pipe-idx">3</div>
+      <div class="pipe-inner">
+        <div class="pipe-name">User reacts; backend looks up trace</div>
+        <div class="pipe-detail">User clicks 👍. Backend receives the rating + request id, then runs <code>search_traces(filter_string="tags.client_request_id='...'")</code> to find the trace.</div>
+      </div>
+      <div class="pipe-api">search_traces</div>
+    </div>
+
+    <div class="pipe-stage">
+      <div class="pipe-idx">4</div>
+      <div class="pipe-inner">
+        <div class="pipe-name">Feedback attached to the trace</div>
+        <div class="pipe-detail">Backend calls <code>mlflow.log_feedback(trace_id, name, value, source)</code>. The new assessment is appended alongside any existing judge and code-scorer assessments.</div>
+      </div>
+      <div class="pipe-api">log_feedback</div>
+    </div>
+  </div>
+
+  <!-- ── CODE BLOCK ── -->
+  <div class="code-block"><span class="kw">import</span> mlflow
+<span class="kw">from</span> mlflow.entities <span class="kw">import</span> AssessmentSource
+
+<span class="cm"># 1. Find the trace using the client_request_id tagged at creation time</span>
+traces = mlflow.<span class="fn">search_traces</span>(
+    filter_string=<span class="st">"tags.client_request_id = 'req_abc_123'"</span>
+)
+trace_id = traces.iloc[<span class="nu">0</span>][<span class="st">"trace_id"</span>]
+
+<span class="cm"># 2. Attach the user's feedback to the trace</span>
+mlflow.<span class="fn">log_feedback</span>(
+    trace_id=trace_id,
+    name=<span class="st">"user_helpful"</span>,
+    value=<span class="kw">True</span>,                                <span class="cm"># thumbs up</span>
+    rationale=<span class="st">"User clicked thumbs up"</span>,
+    source=<span class="fn">AssessmentSource</span>(
+        source_type=<span class="st">"HUMAN"</span>,
+        source_id=<span class="st">"user_456"</span>
+    )
+)</div>
+
+  <!-- ── COMPARISON TABLE ── -->
+  <div class="section-header" style="margin-top:48px; margin-bottom:16px;">
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">When to use which path</h3>
+  </div>
+
+  <div class="compare-wrap">
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>Need</th>
+          <th>Path</th>
+          <th>Why</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Calibrate a new judge against ground truth</td>
+          <td>Review App</td>
+          <td>Experts produce careful, consistent labels with rationale — perfect for few-shot anchors.</td>
+        </tr>
+        <tr>
+          <td>Capture millions of user signals at scale</td>
+          <td><code>log_feedback()</code></td>
+          <td>One API call per click. Cheap, real-time, no UI workflow to coordinate.</td>
+        </tr>
+        <tr>
+          <td>Curate edge cases for the eval dataset</td>
+          <td>Review App</td>
+          <td>Reviewers can annotate rationale and tag traces for inclusion in regression suites.</td>
+        </tr>
+        <tr>
+          <td>Track production quality drift over time</td>
+          <td><code>log_feedback()</code></td>
+          <td>Continuous signal queryable as Delta — feeds dashboards and alerting.</td>
+        </tr>
+        <tr>
+          <td>Build a judge alignment gold set</td>
+          <td>Review App</td>
+          <td>Need consistent expert labels on a balanced trace sample — <code>log_feedback()</code> is too noisy.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="warning">
+    Tag every production trace with a stable <code>client_request_id</code> at creation time. Without it, you can't reliably look up the trace when feedback arrives — and any feedback you collect becomes orphaned.
+  </div>
+
+</section>
+
+<!-- ════════════════════════════════════ SECTION 7.3 ════ -->
+<section class="section" id="topic-7-3">
+
+  <div class="section-header">
+    <span class="section-marker purple">7.3 · Theory</span>
+    <h2 class="section-title">Judge Alignment — Calibrate Automated Scores to Human Judgment</h2>
+    <span class="section-rule"></span>
+  </div>
+
+  <p class="prose">
+    LLM judges are scalable, but they are <strong>not automatically calibrated</strong> to your domain. A correctness judge might confidently rate a response <strong>3.5 / 5</strong> when an expert reviewer would have rated it <strong>2.0 / 5</strong>. Two prompt versions might both score 4.2 from the judge while being objectively very different to a human. The drift compounds silently as your models and prompts evolve.
+  </p>
+
+  <div class="warning">
+    Treat any judge score as a <strong>directional opinion until you've measured its alignment</strong>. High judge scores create false confidence — you think quality is good when it isn't. Release gates that ride on uncalibrated judges will eventually let through regressions that humans would have caught.
+  </div>
+
+  <!-- ── INTERACTIVE ALIGNMENT SIMULATOR ── -->
+  <div class="section-header" style="margin-top:48px; margin-bottom:16px;">
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">Visualizing the gap</h3>
+  </div>
+
+  <p class="prose">
+    The simplest way to see misalignment: plot the human's rating and the judge's rating for the same trace on a 1–5 scale. Drag the slider below to simulate adding human-anchor examples to the judge prompt — watch the judge marker move toward the human's verdict, and the correlation numbers climb past the trust threshold.
+  </p>
+
+  <div class="align-sim" id="align-sim">
+    <div class="align-sim-header">
+      <span class="align-sim-label">Interactive · drag the slider to add human anchors</span>
+      <div class="toggle-group">
+        <button class="toggle-btn active" onclick="setScenario('drift')">Drift</button>
+        <button class="toggle-btn" onclick="setScenario('aligned')">Aligned</button>
+      </div>
+    </div>
+    <div class="align-sim-body">
+      <div class="align-scale">
+        <div class="align-scale-line"></div>
+
+        <div class="align-tick" style="left:8%"></div>
+        <div class="align-tick" style="left:26%"></div>
+        <div class="align-tick" style="left:50%"></div>
+        <div class="align-tick" style="left:74%"></div>
+        <div class="align-tick" style="left:92%"></div>
+
+        <div class="align-tick-lbl" style="left:8%">1</div>
+        <div class="align-tick-lbl" style="left:26%">2</div>
+        <div class="align-tick-lbl" style="left:50%">3</div>
+        <div class="align-tick-lbl" style="left:74%">4</div>
+        <div class="align-tick-lbl" style="left:92%">5</div>
+
+        <div class="align-gap-line" id="gap-line" style="left:26%; width:48%"></div>
+
+        <div class="align-marker human" style="left:26%"></div>
+        <div class="align-marker-lbl human" id="human-lbl" style="left:26%; top:8px;">Human · 2.0</div>
+
+        <div class="align-marker judge" id="judge-marker" style="left:74%"></div>
+        <div class="align-marker-lbl judge" id="judge-lbl" style="left:74%; top:8px;">Judge · 3.5</div>
+      </div>
+
+      <div class="align-control">
+        <span class="align-slider-lbl">Anchors added <span id="anchor-count" style="color:var(--accent-purple)">0</span></span>
+        <input type="range" id="anchor-slider" class="align-slider" min="0" max="100" value="0" oninput="updateAlignment(this.value)"/>
+      </div>
+
+      <div class="align-stats">
+        <div class="align-stat">
+          <div class="align-stat-lbl">Pearson r</div>
+          <div class="align-stat-val bad" id="pearson-val">0.28</div>
+          <div class="align-stat-desc" id="pearson-desc">Judge unusable — release-risky</div>
+        </div>
+        <div class="align-stat">
+          <div class="align-stat-lbl">Cohen κ</div>
+          <div class="align-stat-val bad" id="kappa-val">0.19</div>
+          <div class="align-stat-desc" id="kappa-desc">Near-random agreement</div>
+        </div>
+        <div class="align-stat">
+          <div class="align-stat-lbl">Gap</div>
+          <div class="align-stat-val bad" id="gap-val">1.5 pt</div>
+          <div class="align-stat-desc" id="gap-desc">Judge inflates by 1.5 points</div>
+        </div>
+      </div>
+
+      <div class="align-verdict" id="verdict">
+        <strong>Verdict:</strong> <span id="verdict-text">Do not use this judge in CI gates. Add more human-anchor examples and re-measure.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MECHANISM ── -->
+  <div class="section-header" style="margin-top:48px; margin-bottom:16px;">
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">How alignment works in MLflow</h3>
+  </div>
+
+  <p class="prose">
+    Mechanically, alignment is straightforward: you feed the judge <strong>examples of how humans actually rated similar traces</strong>, embedded as few-shot anchors directly in the judge prompt. The judge learns to map "this kind of response" → "this kind of score" the way humans do. You're not retraining the LLM — you're giving it calibration data in its context.
+  </p>
+
+  <div class="card-grid">
+    <div class="concept-card teal">
+      <div class="card-label">Input 1</div>
+      <div class="card-title">Gold set</div>
+      <div class="card-body">30 to 100 traces with human ratings collected via the Review App or <code>log_feedback()</code>. Used to construct the few-shot anchors in the judge prompt.</div>
+    </div>
+    <div class="concept-card purple">
+      <div class="card-label">Input 2</div>
+      <div class="card-title">Target judge</div>
+      <div class="card-body">The judge whose calibration you want to improve — a <code>make_judge()</code> custom judge or a built-in. Alignment edits the prompt, not the underlying model.</div>
+    </div>
+    <div class="concept-card orange">
+      <div class="card-label">Input 3</div>
+      <div class="card-title">Holdout set</div>
+      <div class="card-body">A separate batch of human-labelled traces, <strong>never shown to the judge</strong>. Used only to measure alignment. Without it, you'd overfit to your anchors.</div>
+    </div>
+  </div>
+
+  <div class="warning">
+    The gold set (used to <em>build</em> the prompt) and the holdout set (used to <em>measure</em> alignment) must be disjoint. If you measure on the same traces you anchored on, correlation will always look great — and your CI gate will be lying to you.
+  </div>
+
+  <!-- ── MEASUREMENT ── -->
+  <div class="section-header" style="margin-top:48px; margin-bottom:16px;">
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">Measuring alignment: Pearson + Cohen's κ</h3>
+  </div>
+
+  <p class="prose">
+    Two complementary statistics, because neither is sufficient alone. Pearson captures whether the judge moves <em>in the same direction</em> as humans — great for catching ranking quality even when absolute scores are biased. Cohen's kappa measures <em>absolute agreement</em> on discrete buckets, corrected for chance — catches the case where the judge correlates but is systematically off.
+  </p>
+
+  <div class="card-grid">
+    <div class="concept-card blue">
+      <div class="card-label">Statistic 1</div>
+      <div class="card-title">Pearson correlation (r)</div>
+      <div class="card-body">Linear correlation between judge scores and human scores across the holdout. Best when scores are continuous or rubric-style (1–5). Computed with <code>scipy.stats.pearsonr</code>.</div>
+    </div>
+    <div class="concept-card amber">
+      <div class="card-label">Statistic 2</div>
+      <div class="card-title">Cohen's kappa (κ)</div>
+      <div class="card-body">Chance-corrected agreement on discrete or categorical scores. Best when ratings are pass/fail or bucketed. Computed with <code>sklearn.metrics.cohen_kappa_score</code>.</div>
+    </div>
+  </div>
+
+  <div class="compare-wrap">
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>Statistic</th>
+          <th>Below 0.4</th>
+          <th>0.4 – 0.7</th>
+          <th>Above 0.7</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Pearson r</td>
+          <td><span class="threshold-cell bad">Unusable</span> — judge doesn't track human direction</td>
+          <td><span class="threshold-cell mid">Directional only</span> — risky for gating decisions</td>
+          <td><span class="threshold-cell good">Trustworthy</span> — safe for release gates</td>
+        </tr>
+        <tr>
+          <td>Cohen κ</td>
+          <td><span class="threshold-cell bad">Near-random</span> agreement</td>
+          <td><span class="threshold-cell mid">Moderate</span> — keep iterating</td>
+          <td><span class="threshold-cell good">Strong</span> agreement</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="insight">
+    <div class="insight-label">The practical bar</div>
+    <p>Don't trust an automated score for release gates until <strong>both Pearson and kappa clear 0.7</strong> against your human holdout. If only one passes, you're either catching ranking but not magnitudes, or catching magnitudes but not ordering — both fail in real CI use.</p>
+  </div>
+
+  <!-- ── CALIBRATION LOOP ── -->
+  <div class="section-header" style="margin-top:48px; margin-bottom:16px;">
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">The calibration loop</h3>
+  </div>
+
+  <p class="prose">
+    Alignment is iterative — you almost never hit threshold on the first try. The loop runs until the holdout numbers clear the gate. Steps 2 and 5 are where most iteration happens: refine the rubric, add more diverse anchors, balance the rating distribution, retry.
+  </p>
+
+  <div class="pipeline-wrap">
+    <div class="pipe-stage">
+      <div class="pipe-idx">1</div>
+      <div class="pipe-inner">
+        <div class="pipe-name">Collect human labels</div>
+        <div class="pipe-detail">30–100 traces rated by experts via Review App. Balance the rating distribution — all-5s teaches the judge nothing.</div>
+      </div>
+      <div class="pipe-api">Review App</div>
+    </div>
+
+    <div class="pipe-stage">
+      <div class="pipe-idx">2</div>
+      <div class="pipe-inner">
+        <div class="pipe-name">Anchor in judge prompt</div>
+        <div class="pipe-detail">Embed labelled examples as few-shot demos in the <code>make_judge()</code> instructions. Show the judge how a 2 looks vs. a 4.</div>
+      </div>
+      <div class="pipe-api">make_judge</div>
+    </div>
+
+    <div class="pipe-stage">
+      <div class="pipe-idx">3</div>
+      <div class="pipe-inner">
+        <div class="pipe-name">Score the holdout</div>
+        <div class="pipe-detail">Run the anchored judge against the held-out, human-labelled traces. Collect parallel arrays of judge and human scores.</div>
+      </div>
+      <div class="pipe-api">evaluate()</div>
+    </div>
+
+    <div class="pipe-stage">
+      <div class="pipe-idx">4</div>
+      <div class="pipe-inner">
+        <div class="pipe-name">Measure correlation + kappa</div>
+        <div class="pipe-detail">Compute <code>pearsonr(judge, human)</code> and <code>cohen_kappa_score(judge, human)</code> on the parallel arrays.</div>
+      </div>
+      <div class="pipe-api">scipy/sklearn</div>
+    </div>
+
+    <div class="pipe-stage">
+      <div class="pipe-idx">5</div>
+      <div class="pipe-inner">
+        <div class="pipe-name">Gate check — and iterate</div>
+        <div class="pipe-detail">If both ≥ 0.7 → judge is trusted for CI. If not → refine rubric, add edge-case anchors, rebalance distribution, jump back to step 2.</div>
+      </div>
+      <div class="pipe-api">↻ if below</div>
+    </div>
+  </div>
+
+  <!-- ── CODE BLOCK ── -->
+  <div class="code-block"><span class="kw">import</span> mlflow, numpy <span class="kw">as</span> np
+<span class="kw">from</span> scipy.stats <span class="kw">import</span> pearsonr
+<span class="kw">from</span> sklearn.metrics <span class="kw">import</span> cohen_kappa_score
+<span class="kw">from</span> mlflow.genai.judges <span class="kw">import</span> make_judge
+
+<span class="cm"># 1. Pull the gold set: traces that already have human feedback</span>
+gold = mlflow.<span class="fn">search_traces</span>(
+    filter_string=<span class="st">"assessments.name = 'human_correctness' AND tags.split = 'gold'"</span>
+)
+
+<span class="cm"># 2. Define a judge with few-shot anchors built from the gold set</span>
+correctness_judge = <span class="fn">make_judge</span>(
+    name=<span class="st">"correctness_aligned_v1"</span>,
+    instructions=<span class="st">"""</span>
+<span class="st">    Rate {{ outputs }} for correctness given {{ inputs }}.</span>
+<span class="st">    Score 1-5. Examples below show how human reviewers scored similar cases:</span>
+<span class="st">    </span>
+<span class="st">    Example 1 (Human score: 2) — ...</span>
+<span class="st">    Example 2 (Human score: 4) — ...</span>
+<span class="st">    Example 3 (Human score: 1) — ...</span>
+<span class="st">    """</span>,
+    model=<span class="st">"databricks:/databricks-claude-sonnet-4"</span>
+)
+
+<span class="cm"># 3. Score the holdout (disjoint from gold)</span>
+holdout = mlflow.<span class="fn">search_traces</span>(filter_string=<span class="st">"tags.split = 'holdout'"</span>)
+judge_scores = [correctness_judge(trace=t).value <span class="kw">for</span> t <span class="kw">in</span> holdout]
+human_scores = [t.assessments[<span class="st">"human_correctness"</span>].value <span class="kw">for</span> t <span class="kw">in</span> holdout]
+
+<span class="cm"># 4. Measure alignment</span>
+r, _ = <span class="fn">pearsonr</span>(judge_scores, human_scores)
+k    = <span class="fn">cohen_kappa_score</span>(np.<span class="fn">round</span>(judge_scores).astype(<span class="kw">int</span>),
+                       np.<span class="fn">round</span>(human_scores).astype(<span class="kw">int</span>))
+
+<span class="fn">print</span>(<span class="st">f"Pearson r = {r:.3f} | Cohen kappa = {k:.3f}"</span>)
+
+<span class="cm"># 5. Gate</span>
+<span class="kw">if</span> r &gt;= <span class="nu">0.7</span> <span class="kw">and</span> k &gt;= <span class="nu">0.7</span>:
+    <span class="fn">print</span>(<span class="st">"Judge aligned — safe to use in CI gate"</span>)
+<span class="kw">else</span>:
+    <span class="fn">print</span>(<span class="st">"Refine rubric, add edge cases, repeat"</span>)</div>
+
+  <!-- ── PITFALLS ── -->
+  <div class="section-header" style="margin-top:48px; margin-bottom:16px;">
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">Common pitfalls</h3>
+  </div>
+
+  <div class="card-grid">
+    <div class="concept-card red">
+      <div class="card-label">Pitfall 1</div>
+      <div class="card-title">Aligning and measuring on the same set</div>
+      <div class="card-body">Correlation will always look strong because the judge has seen the answers. Alignment must be measured on a strictly held-out set the judge has never been anchored on.</div>
+    </div>
+    <div class="concept-card red">
+      <div class="card-label">Pitfall 2</div>
+      <div class="card-title">Too few human labels</div>
+      <div class="card-body">Under 20 examples produces unstable correlation estimates that swing wildly with one outlier. Aim for 50+ on the holdout, more if scores are noisy.</div>
+    </div>
+    <div class="concept-card red">
+      <div class="card-label">Pitfall 3</div>
+      <div class="card-title">Skewed gold-set distribution</div>
+      <div class="card-body">If 90% of human ratings are 5, correlation can look high but the judge has only learned to output 5. Force balance across the rating range when sampling.</div>
+    </div>
+    <div class="concept-card red">
+      <div class="card-label">Pitfall 4</div>
+      <div class="card-title">Aligning once and forgetting</div>
+      <div class="card-body">Alignment drifts when the underlying model, prompt template, or app changes. Re-measure after every meaningful change and on a quarterly cadence.</div>
+    </div>
+    <div class="concept-card red">
+      <div class="card-label">Pitfall 5</div>
+      <div class="card-title">Ignoring κ when Pearson is high</div>
+      <div class="card-body">A judge can correlate well in <em>direction</em> while being absolutely biased — e.g., always rating one point higher than the human. Check both statistics every time.</div>
+    </div>
+  </div>
+
+</section>
+
+<!-- ── MODULE OUTCOME ── -->
+<div class="outcome">
+  <div class="outcome-icon">🎯</div>
+  <div class="outcome-text">
+    <strong>Module outcome:</strong> You understand both feedback collection paths (Review App for domain experts, <code>log_feedback()</code> for end users), the unified <code>Feedback</code> schema that lets you query human and automated scores side by side, and how to calibrate LLM judges to human judgment using few-shot anchors and the Pearson + κ measurement loop. You can recognize the 0.7 threshold as the practical bar for trusting a judge in a release gate, and you know the five most common failure modes that silently break alignment.
+  </div>
+</div>
+
+</main>
+
+<!-- ═══════════════════════════ SCRIPTS ═══ -->
+<script>
+/* ── NAV SCROLL TRACKING ── */
+const sections = document.querySelectorAll('.section');
+const navItems = document.querySelectorAll('.nav-item');
+
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const id = entry.target.getAttribute('id');
+      navItems.forEach(item => {
+        item.classList.toggle('active', item.getAttribute('href') === '#' + id);
+      });
+    }
+  });
+}, { rootMargin: '-20% 0px -60% 0px' });
+
+sections.forEach(s => observer.observe(s));
+
+/* ── PATH EXPLORER ── */
+function selectPath(idx) {
+  document.querySelectorAll('#path-explorer .path-item').forEach((el, i) => {
+    el.classList.toggle('active', i === idx);
+  });
+  document.querySelectorAll('#path-explorer .path-detail').forEach((el, i) => {
+    el.classList.toggle('active', i === idx);
+  });
+}
+
+/* ── ALIGNMENT SIMULATOR ── */
+// Scale: 1=8%, 2=26%, 3=50%, 4=74%, 5=92%
+// human is fixed at 2.0 (26%); judge starts at 3.5 (62%, halfway between 26 and 92 isn't right...)
+// Recompute: each unit = (92-8)/4 = 21%. So 2.0 = 8 + 1*21 = 29%? Let's recompute scale
+// Actually positions: 1→8, 2→8+21=29 (use 26 visually), 3→50, 4→71 (use 74), 5→92
+// Use linear interpolation: pct = 8 + (val - 1) * 21
+function valToPct(v) { return 8 + (v - 1) * 21; }
+
+let humanVal = 2.0;
+let judgeStartVal = 3.5;
+
+function updateAlignment(sliderVal) {
+  const t = sliderVal / 100;  // 0 = no anchors, 1 = full alignment
+  // Judge value moves from judgeStartVal toward humanVal as anchors are added
+  const judgeVal = judgeStartVal - (judgeStartVal - humanVal) * t;
+
+  const humanPct = valToPct(humanVal);
+  const judgePct = valToPct(judgeVal);
+
+  // Update marker positions
+  document.getElementById('judge-marker').style.left = judgePct + '%';
+  document.getElementById('judge-lbl').style.left = judgePct + '%';
+  document.getElementById('judge-lbl').textContent = 'Judge · ' + judgeVal.toFixed(1);
+
+  // Update gap line
+  const gapLine = document.getElementById('gap-line');
+  const gapLeft = Math.min(humanPct, judgePct);
+  const gapWidth = Math.abs(judgePct - humanPct);
+  gapLine.style.left = gapLeft + '%';
+  gapLine.style.width = gapWidth + '%';
+
+  // Anchor count
+  const anchors = Math.round(t * 50);
+  document.getElementById('anchor-count').textContent = anchors;
+
+  // Pearson and Kappa simulated curves
+  // r climbs from 0.28 → 0.92 as t goes 0 → 1
+  const pearson = 0.28 + 0.64 * t;
+  const kappa   = 0.19 + 0.65 * t;
+
+  document.getElementById('pearson-val').textContent = pearson.toFixed(2);
+  document.getElementById('kappa-val').textContent = kappa.toFixed(2);
+  document.getElementById('gap-val').textContent = (judgeStartVal - judgeVal === 0 && t === 0)
+    ? (judgeStartVal - humanVal).toFixed(1) + ' pt'
+    : Math.abs(judgeVal - humanVal).toFixed(1) + ' pt';
+
+  // Color and description updates
+  setStatClass('pearson-val', pearson);
+  setStatClass('kappa-val', kappa);
+  setGapClass('gap-val', Math.abs(judgeVal - humanVal));
+
+  document.getElementById('pearson-desc').textContent = describeR(pearson);
+  document.getElementById('kappa-desc').textContent   = describeK(kappa);
+  document.getElementById('gap-desc').textContent     = describeGap(Math.abs(judgeVal - humanVal));
+
+  // Verdict
+  const verdict = document.getElementById('verdict-text');
+  if (pearson >= 0.7 && kappa >= 0.7) {
+    verdict.innerHTML = '<span style="color:var(--green)">Judge aligned</span> — safe for CI gates and release decisions. Continue monitoring after any model or prompt change.';
+  } else if (pearson >= 0.4 || kappa >= 0.4) {
+    verdict.innerHTML = '<span style="color:var(--amber)">Partial alignment</span> — directional signal only. Add more anchors and rebalance distribution before trusting in gates.';
+  } else {
+    verdict.innerHTML = '<span style="color:var(--red)">Judge unaligned</span> — do not use in CI gates. Add more human-anchor examples and re-measure.';
+  }
+}
+
+function setStatClass(id, v) {
+  const el = document.getElementById(id);
+  el.classList.remove('good', 'mid', 'bad');
+  if (v >= 0.7) el.classList.add('good');
+  else if (v >= 0.4) el.classList.add('mid');
+  else el.classList.add('bad');
+}
+
+function setGapClass(id, v) {
+  const el = document.getElementById(id);
+  el.classList.remove('good', 'mid', 'bad');
+  if (v <= 0.3) el.classList.add('good');
+  else if (v <= 0.8) el.classList.add('mid');
+  else el.classList.add('bad');
+}
+
+function describeR(r) {
+  if (r >= 0.7) return 'Trustworthy for release gates';
+  if (r >= 0.4) return 'Directional only — risky';
+  return 'Judge unusable — release-risky';
+}
+
+function describeK(k) {
+  if (k >= 0.7) return 'Strong agreement with humans';
+  if (k >= 0.4) return 'Moderate — keep iterating';
+  return 'Near-random agreement';
+}
+
+function describeGap(g) {
+  if (g <= 0.3) return 'Judge tracks human verdict closely';
+  if (g <= 0.8) return 'Judge mildly off — refine rubric';
+  return 'Judge inflates by ' + g.toFixed(1) + ' points';
+}
+
+/* ── SCENARIO TOGGLE ── */
+function setScenario(s) {
+  const buttons = document.querySelectorAll('.toggle-btn');
+  buttons.forEach((b, i) => b.classList.toggle('active', (s === 'drift' && i === 0) || (s === 'aligned' && i === 1)));
+
+  const slider = document.getElementById('anchor-slider');
+  if (s === 'drift') {
+    slider.value = 0;
+    updateAlignment(0);
+  } else {
+    slider.value = 100;
+    updateAlignment(100);
+  }
+}
+
+// Initialize
+updateAlignment(0);
+</script>
+
+</body>
+</html>

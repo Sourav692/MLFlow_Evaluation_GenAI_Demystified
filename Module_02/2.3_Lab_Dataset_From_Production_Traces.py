@@ -219,8 +219,15 @@ print(f"Dataset {eval_dataset.name} now has {eval_dataset.to_df().count()} rows.
 # 🔍 STEP 6 - INSPECT THE AUTO-EXTRACTED COLUMNS
 # ============================================================================
 
-display(eval_dataset.to_df())
+import mlflow.genai.datasets
 
+CATALOG       = "genai_eval_tutorial"
+SCHEMA        = "module_01"
+DATASET_TABLE = "tutorial_eval_from_traces_v1"
+DATASET_FQN   = f"{CATALOG}.{SCHEMA}.{DATASET_TABLE}"
+
+eval_dataset = mlflow.genai.datasets.get_dataset(name=DATASET_FQN)
+display(eval_dataset.to_df())
 
 # COMMAND ----------
 

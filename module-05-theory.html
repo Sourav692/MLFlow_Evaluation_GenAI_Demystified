@@ -1,0 +1,1586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 05 — RAG &amp; Agent Evaluation with MLflow Tracing</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=Syne:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #05080f;
+  --surface: #0b0f1a;
+  --surface2: #111827;
+  --surface3: #1a2235;
+  --border: #1e2d45;
+  --border2: #243550;
+  --accent-orange: #ff6b35;
+  --accent-teal: #00bfa5;
+  --accent-blue: #4a9eff;
+  --accent-purple: #a855f7;
+  --accent-yellow: #fbbf24;
+  --text: #e8edf5;
+  --text-dim: #8899bb;
+  --text-muted: #4a5878;
+  --green: #22c55e;
+  --amber: #f59e0b;
+  --red: #ef4444;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Syne', sans-serif;
+  font-weight: 400;
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+
+/* ── MODULE HEADER ── */
+.mod-hero {
+  position: relative;
+  padding: 64px 48px 52px;
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.mod-hero::before {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 60% 80% at 10% 50%, rgba(0,191,165,0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 50% at 90% 20%, rgba(74,158,255,0.06) 0%, transparent 55%);
+  pointer-events: none;
+}
+
+.hero-inner { max-width: 960px; margin: 0 auto; position: relative; }
+
+.breadcrumb {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 28px;
+}
+
+.bc-tag {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; font-weight: 500;
+  letter-spacing: 0.15em; text-transform: uppercase;
+  color: var(--accent-teal);
+  padding: 4px 12px;
+  border: 1px solid rgba(0,191,165,0.25);
+  border-radius: 2px;
+  background: rgba(0,191,165,0.06);
+}
+
+.bc-sep { color: var(--text-muted); font-size: 12px; }
+
+.bc-current {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: var(--text-muted);
+  letter-spacing: 0.1em; text-transform: uppercase;
+}
+
+.mod-eyebrow {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-orange);
+  margin-bottom: 14px;
+}
+
+.mod-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(34px, 4.5vw, 56px);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  margin-bottom: 16px;
+}
+
+.mod-title em { font-style: italic; color: var(--accent-teal); }
+
+.mod-desc {
+  font-size: 16px; color: var(--text-dim);
+  max-width: 620px; line-height: 1.75;
+  margin-bottom: 36px;
+}
+
+.mod-meta {
+  display: flex; gap: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  width: fit-content;
+}
+
+.meta-chip {
+  padding: 10px 20px;
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: 2px;
+}
+.meta-chip:last-child { border-right: none; }
+
+.meta-val {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 16px; font-weight: 500;
+  color: var(--accent-teal);
+}
+
+.meta-lbl {
+  font-size: 10px; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.1em;
+}
+
+/* ── PROGRESS NAV ── */
+.progress-nav {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 48px;
+  position: sticky; top: 0;
+  z-index: 100;
+}
+
+.nav-inner {
+  max-width: 960px; margin: 0 auto;
+  display: flex; gap: 0; align-items: stretch;
+  overflow-x: auto;
+}
+
+.nav-inner::-webkit-scrollbar { height: 0; }
+
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 20px;
+  border-right: 1px solid var(--border);
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.nav-item:hover { background: var(--surface2); }
+.nav-item.active { background: rgba(255,107,53,0.06); }
+.nav-item:last-child { border-right: none; }
+
+.nav-num {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: var(--text-muted);
+  letter-spacing: 0.1em;
+}
+
+.nav-label {
+  font-size: 12px; color: var(--text-dim);
+  font-weight: 500;
+}
+
+.nav-item.active .nav-label { color: var(--accent-orange); }
+.nav-item.active .nav-num { color: var(--accent-orange); }
+
+/* ── MAIN ── */
+main {
+  max-width: 960px; margin: 0 auto;
+  padding: 56px 48px 100px;
+}
+
+/* ── SECTION ── */
+.section {
+  margin-bottom: 80px;
+  scroll-margin-top: 60px;
+}
+
+.section-header {
+  display: flex; align-items: center; gap: 16px;
+  margin-bottom: 36px;
+}
+
+.section-marker {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: var(--accent-orange);
+  letter-spacing: 0.15em; text-transform: uppercase;
+  padding: 4px 12px;
+  border: 1px solid rgba(255,107,53,0.25);
+  border-radius: 2px;
+  background: rgba(255,107,53,0.06);
+  white-space: nowrap;
+}
+
+.section-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 28px; line-height: 1.2;
+}
+
+.section-rule { flex: 1; height: 1px; background: var(--border); }
+
+/* ── CONCEPT PROSE ── */
+.prose {
+  font-size: 15px; color: var(--text-dim);
+  line-height: 1.8; max-width: 720px;
+  margin-bottom: 28px;
+}
+
+.prose strong { color: var(--text); font-weight: 600; }
+
+.prose code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12.5px;
+  color: var(--accent-blue);
+  background: rgba(74,158,255,0.08);
+  padding: 2px 7px;
+  border-radius: 3px;
+}
+
+/* ── KEY INSIGHT BOX ── */
+.insight {
+  padding: 20px 24px;
+  background: rgba(0,191,165,0.04);
+  border: 1px solid rgba(0,191,165,0.15);
+  border-left: 3px solid var(--accent-teal);
+  border-radius: 0 8px 8px 0;
+  margin-bottom: 28px;
+}
+
+.insight-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--accent-teal);
+  margin-bottom: 8px;
+}
+
+.insight p {
+  font-size: 14px; color: var(--text-dim); line-height: 1.7;
+}
+
+.insight p strong { color: var(--accent-teal); }
+
+/* ── WARNING BOX ── */
+.warning {
+  padding: 16px 20px;
+  background: rgba(245,158,11,0.04);
+  border: 1px solid rgba(245,158,11,0.15);
+  border-left: 3px solid var(--amber);
+  border-radius: 0 8px 8px 0;
+  margin-bottom: 28px;
+  font-size: 13.5px; color: var(--text-dim); line-height: 1.6;
+}
+
+.warning::before {
+  content: 'Note  ';
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--amber);
+}
+
+.warning code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: var(--accent-blue);
+  background: rgba(74,158,255,0.08);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+/* ── CONCEPT CARDS GRID ── */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+  margin-bottom: 36px;
+}
+
+.concept-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 22px;
+  transition: border-color 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+.concept-card::before {
+  content: '';
+  position: absolute; left: 0; top: 0; bottom: 0;
+  width: 3px;
+}
+
+.concept-card.teal::before { background: var(--accent-teal); }
+.concept-card.orange::before { background: var(--accent-orange); }
+.concept-card.purple::before { background: var(--accent-purple); }
+.concept-card.blue::before { background: var(--accent-blue); }
+.concept-card.amber::before { background: var(--amber); }
+.concept-card.red::before { background: var(--red); }
+.concept-card.green::before { background: var(--green); }
+
+.concept-card:hover { border-color: var(--border2); }
+
+.card-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.concept-card.teal .card-label { color: var(--accent-teal); }
+.concept-card.orange .card-label { color: var(--accent-orange); }
+.concept-card.purple .card-label { color: var(--accent-purple); }
+.concept-card.blue .card-label { color: var(--accent-blue); }
+.concept-card.amber .card-label { color: var(--amber); }
+.concept-card.red .card-label { color: var(--red); }
+.concept-card.green .card-label { color: var(--green); }
+
+.card-title {
+  font-size: 15px; font-weight: 600;
+  color: var(--text); margin-bottom: 8px;
+  line-height: 1.3;
+}
+
+.card-body {
+  font-size: 13px; color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.card-body code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11.5px;
+  color: var(--accent-blue);
+  background: rgba(74,158,255,0.08);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+/* ── COMPARISON TABLE ── */
+.compare-wrap { overflow-x: auto; margin-bottom: 36px; }
+
+.compare-table {
+  width: 100%; border-collapse: collapse;
+  font-size: 13.5px;
+}
+
+.compare-table thead tr {
+  border-bottom: 1px solid var(--border2);
+}
+
+.compare-table th {
+  padding: 12px 16px; text-align: left;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--text-muted);
+  font-weight: 500;
+}
+
+.compare-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-dim);
+  vertical-align: top;
+  line-height: 1.55;
+}
+
+.compare-table tr:last-child td { border-bottom: none; }
+.compare-table tr:hover td { background: rgba(255,255,255,0.012); }
+
+.compare-table td:first-child {
+  font-weight: 500; color: var(--text);
+  white-space: nowrap;
+}
+
+.compare-table td code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11.5px;
+  color: var(--accent-blue);
+  background: rgba(74,158,255,0.08);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.badge {
+  display: inline-block;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; padding: 2px 8px;
+  border-radius: 2px; font-weight: 500;
+  letter-spacing: 0.04em;
+  border: 1px solid;
+}
+
+.badge-fail { color: var(--red); background: rgba(239,68,68,0.08); border-color: rgba(239,68,68,0.2); }
+.badge-pass { color: var(--green); background: rgba(34,197,94,0.08); border-color: rgba(34,197,94,0.2); }
+.badge-partial { color: var(--amber); background: rgba(245,158,11,0.08); border-color: rgba(245,158,11,0.2); }
+.badge-new { color: var(--accent-orange); background: rgba(255,107,53,0.08); border-color: rgba(255,107,53,0.2); }
+
+/* ── CODE BLOCK ── */
+.code-block {
+  background: #020509;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent-blue);
+  border-radius: 0 6px 6px 0;
+  padding: 14px 18px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11.5px;
+  line-height: 1.8;
+  overflow-x: auto;
+  white-space: pre;
+  margin-bottom: 28px;
+}
+
+.kw { color: #c792ea; }
+.fn { color: #82aaff; }
+.st { color: #c3e88d; }
+.cm { color: var(--text-muted); }
+.nm { color: var(--accent-orange); }
+.nu { color: #f78c6c; }
+
+/* ── PIPELINE STAGES ── */
+.pipeline-wrap {
+  display: flex; flex-direction: column;
+  gap: 2px; margin-bottom: 36px;
+}
+
+.pipe-stage {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: stretch;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.pipe-inner { padding: 16px 20px; }
+
+.pipe-name {
+  font-size: 14px; font-weight: 600; color: var(--text);
+  margin-bottom: 4px;
+}
+
+.pipe-detail {
+  font-size: 12.5px; color: var(--text-muted); line-height: 1.5;
+}
+
+.pipe-detail code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-blue);
+  background: rgba(74,158,255,0.08);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.pipe-api {
+  padding: 12px 16px;
+  background: var(--surface2);
+  border-left: 1px solid var(--border);
+  display: flex; align-items: center;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; color: var(--text-muted);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+/* ── DIAGRAM CONTAINER ── */
+.diagram-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 36px;
+}
+
+.diagram-header {
+  padding: 14px 20px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+}
+
+.diagram-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: var(--text-muted);
+  letter-spacing: 0.08em; text-transform: uppercase;
+}
+
+.diagram-body {
+  padding: 32px 24px;
+  display: flex;
+  justify-content: center;
+}
+
+.diagram-body svg { max-width: 100%; height: auto; }
+
+/* ── SPAN EXPLORER ── */
+.span-explorer {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 36px;
+  background: var(--surface);
+  min-height: 340px;
+}
+
+.span-sidebar {
+  border-right: 1px solid var(--border);
+  background: var(--surface2);
+}
+
+.span-sidebar-title {
+  padding: 14px 16px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: var(--text-muted);
+  letter-spacing: 0.1em; text-transform: uppercase;
+  border-bottom: 1px solid var(--border);
+}
+
+.span-item {
+  padding: 12px 16px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.span-item:hover { background: var(--surface3); }
+.span-item.active { background: rgba(255,107,53,0.06); }
+
+.span-item .s-dot {
+  width: 6px; height: 6px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.span-item .s-name {
+  font-size: 13px; color: var(--text-dim); font-weight: 500;
+}
+
+.span-item.active .s-name { color: var(--accent-orange); }
+
+.span-detail {
+  padding: 24px;
+  display: none;
+}
+
+.span-detail.active { display: block; }
+
+.span-detail h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px; margin-bottom: 6px;
+}
+
+.span-detail .sd-type {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 3px 10px; border-radius: 2px;
+  display: inline-block;
+  margin-bottom: 16px;
+  border: 1px solid;
+}
+
+.sd-type.type-chain { color: var(--text-dim); background: rgba(136,153,187,0.08); border-color: rgba(136,153,187,0.2); }
+.sd-type.type-retriever { color: var(--accent-teal); background: rgba(0,191,165,0.08); border-color: rgba(0,191,165,0.2); }
+.sd-type.type-llm { color: var(--accent-purple); background: rgba(168,85,247,0.08); border-color: rgba(168,85,247,0.2); }
+.sd-type.type-tool { color: var(--accent-orange); background: rgba(255,107,53,0.08); border-color: rgba(255,107,53,0.2); }
+.sd-type.type-embedding { color: var(--accent-blue); background: rgba(74,158,255,0.08); border-color: rgba(74,158,255,0.2); }
+
+.span-detail .sd-desc {
+  font-size: 14px; color: var(--text-dim); line-height: 1.7;
+  margin-bottom: 16px;
+}
+
+.sd-table {
+  width: 100%; border-collapse: collapse;
+  font-size: 12.5px; margin-bottom: 14px;
+}
+
+.sd-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+.sd-table td:first-child {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  width: 120px;
+}
+
+.sd-table td:last-child {
+  color: var(--text-dim);
+}
+
+.sd-table td code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-blue);
+  background: rgba(74,158,255,0.08);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+/* ── DIAGNOSIS MATRIX ── */
+.diag-matrix {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 36px;
+}
+
+.diag-scenario {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 22px;
+  position: relative;
+  overflow: hidden;
+}
+
+.diag-scenario::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0;
+  height: 3px;
+}
+
+.diag-scenario.retrieval-miss::before { background: var(--accent-teal); }
+.diag-scenario.hallucination::before { background: var(--red); }
+
+.diag-signals {
+  display: flex; gap: 8px;
+  margin-bottom: 12px;
+}
+
+.diag-signal {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; padding: 3px 10px;
+  border-radius: 2px;
+  border: 1px solid;
+}
+
+.diag-title {
+  font-size: 16px; font-weight: 600;
+  color: var(--text); margin-bottom: 8px;
+}
+
+.diag-desc {
+  font-size: 13px; color: var(--text-muted);
+  line-height: 1.6; margin-bottom: 12px;
+}
+
+.diag-fix {
+  font-size: 12px; color: var(--text-dim);
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.diag-fix strong { color: var(--green); }
+
+/* ── STACK ARCHITECTURE ── */
+.stack-diagram {
+  display: flex; flex-direction: column;
+  gap: 3px;
+  margin-bottom: 36px;
+}
+
+.stack-layer {
+  display: grid;
+  grid-template-columns: 120px 1fr auto;
+  align-items: center;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  transition: border-color 0.15s;
+}
+
+.stack-layer:hover { border-color: var(--border2); }
+
+.stack-index {
+  padding: 16px 14px;
+  background: var(--surface2);
+  border-right: 1px solid var(--border);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--text-muted);
+  text-align: center;
+}
+
+.stack-content {
+  padding: 14px 20px;
+}
+
+.stack-title {
+  font-size: 14px; font-weight: 600; color: var(--text);
+  margin-bottom: 4px;
+}
+
+.stack-desc {
+  font-size: 12px; color: var(--text-muted); line-height: 1.5;
+}
+
+.stack-desc code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-blue);
+  background: rgba(74,158,255,0.08);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.stack-tag {
+  padding: 14px 18px;
+  background: var(--surface2);
+  border-left: 1px solid var(--border);
+}
+
+/* ── TIMELINE VIS ── */
+.timeline-vis {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 36px;
+}
+
+.tl-header {
+  padding: 14px 20px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+}
+
+.tl-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: var(--text-muted);
+  letter-spacing: 0.08em; text-transform: uppercase;
+}
+
+.tl-body { padding: 20px 24px; }
+
+.tl-row {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.tl-span-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; color: var(--text-dim);
+  text-align: right;
+}
+
+.tl-bar-track {
+  height: 28px;
+  position: relative;
+  background: rgba(255,255,255,0.02);
+  border-radius: 4px;
+}
+
+.tl-bar {
+  position: absolute;
+  height: 100%;
+  border-radius: 4px;
+  display: flex; align-items: center;
+  padding-left: 8px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: rgba(255,255,255,0.7);
+  cursor: pointer;
+  transition: filter 0.15s;
+}
+
+.tl-bar:hover { filter: brightness(1.2); }
+
+/* ── OUTCOME ── */
+.outcome {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent-orange);
+  border-radius: 0 10px 10px 0;
+  padding: 28px 32px;
+  display: flex; gap: 16px; align-items: start;
+}
+
+.outcome-icon { font-size: 20px; padding-top: 2px; }
+
+.outcome-text {
+  font-size: 14px; color: var(--text-dim); line-height: 1.7;
+}
+
+.outcome-text strong { color: var(--text); }
+
+.outcome-text code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11.5px;
+  color: var(--accent-blue);
+  background: rgba(74,158,255,0.08);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 768px) {
+  .mod-hero { padding: 40px 20px 36px; }
+  main { padding: 36px 20px 60px; }
+  .progress-nav { padding: 0 20px; }
+  .diag-matrix { grid-template-columns: 1fr; }
+  .span-explorer { grid-template-columns: 1fr; }
+  .span-sidebar { border-right: none; border-bottom: 1px solid var(--border); }
+  .card-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── HERO ── -->
+<header class="mod-hero">
+  <div class="hero-inner">
+    <div class="breadcrumb">
+      <span class="bc-tag">Databricks · MLflow 3 · GenAI</span>
+      <span class="bc-sep">/</span>
+      <span class="bc-current">Module 05 · RAG &amp; Agent Eval</span>
+    </div>
+    <div class="mod-eyebrow">Module 05 · Intermediate · ~3h</div>
+    <h1 class="mod-title">RAG &amp; Agent Evaluation with <em>MLflow Tracing</em></h1>
+    <p class="mod-desc">Evaluation patterns specific to retrieval pipelines and multi-step agentic systems — trace-based analysis on Databricks.</p>
+    <div class="mod-meta">
+      <div class="meta-chip"><span class="meta-val">2</span><span class="meta-lbl">Theory topics</span></div>
+      <div class="meta-chip"><span class="meta-val">2</span><span class="meta-lbl">Labs</span></div>
+      <div class="meta-chip"><span class="meta-val">3h</span><span class="meta-lbl">Duration</span></div>
+      <div class="meta-chip"><span class="meta-val">Int</span><span class="meta-lbl">Level</span></div>
+    </div>
+  </div>
+</header>
+
+<!-- ── NAV ── -->
+<nav class="progress-nav">
+  <div class="nav-inner">
+    <a href="#topic-5-1" class="nav-item active">
+      <span class="nav-num">5.1</span>
+      <span class="nav-label">Three quality pillars</span>
+    </a>
+    <a href="#topic-5-2" class="nav-item">
+      <span class="nav-num">5.2</span>
+      <span class="nav-label">Lab: RAG pipeline</span>
+    </a>
+    <a href="#topic-5-3" class="nav-item">
+      <span class="nav-num">5.3</span>
+      <span class="nav-label">Tracing deep dive</span>
+    </a>
+    <a href="#topic-5-4" class="nav-item">
+      <span class="nav-num">5.4</span>
+      <span class="nav-label">Lab: Agent judges</span>
+    </a>
+  </div>
+</nav>
+
+<!-- ── MAIN ── -->
+<main>
+
+<!-- ════════════════════════════════════════════ SECTION 5.1 -->
+<section class="section" id="topic-5-1">
+
+  <div class="section-header">
+    <span class="section-marker">5.1 · Theory</span>
+    <h2 class="section-title">RAG Evaluation: The Three Quality Pillars</h2>
+    <span class="section-rule"></span>
+  </div>
+
+  <p class="prose">
+    A RAG pipeline has two distinct stages — <strong>retrieval</strong> and <strong>generation</strong> — and each can fail independently. You can't evaluate RAG with a single quality score. Instead, evaluation splits into three pillars, each targeting a different point in the pipeline. This decomposition is what enables root-cause diagnosis: when something goes wrong, you know <em>where</em> it broke.
+  </p>
+
+  <!-- ── THE THREE PILLARS ── -->
+  <div class="section-header" style="margin-top:40px; margin-bottom:16px;">
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">The three pillars</h3>
+  </div>
+
+  <div class="card-grid">
+    <div class="concept-card teal">
+      <div class="card-label">Pillar 1 — Retrieval</div>
+      <div class="card-title">Did we fetch the right documents?</div>
+      <div class="card-body">Scored by <code>RetrievalRelevance</code>. Checks whether the documents pulled from your vector store actually relate to the user's question. If retrieval fails, generation has no chance — the answer will be fabricated or generic regardless of how good the LLM is.</div>
+    </div>
+    <div class="concept-card purple">
+      <div class="card-label">Pillar 2 — Groundedness</div>
+      <div class="card-title">Is the answer grounded in context?</div>
+      <div class="card-body">Scored by <code>RetrievalGroundedness</code>. Checks whether every claim in the response can be traced back to the retrieved chunks. This is the hallucination detector — a high score means the model is "reading" the context, not making things up.</div>
+    </div>
+    <div class="concept-card blue">
+      <div class="card-label">Pillar 3 — End-to-end</div>
+      <div class="card-title">Does the answer address the question?</div>
+      <div class="card-body">Scored by <code>Correctness</code> + <code>RelevanceToQuery</code>. Operates on the final output, treating the pipeline as a black box. This is what the user experiences — factual accuracy and topic relevance of the response.</div>
+    </div>
+  </div>
+
+  <!-- ── PIPELINE DIAGRAM ── -->
+  <div class="diagram-wrap">
+    <div class="diagram-header">
+      <div class="diagram-label">Interactive diagram</div>
+      <span class="badge-new" style="font-family:'IBM Plex Mono',monospace; font-size:9px; padding:2px 8px; border-radius:2px; color:var(--accent-teal); background:rgba(0,191,165,0.08); border:1px solid rgba(0,191,165,0.2);">Where each pillar evaluates</span>
+    </div>
+    <div class="diagram-body">
+      <svg width="100%" viewBox="0 0 860 400" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arr-main" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </marker>
+        </defs>
+
+        <!-- Pipeline flow -->
+        <rect x="40" y="40" width="120" height="44" rx="8" fill="var(--surface2)" stroke="var(--border2)" stroke-width="0.8"/>
+        <text x="100" y="66" text-anchor="middle" fill="var(--text)" font-family="'Syne',sans-serif" font-size="13" font-weight="500">User query</text>
+
+        <line x1="160" y1="62" x2="210" y2="62" stroke="var(--text-muted)" stroke-width="1" marker-end="url(#arr-main)"/>
+
+        <rect x="212" y="32" width="160" height="60" rx="8" fill="rgba(0,191,165,0.06)" stroke="var(--accent-teal)" stroke-width="0.8"/>
+        <text x="292" y="56" text-anchor="middle" fill="var(--accent-teal)" font-family="'IBM Plex Mono',monospace" font-size="12" font-weight="500">Retriever</text>
+        <text x="292" y="74" text-anchor="middle" fill="var(--text-muted)" font-family="'Syne',sans-serif" font-size="11">Vector search</text>
+
+        <line x1="372" y1="62" x2="422" y2="62" stroke="var(--text-muted)" stroke-width="1" marker-end="url(#arr-main)"/>
+
+        <rect x="424" y="32" width="160" height="60" rx="8" fill="rgba(168,85,247,0.06)" stroke="var(--accent-purple)" stroke-width="0.8"/>
+        <text x="504" y="56" text-anchor="middle" fill="var(--accent-purple)" font-family="'IBM Plex Mono',monospace" font-size="12" font-weight="500">Generator</text>
+        <text x="504" y="74" text-anchor="middle" fill="var(--text-muted)" font-family="'Syne',sans-serif" font-size="11">LLM + context</text>
+
+        <line x1="584" y1="62" x2="634" y2="62" stroke="var(--text-muted)" stroke-width="1" marker-end="url(#arr-main)"/>
+
+        <rect x="636" y="40" width="100" height="44" rx="8" fill="var(--surface2)" stroke="var(--border2)" stroke-width="0.8"/>
+        <text x="686" y="66" text-anchor="middle" fill="var(--text)" font-family="'Syne',sans-serif" font-size="13" font-weight="500">Answer</text>
+
+        <!-- Pillar 1 -->
+        <line x1="292" y1="92" x2="292" y2="140" stroke="var(--accent-teal)" stroke-width="0.5" stroke-dasharray="4 4"/>
+        <rect x="192" y="142" width="200" height="56" rx="8" fill="rgba(0,191,165,0.04)" stroke="var(--accent-teal)" stroke-width="0.8"/>
+        <text x="292" y="164" text-anchor="middle" fill="var(--accent-teal)" font-family="'IBM Plex Mono',monospace" font-size="12" font-weight="500">Pillar 1</text>
+        <text x="292" y="184" text-anchor="middle" fill="var(--text-muted)" font-family="'IBM Plex Mono',monospace" font-size="10">RetrievalRelevance</text>
+        <text x="292" y="218" text-anchor="middle" fill="var(--text-muted)" font-family="'Syne',sans-serif" font-size="11">Right docs fetched?</text>
+
+        <!-- Pillar 2 -->
+        <line x1="398" y1="92" x2="398" y2="258" stroke="var(--accent-purple)" stroke-width="0.5" stroke-dasharray="4 4"/>
+        <rect x="268" y="260" width="260" height="56" rx="8" fill="rgba(168,85,247,0.04)" stroke="var(--accent-purple)" stroke-width="0.8"/>
+        <text x="398" y="282" text-anchor="middle" fill="var(--accent-purple)" font-family="'IBM Plex Mono',monospace" font-size="12" font-weight="500">Pillar 2</text>
+        <text x="398" y="302" text-anchor="middle" fill="var(--text-muted)" font-family="'IBM Plex Mono',monospace" font-size="10">RetrievalGroundedness</text>
+        <text x="398" y="336" text-anchor="middle" fill="var(--text-muted)" font-family="'Syne',sans-serif" font-size="11">Answer grounded in context?</text>
+
+        <!-- Pillar 3 -->
+        <line x1="504" y1="92" x2="504" y2="360" stroke="var(--accent-blue)" stroke-width="0.5" stroke-dasharray="4 4"/>
+        <rect x="374" y="362" width="260" height="56" rx="8" fill="rgba(74,158,255,0.04)" stroke="var(--accent-blue)" stroke-width="0.8"/>
+        <text x="504" y="384" text-anchor="middle" fill="var(--accent-blue)" font-family="'IBM Plex Mono',monospace" font-size="12" font-weight="500">Pillar 3</text>
+        <text x="504" y="404" text-anchor="middle" fill="var(--text-muted)" font-family="'IBM Plex Mono',monospace" font-size="10">Correctness + RelevanceToQuery</text>
+      </svg>
+    </div>
+  </div>
+
+  <!-- ── WHY THREE PILLARS ── -->
+  <div class="section-header" style="margin-top:40px; margin-bottom:16px;">
+    <span class="section-marker" style="background:rgba(74,158,255,0.06); color:var(--accent-blue); border-color:rgba(74,158,255,0.2);">Key insight</span>
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">Why three pillars, not one?</h3>
+  </div>
+
+  <p class="prose">
+    A single quality score tells you <strong>something</strong> is wrong but not <strong>where</strong>. The three pillars let you pinpoint root cause. The combination of Correctness (end-to-end) and Groundedness (retriever-generator boundary) forms a diagnostic matrix that points directly at the fix.
+  </p>
+
+  <div class="diag-matrix">
+    <div class="diag-scenario retrieval-miss">
+      <div class="diag-signals">
+        <span class="diag-signal" style="color:var(--red); background:rgba(239,68,68,0.08); border-color:rgba(239,68,68,0.2);">Correctness: LOW</span>
+        <span class="diag-signal" style="color:var(--green); background:rgba(34,197,94,0.08); border-color:rgba(34,197,94,0.2);">Groundedness: HIGH</span>
+      </div>
+      <div class="diag-title">Retrieval miss</div>
+      <div class="diag-desc">The LLM faithfully used the retrieved context — but the retriever fetched the wrong documents. The model answered from bad context, not from hallucination.</div>
+      <div class="diag-fix"><strong>Fix:</strong> Improve retrieval — re-chunk documents, update embeddings, add missing docs to the index.</div>
+    </div>
+    <div class="diag-scenario hallucination">
+      <div class="diag-signals">
+        <span class="diag-signal" style="color:var(--red); background:rgba(239,68,68,0.08); border-color:rgba(239,68,68,0.2);">Correctness: LOW</span>
+        <span class="diag-signal" style="color:var(--red); background:rgba(239,68,68,0.08); border-color:rgba(239,68,68,0.2);">Groundedness: LOW</span>
+      </div>
+      <div class="diag-title">Hallucination</div>
+      <div class="diag-desc">The LLM ignored the retrieved context and generated claims that can't be traced back to any document. The context may have been fine — the model just didn't use it.</div>
+      <div class="diag-fix"><strong>Fix:</strong> Improve generation — adjust the system prompt for stricter grounding, lower temperature, or switch models.</div>
+    </div>
+  </div>
+
+  <div class="insight">
+    <div class="insight-label">Practical workflow</div>
+    <p>Always <strong>fix retrieval first</strong>. If the retriever scores are consistently low, improving generation won't help — the LLM simply doesn't have the right context. Fix the chunking or embedding strategy, then re-evaluate. Only tune the generation prompt once retrieval scores are healthy.</p>
+  </div>
+
+  <!-- ── RUNNING ALL THREE ── -->
+  <div class="section-header" style="margin-top:40px; margin-bottom:16px;">
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">Running all three pillars in one call</h3>
+  </div>
+
+  <p class="prose">
+    In MLflow, all three pillars are just scorers passed to a single <code>evaluate()</code> call. The trace-based scorers (<code>RetrievalGroundedness</code>, <code>RetrievalRelevance</code>) automatically extract the retrieval and generation spans from your traced RAG pipeline — you don't manually pass retrieved documents.
+  </p>
+
+  <div class="code-block"><span class="kw">from</span> mlflow.genai.scorers <span class="kw">import</span> (
+    Correctness, RelevanceToQuery,
+    RetrievalGroundedness, RetrievalRelevance
+)
+<span class="kw">import</span> mlflow
+
+<span class="cm"># All three pillars in one evaluate() call</span>
+results = mlflow.genai.<span class="fn">evaluate</span>(
+    data=eval_dataset,
+    predict_fn=my_rag_agent,
+    scorers=[
+        <span class="fn">RetrievalRelevance</span>(),       <span class="cm"># Pillar 1: retrieval quality</span>
+        <span class="fn">RetrievalGroundedness</span>(),     <span class="cm"># Pillar 2: grounding fidelity</span>
+        <span class="fn">Correctness</span>(),               <span class="cm"># Pillar 3a: factual accuracy</span>
+        <span class="fn">RelevanceToQuery</span>(),          <span class="cm"># Pillar 3b: topic relevance</span>
+    ]
+)
+
+<span class="cm"># Diagnose: find rows where retrieval failed</span>
+df = results.eval_table
+retrieval_misses = df[
+    (df[<span class="st">"correctness"</span>] <= <span class="nu">2</span>) &
+    (df[<span class="st">"retrieval_groundedness"</span>] >= <span class="nu">4</span>)
+]
+<span class="fn">print</span>(<span class="st">f"Retrieval misses: </span>{<span class="fn">len</span>(retrieval_misses)}<span class="st"> rows"</span>)</div>
+
+  <div class="warning">Trace-based scorers like <code>RetrievalGroundedness</code> require your agent to emit proper traces with RETRIEVER and CHAT_MODEL spans. Without <code>mlflow.openai.autolog()</code> or <code>@mlflow.trace</code>, these scorers silently return null — no error, just missing data.</div>
+
+</section>
+
+
+<!-- ════════════════════════════════════════════ SECTION 5.2 — LAB -->
+<section class="section" id="topic-5-2">
+
+  <div class="section-header">
+    <span class="section-marker" style="background:rgba(168,85,247,0.06); color:var(--accent-purple); border-color:rgba(168,85,247,0.2);">5.2 · Hands-On Lab</span>
+    <h2 class="section-title">Lab: Build &amp; Evaluate a RAG Pipeline on Databricks Vector Search</h2>
+    <span class="section-rule"></span>
+  </div>
+
+  <p class="prose">
+    In this lab you build a minimal RAG agent using Databricks Vector Search + Foundation Model API, instrument it with MLflow tracing, then evaluate all three quality pillars. You'll diagnose rows where Correctness is low but Groundedness is high (retrieval miss) vs. where both are low (hallucination). Lab content is in the companion notebook.
+  </p>
+
+  <div class="card-grid">
+    <div class="concept-card teal">
+      <div class="card-label">Step 1</div>
+      <div class="card-title">Create vector search index</div>
+      <div class="card-body">Index Delta Lake docs chunks in Unity Catalog using Databricks Vector Search. This becomes your RAG retriever.</div>
+    </div>
+    <div class="concept-card orange">
+      <div class="card-label">Step 2</div>
+      <div class="card-title">Build traced RAG agent</div>
+      <div class="card-body">Wire retrieval span → LLM generation span. Instrument with <code>mlflow.openai.autolog()</code> so both appear as separate traced spans.</div>
+    </div>
+    <div class="concept-card blue">
+      <div class="card-label">Step 3</div>
+      <div class="card-title">Run all three pillars</div>
+      <div class="card-body">Execute <code>RetrievalGroundedness</code> + <code>Correctness</code> + a custom <code>retrieved_document_recall</code> code scorer in one <code>evaluate()</code> call.</div>
+    </div>
+    <div class="concept-card purple">
+      <div class="card-label">Step 4</div>
+      <div class="card-title">Diagnose failure modes</div>
+      <div class="card-body">Identify retrieval misses vs. hallucinations from the score matrix. Trace the root cause in the MLflow UI span detail panel.</div>
+    </div>
+  </div>
+
+</section>
+
+
+<!-- ════════════════════════════════════════════ SECTION 5.3 -->
+<section class="section" id="topic-5-3">
+
+  <div class="section-header">
+    <span class="section-marker">5.3 · Theory</span>
+    <h2 class="section-title">Agent Tracing Deep Dive — Reading Spans</h2>
+    <span class="section-rule"></span>
+  </div>
+
+  <p class="prose">
+    Tracing is how you see <strong>inside</strong> your agent. Instead of treating the pipeline as a black box, MLflow tracing breaks every execution into <strong>spans</strong> — individual units of work that capture what happened, what went in, what came out, and how long it took. Understanding span structure is prerequisite for writing trace-based scorers and diagnosing agent behaviour.
+  </p>
+
+  <!-- ── WHAT IS A SPAN ── -->
+  <div class="section-header" style="margin-top:40px; margin-bottom:16px;">
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">What is a span?</h3>
+  </div>
+
+  <p class="prose">
+    A span represents a single operation within your agent's execution. When your RAG agent runs, it doesn't do one thing — it retrieves documents, calls an LLM, maybe invokes a tool, then formats a response. Each of those steps becomes a span in the trace. Spans are nested: a parent CHAIN span wraps the entire agent call, and child spans sit inside it for each sub-operation. Every span captures four things:
+  </p>
+
+  <div class="card-grid">
+    <div class="concept-card teal">
+      <div class="card-label">Captured</div>
+      <div class="card-title">Inputs</div>
+      <div class="card-body">What was passed into this operation — the query for a retriever, the messages array for an LLM call, the arguments for a tool invocation.</div>
+    </div>
+    <div class="concept-card orange">
+      <div class="card-label">Captured</div>
+      <div class="card-title">Outputs</div>
+      <div class="card-body">What the operation returned — retrieved documents, the LLM response, the tool result. This is what downstream scorers read.</div>
+    </div>
+    <div class="concept-card blue">
+      <div class="card-label">Captured</div>
+      <div class="card-title">Timing</div>
+      <div class="card-body">Start and end timestamps in nanoseconds. Enables latency analysis per span — find which operation is the bottleneck.</div>
+    </div>
+    <div class="concept-card purple">
+      <div class="card-label">Captured</div>
+      <div class="card-title">Attributes</div>
+      <div class="card-body">Metadata like model name, token count, endpoint URL, or custom key-value pairs you attach via the tracing API.</div>
+    </div>
+  </div>
+
+  <!-- ── SPAN TYPES ── -->
+  <div class="section-header" style="margin-top:40px; margin-bottom:16px;">
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">Span types</h3>
+  </div>
+
+  <p class="prose">
+    MLflow defines specific span types so scorers and the UI know what each span represents. Click each type below to see what it captures and when it appears.
+  </p>
+
+  <div class="span-explorer" id="span-explorer">
+    <div class="span-sidebar">
+      <div class="span-sidebar-title">Span types</div>
+      <div class="span-item active" onclick="selectSpan(0)">
+        <span class="s-dot" style="background:var(--text-dim)"></span>
+        <span class="s-name">CHAIN</span>
+      </div>
+      <div class="span-item" onclick="selectSpan(1)">
+        <span class="s-dot" style="background:var(--accent-purple)"></span>
+        <span class="s-name">CHAT_MODEL</span>
+      </div>
+      <div class="span-item" onclick="selectSpan(2)">
+        <span class="s-dot" style="background:var(--accent-teal)"></span>
+        <span class="s-name">RETRIEVER</span>
+      </div>
+      <div class="span-item" onclick="selectSpan(3)">
+        <span class="s-dot" style="background:var(--accent-orange)"></span>
+        <span class="s-name">TOOL</span>
+      </div>
+      <div class="span-item" onclick="selectSpan(4)">
+        <span class="s-dot" style="background:var(--accent-blue)"></span>
+        <span class="s-name">EMBEDDING</span>
+      </div>
+      <div class="span-item" onclick="selectSpan(5)">
+        <span class="s-dot" style="background:var(--amber)"></span>
+        <span class="s-name">LLM</span>
+      </div>
+    </div>
+
+    <div>
+      <div class="span-detail active" data-span="0">
+        <h3>CHAIN</h3>
+        <span class="sd-type type-chain">Outermost wrapper</span>
+        <p class="sd-desc">The root span representing the full agent execution from input to output. If your agent calls sub-agents, each gets its own nested CHAIN span.</p>
+        <table class="sd-table">
+          <tr><td>Inputs</td><td>The original user query or function arguments</td></tr>
+          <tr><td>Outputs</td><td>The final agent response (return value of your function)</td></tr>
+          <tr><td>Timing</td><td>Total wall-clock duration of the entire agent call</td></tr>
+          <tr><td>Children</td><td>All other spans nest inside this — RETRIEVER, CHAT_MODEL, TOOL, etc.</td></tr>
+          <tr><td>Created by</td><td><code>@mlflow.trace</code> decorator on your agent function</td></tr>
+        </table>
+      </div>
+
+      <div class="span-detail" data-span="1">
+        <h3>CHAT_MODEL</h3>
+        <span class="sd-type type-llm">LLM call · Chat format</span>
+        <p class="sd-desc">An LLM call using the chat completions format. Captures the full messages array as input and the model's response as output. This is what <code>RetrievalGroundedness</code> reads from.</p>
+        <table class="sd-table">
+          <tr><td>Inputs</td><td>The <code>messages</code> array (system, user, assistant turns)</td></tr>
+          <tr><td>Outputs</td><td>The model's response message with content and role</td></tr>
+          <tr><td>Attributes</td><td>Model name, token usage (prompt + completion), temperature</td></tr>
+          <tr><td>Created by</td><td><code>mlflow.openai.autolog()</code> or OpenAI client instrumentation</td></tr>
+          <tr><td>Used by</td><td><code>RetrievalGroundedness</code>, <code>Correctness</code> (reads response)</td></tr>
+        </table>
+      </div>
+
+      <div class="span-detail" data-span="2">
+        <h3>RETRIEVER</h3>
+        <span class="sd-type type-retriever">Document retrieval</span>
+        <p class="sd-desc">A document retrieval operation — vector search, keyword search, or hybrid. Captures the query and the list of retrieved documents. This is the primary data source for <code>RetrievalRelevance</code>.</p>
+        <table class="sd-table">
+          <tr><td>Inputs</td><td>The search query passed to the retriever</td></tr>
+          <tr><td>Outputs</td><td>List of retrieved documents (content + metadata)</td></tr>
+          <tr><td>Attributes</td><td>Index name, top-k, similarity threshold</td></tr>
+          <tr><td>Created by</td><td>LangChain autolog, or manually via <code>@mlflow.trace(span_type="RETRIEVER")</code></td></tr>
+          <tr><td>Used by</td><td><code>RetrievalRelevance</code>, <code>RetrievalGroundedness</code> (reads docs)</td></tr>
+        </table>
+      </div>
+
+      <div class="span-detail" data-span="3">
+        <h3>TOOL</h3>
+        <span class="sd-type type-tool">External tool call</span>
+        <p class="sd-desc">An external tool invocation — API call, database query, calculator, code execution. Captures the tool name, arguments, and result. Key for evaluating agent efficiency.</p>
+        <table class="sd-table">
+          <tr><td>Inputs</td><td>Tool name and arguments (the function call parameters)</td></tr>
+          <tr><td>Outputs</td><td>The tool's return value or result</td></tr>
+          <tr><td>Timing</td><td>External call latency — often the largest contributor to total time</td></tr>
+          <tr><td>Created by</td><td>LangChain/LangGraph autolog, or manually decorated tool functions</td></tr>
+          <tr><td>Used by</td><td><code>ToolCallEfficiency</code>, custom trace-based scorers</td></tr>
+        </table>
+      </div>
+
+      <div class="span-detail" data-span="4">
+        <h3>EMBEDDING</h3>
+        <span class="sd-type type-embedding">Embedding model call</span>
+        <p class="sd-desc">A call to an embedding model to convert text into a vector. Typically a child of a RETRIEVER span — the query gets embedded before the similarity search.</p>
+        <table class="sd-table">
+          <tr><td>Inputs</td><td>The text to embed (query or document chunk)</td></tr>
+          <tr><td>Outputs</td><td>The resulting vector (float array)</td></tr>
+          <tr><td>Attributes</td><td>Model name, vector dimension, batch size</td></tr>
+          <tr><td>Created by</td><td>Embedding client autolog or manual decoration</td></tr>
+        </table>
+      </div>
+
+      <div class="span-detail" data-span="5">
+        <h3>LLM</h3>
+        <span class="sd-type" style="color:var(--amber); background:rgba(245,158,11,0.08); border-color:rgba(245,158,11,0.2);">Raw text completion</span>
+        <p class="sd-desc">A raw text completion call (non-chat format). Less common in modern agents but still used for some backends that use the completions API rather than chat completions.</p>
+        <table class="sd-table">
+          <tr><td>Inputs</td><td>The prompt string (single text, not messages array)</td></tr>
+          <tr><td>Outputs</td><td>The completion text</td></tr>
+          <tr><td>Attributes</td><td>Model name, token usage, generation parameters</td></tr>
+          <tr><td>Note</td><td>Most modern agents use CHAT_MODEL instead. LLM is for legacy or non-chat endpoints.</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TRACE STRUCTURE DIAGRAM ── -->
+  <div class="section-header" style="margin-top:40px; margin-bottom:16px;">
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">How spans nest inside a trace</h3>
+  </div>
+
+  <p class="prose">
+    A trace is a tree of spans. The outermost CHAIN span is the root. Child spans nest inside it in the order they execute. This nesting is what lets you see the complete execution structure — which operations happened, in what sequence, and how long each took.
+  </p>
+
+  <div class="diagram-wrap">
+    <div class="diagram-header">
+      <div class="diagram-label">Interactive diagram</div>
+      <span class="badge-new" style="font-family:'IBM Plex Mono',monospace; font-size:9px; padding:2px 8px; border-radius:2px; color:var(--accent-teal); background:rgba(0,191,165,0.08); border:1px solid rgba(0,191,165,0.2);">Span hierarchy</span>
+    </div>
+    <div class="diagram-body">
+      <svg width="100%" viewBox="0 0 860 340" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arr-nest" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </marker>
+        </defs>
+
+        <!-- Outer CHAIN -->
+        <rect x="40" y="20" width="780" height="290" rx="16" fill="rgba(136,153,187,0.03)" stroke="var(--border2)" stroke-width="0.8"/>
+        <text x="430" y="50" text-anchor="middle" fill="var(--text)" font-family="'Syne',sans-serif" font-size="14" font-weight="500">CHAIN — my_rag_agent()</text>
+        <text x="430" y="68" text-anchor="middle" fill="var(--text-muted)" font-family="'Syne',sans-serif" font-size="11">Inputs, outputs, total duration</text>
+
+        <!-- RETRIEVER -->
+        <rect x="70" y="90" width="200" height="110" rx="8" fill="rgba(0,191,165,0.05)" stroke="var(--accent-teal)" stroke-width="0.8"/>
+        <text x="170" y="116" text-anchor="middle" fill="var(--accent-teal)" font-family="'IBM Plex Mono',monospace" font-size="12" font-weight="500">RETRIEVER</text>
+        <text x="170" y="138" text-anchor="middle" fill="var(--text-muted)" font-family="'Syne',sans-serif" font-size="11">Query in</text>
+        <text x="170" y="156" text-anchor="middle" fill="var(--text-muted)" font-family="'Syne',sans-serif" font-size="11">Docs out</text>
+        <text x="170" y="174" text-anchor="middle" fill="var(--text-muted)" font-family="'Syne',sans-serif" font-size="11">Timing</text>
+
+        <!-- Arrow: Retriever → Chat model -->
+        <line x1="270" y1="145" x2="320" y2="145" stroke="var(--text-muted)" stroke-width="1" marker-end="url(#arr-nest)"/>
+
+        <!-- CHAT_MODEL -->
+        <rect x="322" y="90" width="220" height="110" rx="8" fill="rgba(168,85,247,0.05)" stroke="var(--accent-purple)" stroke-width="0.8"/>
+        <text x="432" y="116" text-anchor="middle" fill="var(--accent-purple)" font-family="'IBM Plex Mono',monospace" font-size="12" font-weight="500">CHAT_MODEL</text>
+        <text x="432" y="138" text-anchor="middle" fill="var(--text-muted)" font-family="'Syne',sans-serif" font-size="11">Messages in</text>
+        <text x="432" y="156" text-anchor="middle" fill="var(--text-muted)" font-family="'Syne',sans-serif" font-size="11">Response out</text>
+        <text x="432" y="174" text-anchor="middle" fill="var(--text-muted)" font-family="'Syne',sans-serif" font-size="11">Token count</text>
+
+        <!-- Arrow: Chat model → Tool -->
+        <line x1="542" y1="145" x2="592" y2="145" stroke="var(--text-muted)" stroke-width="1" marker-end="url(#arr-nest)"/>
+
+        <!-- TOOL -->
+        <rect x="594" y="90" width="196" height="110" rx="8" fill="rgba(255,107,53,0.05)" stroke="var(--accent-orange)" stroke-width="0.8"/>
+        <text x="692" y="116" text-anchor="middle" fill="var(--accent-orange)" font-family="'IBM Plex Mono',monospace" font-size="12" font-weight="500">TOOL</text>
+        <text x="692" y="138" text-anchor="middle" fill="var(--text-muted)" font-family="'Syne',sans-serif" font-size="11">Name, args in</text>
+        <text x="692" y="156" text-anchor="middle" fill="var(--text-muted)" font-family="'Syne',sans-serif" font-size="11">Result out</text>
+        <text x="692" y="174" text-anchor="middle" fill="var(--text-muted)" font-family="'Syne',sans-serif" font-size="11">Timing</text>
+
+        <!-- EMBEDDING (child of RETRIEVER) -->
+        <line x1="170" y1="200" x2="170" y2="226" stroke="var(--accent-teal)" stroke-width="0.5" stroke-dasharray="4 4"/>
+        <rect x="70" y="228" width="200" height="60" rx="8" fill="rgba(74,158,255,0.05)" stroke="var(--accent-blue)" stroke-width="0.8"/>
+        <text x="170" y="254" text-anchor="middle" fill="var(--accent-blue)" font-family="'IBM Plex Mono',monospace" font-size="12" font-weight="500">EMBEDDING</text>
+        <text x="170" y="274" text-anchor="middle" fill="var(--text-muted)" font-family="'Syne',sans-serif" font-size="11">Text in → vector out</text>
+
+        <!-- Key API -->
+        <rect x="372" y="246" width="380" height="44" rx="8" fill="var(--surface2)" stroke="var(--border2)" stroke-width="0.8"/>
+        <text x="562" y="272" text-anchor="middle" fill="var(--accent-blue)" font-family="'IBM Plex Mono',monospace" font-size="12" font-weight="500">trace.search_spans(span_type=...)</text>
+        <text x="562" y="310" text-anchor="middle" fill="var(--text-muted)" font-family="'Syne',sans-serif" font-size="11">Key API for trace-based scorers</text>
+      </svg>
+    </div>
+  </div>
+
+  <!-- ── THE KEY API ── -->
+  <div class="section-header" style="margin-top:40px; margin-bottom:16px;">
+    <span class="section-marker" style="background:rgba(74,158,255,0.06); color:var(--accent-blue); border-color:rgba(74,158,255,0.2);">API</span>
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">The key API: trace.search_spans()</h3>
+  </div>
+
+  <p class="prose">
+    This is the method you'll use most when writing trace-based scorers. It lets you query a trace for specific span types and extract their data programmatically. This is what makes trace-based evaluation powerful — you can inspect intermediate steps, not just the final output.
+  </p>
+
+  <div class="code-block"><span class="kw">from</span> mlflow.entities <span class="kw">import</span> SpanType
+
+<span class="cm"># Inside a trace-based scorer:</span>
+<span class="nm">@scorer</span>
+<span class="kw">def</span> <span class="fn">retriever_latency_check</span>(trace):
+    <span class="cm"># Find all RETRIEVER spans in this trace</span>
+    retriever_spans = trace.<span class="fn">search_spans</span>(
+        span_type=SpanType.RETRIEVER
+    )
+
+    <span class="kw">if not</span> retriever_spans:
+        <span class="kw">return</span> Feedback(
+            value=<span class="st">"no_retriever"</span>,
+            rationale=<span class="st">"No retriever span found in trace"</span>
+        )
+
+    <span class="cm"># Check latency of the first retriever span</span>
+    span = retriever_spans[<span class="nu">0</span>]
+    latency_ms = (span.end_time_ns - span.start_time_ns) / <span class="nu">1e6</span>
+
+    <span class="kw">return</span> Feedback(
+        value=latency_ms < <span class="nu">500</span>,  <span class="cm"># Pass if under 500ms</span>
+        rationale=<span class="st">f"Retriever latency: </span>{latency_ms:.0f}<span class="st">ms"</span>
+    )</div>
+
+  <div class="code-block"><span class="cm"># Other common search_spans patterns:</span>
+
+<span class="cm"># Count total tool calls</span>
+tool_spans = trace.<span class="fn">search_spans</span>(span_type=SpanType.TOOL)
+num_tools = <span class="fn">len</span>(tool_spans)
+
+<span class="cm"># Get token count from all LLM calls</span>
+llm_spans = trace.<span class="fn">search_spans</span>(span_type=SpanType.CHAT_MODEL)
+total_tokens = <span class="fn">sum</span>(
+    s.attributes.get(<span class="st">"usage.total_tokens"</span>, <span class="nu">0</span>)
+    <span class="kw">for</span> s <span class="kw">in</span> llm_spans
+)
+
+<span class="cm"># Get retrieved documents for custom relevance check</span>
+ret_spans = trace.<span class="fn">search_spans</span>(span_type=SpanType.RETRIEVER)
+docs = ret_spans[<span class="nu">0</span>].outputs <span class="kw">if</span> ret_spans <span class="kw">else</span> []</div>
+
+  <!-- ── INSTRUMENTATION ── -->
+  <div class="section-header" style="margin-top:40px; margin-bottom:16px;">
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">How tracing gets instrumented</h3>
+  </div>
+
+  <p class="prose">
+    There are two approaches depending on your framework. They compose — autolog captures the LLM calls inside your manually-traced agent function, giving you a complete picture.
+  </p>
+
+  <div class="diag-matrix">
+    <div class="diag-scenario" style="border-top: none;">
+      <div class="diag-scenario::before" style="display:none;"></div>
+      <div class="diag-signals">
+        <span class="diag-signal" style="color:var(--green); background:rgba(34,197,94,0.08); border-color:rgba(34,197,94,0.2);">Zero-code</span>
+      </div>
+      <div class="diag-title">Autolog</div>
+      <div class="diag-desc"><code style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--accent-blue); background:rgba(74,158,255,0.08); padding:1px 5px; border-radius:3px;">mlflow.openai.autolog()</code> automatically instruments all OpenAI-compatible client calls. Each <code style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--accent-blue); background:rgba(74,158,255,0.08); padding:1px 5px; border-radius:3px;">chat.completions.create()</code> produces a CHAT_MODEL span. LangChain/LangGraph have their own autolog for the entire chain.</div>
+      <div class="diag-fix"><strong>Best for:</strong> Quick setup, standard frameworks, when you want tracing without code changes.</div>
+    </div>
+    <div class="diag-scenario" style="border-top: none;">
+      <div class="diag-signals">
+        <span class="diag-signal" style="color:var(--accent-purple); background:rgba(168,85,247,0.08); border-color:rgba(168,85,247,0.2);">Manual</span>
+      </div>
+      <div class="diag-title">@mlflow.trace decoration</div>
+      <div class="diag-desc">Decorate your functions to create CHAIN spans. MLflow captures the function arguments as inputs and the return value as output. You control exactly what gets traced and which spans are created.</div>
+      <div class="diag-fix"><strong>Best for:</strong> Custom agent frameworks, fine-grained control, when you need specific span types or custom attributes.</div>
+    </div>
+  </div>
+
+  <div class="code-block"><span class="cm"># Autolog: zero-code instrumentation</span>
+mlflow.openai.<span class="fn">autolog</span>()  <span class="cm"># All OpenAI calls become CHAT_MODEL spans</span>
+
+<span class="cm"># Manual: explicit control</span>
+<span class="nm">@mlflow.trace</span>
+<span class="kw">def</span> <span class="fn">my_rag_agent</span>(question: <span class="fn">str</span>) -> <span class="fn">str</span>:
+    <span class="cm"># This creates a CHAIN span wrapping everything</span>
+
+    docs = <span class="fn">retrieve_docs</span>(question)  <span class="cm"># If using autolog, RETRIEVER span auto-created</span>
+    response = client.chat.completions.<span class="fn">create</span>(
+        model=<span class="st">"databricks-claude-sonnet-4"</span>,
+        messages=[
+            {<span class="st">"role"</span>: <span class="st">"system"</span>, <span class="st">"content"</span>: <span class="st">f"Context: </span>{docs}<span class="st">"</span>},
+            {<span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: question}
+        ]
+    )  <span class="cm"># CHAT_MODEL span auto-created by autolog</span>
+
+    <span class="kw">return</span> response.choices[<span class="nu">0</span>].message.content</div>
+
+  <!-- ── READING TRACES IN THE UI ── -->
+  <div class="section-header" style="margin-top:40px; margin-bottom:16px;">
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">Reading traces in the Databricks UI</h3>
+  </div>
+
+  <p class="prose">
+    The MLflow trace UI in Databricks shows each trace as a timeline view. The CHAIN span stretches across the full width representing total execution time. Child spans appear as nested bars underneath, proportional to their duration.
+  </p>
+
+  <!-- Interactive timeline visualization -->
+  <div class="timeline-vis">
+    <div class="tl-header">
+      <div class="tl-label">Interactive: trace timeline view</div>
+      <span class="badge-new" style="font-family:'IBM Plex Mono',monospace; font-size:9px; padding:2px 8px; border-radius:2px; color:var(--text-muted); background:rgba(136,153,187,0.08); border:1px solid rgba(136,153,187,0.2);">Hover for latency</span>
+    </div>
+    <div class="tl-body">
+      <div class="tl-row">
+        <div class="tl-span-label">CHAIN</div>
+        <div class="tl-bar-track">
+          <div class="tl-bar" style="left:0%;width:100%;background:rgba(136,153,187,0.15);" title="my_rag_agent — 1,240ms total">1,240ms</div>
+        </div>
+      </div>
+      <div class="tl-row">
+        <div class="tl-span-label">EMBEDDING</div>
+        <div class="tl-bar-track">
+          <div class="tl-bar" style="left:2%;width:8%;background:rgba(74,158,255,0.3);" title="embed_query — 95ms">95ms</div>
+        </div>
+      </div>
+      <div class="tl-row">
+        <div class="tl-span-label">RETRIEVER</div>
+        <div class="tl-bar-track">
+          <div class="tl-bar" style="left:2%;width:18%;background:rgba(0,191,165,0.3);" title="vector_search — 220ms">220ms</div>
+        </div>
+      </div>
+      <div class="tl-row">
+        <div class="tl-span-label">CHAT_MODEL</div>
+        <div class="tl-bar-track">
+          <div class="tl-bar" style="left:22%;width:72%;background:rgba(168,85,247,0.3);" title="gpt-4o — 890ms · 1,847 tokens">890ms · 1,847 tokens</div>
+        </div>
+      </div>
+      <div class="tl-row">
+        <div class="tl-span-label">TOOL</div>
+        <div class="tl-bar-track">
+          <div class="tl-bar" style="left:95%;width:4%;background:rgba(255,107,53,0.3);" title="format_citations — 35ms">35ms</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p class="prose">
+    This timeline is useful for spotting performance bottlenecks — if the RETRIEVER span takes 80% of total time, you know where to optimise. It also reveals unexpected behaviour: an agent that makes three TOOL calls where one should suffice, or a CHAT_MODEL span that received truncated context because the retriever returned too much text.
+  </p>
+
+  <div class="insight">
+    <div class="insight-label">Critical implementation detail</div>
+    <p>Remember from Module 1: <code>ENABLE_MLFLOW_TRACING=True</code> (or calling <code>mlflow.deploy()</code>) is critical. Without it, Inference Tables capture only request/response pairs — <strong>not the full trace JSON</strong>. Trace-based scorers like <code>RetrievalGroundedness</code> need the span tree to find RETRIEVER outputs. No trace means these scorers silently return null.</p>
+  </div>
+
+</section>
+
+
+<!-- ════════════════════════════════════════════ SECTION 5.4 — LAB -->
+<section class="section" id="topic-5-4">
+
+  <div class="section-header">
+    <span class="section-marker" style="background:rgba(168,85,247,0.06); color:var(--accent-purple); border-color:rgba(168,85,247,0.2);">5.4 · Hands-On Lab</span>
+    <h2 class="section-title">Lab: Agent-Specific Judges — Tool Call Efficiency</h2>
+    <span class="section-rule"></span>
+  </div>
+
+  <p class="prose">
+    This lab evaluates agentic behaviour — not just the final answer, but how efficiently the agent reached it. You'll apply built-in agent judges and write a custom trace-based scorer, then compare two agent versions to measure improvement. Lab content is in the companion notebook.
+  </p>
+
+  <div class="card-grid">
+    <div class="concept-card orange">
+      <div class="card-label">Step 1</div>
+      <div class="card-title">Apply ToolCallEfficiency</div>
+      <div class="card-body">Run the built-in <code>ToolCallEfficiency</code> scorer to detect redundant tool calls — agents often repeat the same API call or invoke tools that return duplicate information.</div>
+    </div>
+    <div class="concept-card teal">
+      <div class="card-label">Step 2</div>
+      <div class="card-title">Custom trace-based scorer</div>
+      <div class="card-body">Write a scorer using <code>trace.search_spans(span_type=SpanType.TOOL)</code> that flags traces with more than 3 tool calls for a simple query — a signal the agent is reasoning inefficiently.</div>
+    </div>
+    <div class="concept-card purple">
+      <div class="card-label">Step 3</div>
+      <div class="card-title">Multi-turn evaluation</div>
+      <div class="card-body">Apply <code>KnowledgeRetention</code> to evaluate whether the agent maintains context across multi-turn conversations — critical for support and onboarding agents.</div>
+    </div>
+    <div class="concept-card blue">
+      <div class="card-label">Step 4</div>
+      <div class="card-title">Version comparison</div>
+      <div class="card-body">Compare v1 vs. v2 of the agent after optimising the system prompt. Use MLflow Experiments comparison view to see score improvements side-by-side.</div>
+    </div>
+  </div>
+
+  <div class="code-block"><span class="kw">from</span> mlflow.genai.scorers <span class="kw">import</span> ToolCallEfficiency
+<span class="kw">from</span> mlflow.genai <span class="kw">import</span> scorer
+<span class="kw">from</span> mlflow.entities <span class="kw">import</span> SpanType, Feedback
+
+<span class="nm">@scorer</span>
+<span class="kw">def</span> <span class="fn">tool_call_count</span>(trace):
+    <span class="st">"""Flag agents making too many tool calls for simple queries."""</span>
+    tool_spans = trace.<span class="fn">search_spans</span>(span_type=SpanType.TOOL)
+    count = <span class="fn">len</span>(tool_spans)
+    <span class="kw">return</span> Feedback(
+        value=count <= <span class="nu">3</span>,
+        rationale=<span class="st">f"Agent made </span>{count}<span class="st"> tool calls"</span>
+    )
+
+<span class="cm"># Combine built-in + custom in one evaluate() call</span>
+results = mlflow.genai.<span class="fn">evaluate</span>(
+    data=eval_dataset,
+    predict_fn=my_agent_v2,
+    scorers=[
+        <span class="fn">ToolCallEfficiency</span>(),     <span class="cm"># Built-in agent judge</span>
+        tool_call_count,             <span class="cm"># Custom trace-based scorer</span>
+        <span class="fn">Correctness</span>(),             <span class="cm"># Still check end-to-end quality</span>
+    ],
+    model_id=<span class="st">"models:/my-agent/2"</span>  <span class="cm"># Tag as v2 for comparison</span>
+)</div>
+
+</section>
+
+
+<!-- ═══════════════════════════ MODULE OUTCOME ═══ -->
+<div class="outcome">
+  <div class="outcome-icon">🎯</div>
+  <div class="outcome-text">
+    <strong>Module 05 outcome:</strong> You understand the three quality pillars for RAG evaluation — retrieval quality, generation groundedness, and end-to-end correctness — and can diagnose whether a failure is a retrieval miss or a hallucination using the Correctness × Groundedness matrix. You can read agent traces in the MLflow UI, navigate the span hierarchy (CHAIN, CHAT_MODEL, RETRIEVER, TOOL, EMBEDDING), and use <code>trace.search_spans()</code> to build custom trace-based scorers. You can evaluate agent efficiency with <code>ToolCallEfficiency</code> and compare agent versions quantitatively in MLflow Experiments.
+  </div>
+</div>
+
+</main>
+
+<script>
+var sections = document.querySelectorAll('.section');
+var navItems = document.querySelectorAll('.nav-item');
+
+var observer = new IntersectionObserver(function(entries) {
+  entries.forEach(function(entry) {
+    if (entry.isIntersecting) {
+      var id = entry.target.getAttribute('id');
+      navItems.forEach(function(item) {
+        item.classList.toggle('active', item.getAttribute('href') === '#' + id);
+      });
+    }
+  });
+}, { rootMargin: '-20% 0px -60% 0px' });
+
+sections.forEach(function(s) { observer.observe(s); });
+
+function selectSpan(idx) {
+  document.querySelectorAll('#span-explorer .span-item').forEach(function(el, i) {
+    el.classList.toggle('active', i === idx);
+  });
+  document.querySelectorAll('#span-explorer .span-detail').forEach(function(el, i) {
+    el.classList.toggle('active', i === idx);
+  });
+}
+</script>
+
+</body>
+</html>

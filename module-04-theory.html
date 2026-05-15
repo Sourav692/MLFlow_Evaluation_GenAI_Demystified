@@ -1,0 +1,1855 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 04 — Built-in Judges, Code-Based Scorers & Custom Judges</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=Syne:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #05080f;
+  --surface: #0b0f1a;
+  --surface2: #111827;
+  --surface3: #1a2235;
+  --border: #1e2d45;
+  --border2: #243550;
+  --accent-orange: #ff6b35;
+  --accent-teal: #00bfa5;
+  --accent-blue: #4a9eff;
+  --accent-purple: #a855f7;
+  --accent-yellow: #fbbf24;
+  --text: #e8edf5;
+  --text-dim: #8899bb;
+  --text-muted: #4a5878;
+  --green: #22c55e;
+  --amber: #f59e0b;
+  --red: #ef4444;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Syne', sans-serif;
+  font-weight: 400;
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+
+/* ── MODULE HEADER ── */
+.mod-hero {
+  position: relative;
+  padding: 64px 48px 52px;
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.mod-hero::before {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 60% 80% at 10% 50%, rgba(255,107,53,0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 50% at 90% 20%, rgba(168,85,247,0.06) 0%, transparent 55%);
+  pointer-events: none;
+}
+
+.hero-inner { max-width: 960px; margin: 0 auto; position: relative; }
+
+.breadcrumb {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 28px;
+}
+
+.bc-tag {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; font-weight: 500;
+  letter-spacing: 0.15em; text-transform: uppercase;
+  color: var(--accent-teal);
+  padding: 4px 12px;
+  border: 1px solid rgba(0,191,165,0.25);
+  border-radius: 2px;
+  background: rgba(0,191,165,0.06);
+}
+
+.bc-sep { color: var(--text-muted); font-size: 12px; }
+
+.bc-current {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: var(--text-muted);
+  letter-spacing: 0.1em; text-transform: uppercase;
+}
+
+.mod-eyebrow {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-orange);
+  margin-bottom: 14px;
+}
+
+.mod-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(34px, 4.5vw, 56px);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  margin-bottom: 16px;
+}
+
+.mod-title em { font-style: italic; color: var(--accent-orange); }
+
+.mod-desc {
+  font-size: 16px; color: var(--text-dim);
+  max-width: 620px; line-height: 1.75;
+  margin-bottom: 36px;
+}
+
+.mod-meta {
+  display: flex; gap: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  width: fit-content;
+}
+
+.meta-chip {
+  padding: 10px 20px;
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: 2px;
+}
+.meta-chip:last-child { border-right: none; }
+
+.meta-val {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 16px; font-weight: 500;
+  color: var(--accent-teal);
+}
+
+.meta-lbl {
+  font-size: 10px; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.1em;
+}
+
+/* ── PROGRESS NAV ── */
+.progress-nav {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 48px;
+  position: sticky; top: 0;
+  z-index: 100;
+}
+
+.nav-inner {
+  max-width: 960px; margin: 0 auto;
+  display: flex; gap: 0; align-items: stretch;
+  overflow-x: auto;
+}
+
+.nav-inner::-webkit-scrollbar { height: 0; }
+
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 20px;
+  border-right: 1px solid var(--border);
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.nav-item:hover { background: var(--surface2); }
+.nav-item.active { background: rgba(255,107,53,0.06); }
+.nav-item:last-child { border-right: none; }
+
+.nav-num {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: var(--text-muted);
+  letter-spacing: 0.1em;
+}
+
+.nav-label {
+  font-size: 12px; color: var(--text-dim);
+  font-weight: 500;
+}
+
+.nav-item.active .nav-label { color: var(--accent-orange); }
+.nav-item.active .nav-num { color: var(--accent-orange); }
+
+/* ── MAIN ── */
+main {
+  max-width: 960px; margin: 0 auto;
+  padding: 56px 48px 100px;
+}
+
+/* ── SECTION ── */
+.section {
+  margin-bottom: 80px;
+  scroll-margin-top: 60px;
+}
+
+.section-header {
+  display: flex; align-items: center; gap: 16px;
+  margin-bottom: 36px;
+}
+
+.section-marker {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: var(--accent-orange);
+  letter-spacing: 0.15em; text-transform: uppercase;
+  padding: 4px 12px;
+  border: 1px solid rgba(255,107,53,0.25);
+  border-radius: 2px;
+  background: rgba(255,107,53,0.06);
+  white-space: nowrap;
+}
+
+.section-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 28px; line-height: 1.2;
+}
+
+.section-rule { flex: 1; height: 1px; background: var(--border); }
+
+/* ── CONCEPT PROSE ── */
+.prose {
+  font-size: 15px; color: var(--text-dim);
+  line-height: 1.8; max-width: 720px;
+  margin-bottom: 28px;
+}
+
+.prose strong { color: var(--text); font-weight: 600; }
+
+.prose code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12.5px;
+  color: var(--accent-blue);
+  background: rgba(74,158,255,0.08);
+  padding: 2px 7px;
+  border-radius: 3px;
+}
+
+/* ── KEY INSIGHT BOX ── */
+.insight {
+  padding: 20px 24px;
+  background: rgba(0,191,165,0.04);
+  border: 1px solid rgba(0,191,165,0.15);
+  border-left: 3px solid var(--accent-teal);
+  border-radius: 0 8px 8px 0;
+  margin-bottom: 28px;
+}
+
+.insight-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--accent-teal);
+  margin-bottom: 8px;
+}
+
+.insight p {
+  font-size: 14px; color: var(--text-dim); line-height: 1.7;
+}
+
+.insight p strong { color: var(--accent-teal); }
+
+/* ── WARNING BOX ── */
+.warning {
+  padding: 16px 20px;
+  background: rgba(245,158,11,0.04);
+  border: 1px solid rgba(245,158,11,0.15);
+  border-left: 3px solid var(--amber);
+  border-radius: 0 8px 8px 0;
+  margin-bottom: 28px;
+  font-size: 13.5px; color: var(--text-dim); line-height: 1.6;
+}
+
+.warning::before {
+  content: 'Note  ';
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--amber);
+}
+
+.warning code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: var(--accent-blue);
+  background: rgba(74,158,255,0.08);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+/* ── CONCEPT CARDS GRID ── */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+  margin-bottom: 36px;
+}
+
+.concept-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 22px;
+  transition: border-color 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+.concept-card::before {
+  content: '';
+  position: absolute; left: 0; top: 0; bottom: 0;
+  width: 3px;
+}
+
+.concept-card.teal::before { background: var(--accent-teal); }
+.concept-card.orange::before { background: var(--accent-orange); }
+.concept-card.purple::before { background: var(--accent-purple); }
+.concept-card.blue::before { background: var(--accent-blue); }
+.concept-card.amber::before { background: var(--amber); }
+.concept-card.red::before { background: var(--red); }
+.concept-card.green::before { background: var(--green); }
+
+.concept-card:hover { border-color: var(--border2); }
+
+.card-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.concept-card.teal .card-label { color: var(--accent-teal); }
+.concept-card.orange .card-label { color: var(--accent-orange); }
+.concept-card.purple .card-label { color: var(--accent-purple); }
+.concept-card.blue .card-label { color: var(--accent-blue); }
+.concept-card.amber .card-label { color: var(--amber); }
+.concept-card.red .card-label { color: var(--red); }
+.concept-card.green .card-label { color: var(--green); }
+
+.card-title {
+  font-size: 15px; font-weight: 600;
+  color: var(--text); margin-bottom: 8px;
+  line-height: 1.3;
+}
+
+.card-body {
+  font-size: 13px; color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.card-body code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11.5px;
+  color: var(--accent-blue);
+  background: rgba(74,158,255,0.08);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+/* ── COMPARISON TABLE ── */
+.compare-wrap { overflow-x: auto; margin-bottom: 36px; }
+
+.compare-table {
+  width: 100%; border-collapse: collapse;
+  font-size: 13.5px;
+}
+
+.compare-table thead tr {
+  border-bottom: 1px solid var(--border2);
+}
+
+.compare-table th {
+  padding: 12px 16px; text-align: left;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--text-muted);
+  font-weight: 500;
+}
+
+.compare-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-dim);
+  vertical-align: top;
+  line-height: 1.55;
+}
+
+.compare-table tr:last-child td { border-bottom: none; }
+.compare-table tr:hover td { background: rgba(255,255,255,0.012); }
+
+.compare-table td:first-child {
+  font-weight: 500; color: var(--text);
+  white-space: nowrap;
+}
+
+.compare-table td code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11.5px;
+  color: var(--accent-blue);
+  background: rgba(74,158,255,0.08);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.badge {
+  display: inline-block;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; padding: 2px 8px;
+  border-radius: 2px; font-weight: 500;
+  letter-spacing: 0.04em;
+  border: 1px solid;
+}
+
+.badge-fail { color: var(--red); background: rgba(239,68,68,0.08); border-color: rgba(239,68,68,0.2); }
+.badge-pass { color: var(--green); background: rgba(34,197,94,0.08); border-color: rgba(34,197,94,0.2); }
+.badge-partial { color: var(--amber); background: rgba(245,158,11,0.08); border-color: rgba(245,158,11,0.2); }
+.badge-new { color: var(--accent-orange); background: rgba(255,107,53,0.08); border-color: rgba(255,107,53,0.2); }
+
+/* ── CODE BLOCK ── */
+.code-block {
+  background: #020509;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent-blue);
+  border-radius: 0 6px 6px 0;
+  padding: 14px 18px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11.5px;
+  line-height: 1.8;
+  overflow-x: auto;
+  white-space: pre;
+  margin-bottom: 28px;
+}
+
+.kw { color: #c792ea; }
+.fn { color: #82aaff; }
+.st { color: #c3e88d; }
+.cm { color: var(--text-muted); }
+.nm { color: var(--accent-orange); }
+.nu { color: #f78c6c; }
+
+/* ── STACK ARCHITECTURE ── */
+.stack-diagram {
+  display: flex; flex-direction: column;
+  gap: 3px;
+  margin-bottom: 36px;
+}
+
+.stack-layer {
+  display: grid;
+  grid-template-columns: 120px 1fr auto;
+  align-items: center;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  transition: border-color 0.15s;
+}
+
+.stack-layer:hover { border-color: var(--border2); }
+
+.stack-index {
+  padding: 16px 14px;
+  background: var(--surface2);
+  border-right: 1px solid var(--border);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--text-muted);
+  text-align: center;
+}
+
+.stack-content {
+  padding: 14px 20px;
+}
+
+.stack-title {
+  font-size: 14px; font-weight: 600; color: var(--text);
+  margin-bottom: 4px;
+}
+
+.stack-desc {
+  font-size: 12px; color: var(--text-muted); line-height: 1.5;
+}
+
+.stack-desc code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-blue);
+  background: rgba(74,158,255,0.08);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.stack-tag {
+  padding: 14px 18px;
+  background: var(--surface2);
+  border-left: 1px solid var(--border);
+}
+
+/* ── INTERACTIVE TAXONOMY TREE ── */
+.taxonomy-tree {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 36px;
+}
+
+.taxonomy-header {
+  padding: 14px 20px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+}
+
+.taxonomy-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: var(--text-muted);
+  letter-spacing: 0.08em; text-transform: uppercase;
+}
+
+.taxonomy-badge {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px; padding: 2px 8px;
+  border-radius: 2px; font-weight: 500;
+  color: var(--accent-teal);
+  background: rgba(0,191,165,0.08);
+  border: 1px solid rgba(0,191,165,0.2);
+}
+
+.taxonomy-body {
+  padding: 32px 24px;
+  display: flex;
+  justify-content: center;
+}
+
+.taxonomy-body svg { max-width: 100%; height: auto; }
+
+.tax-tooltip {
+  position: absolute;
+  bottom: 12px; left: 50%;
+  transform: translateX(-50%);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-family: 'Syne', sans-serif;
+  font-size: 12px; color: var(--text-dim);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+  white-space: nowrap;
+  max-width: 500px;
+  text-align: center;
+}
+
+/* ── SCORER EXPLORER ── */
+.scorer-explorer {
+  display: grid;
+  grid-template-columns: 210px 1fr;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 36px;
+  background: var(--surface);
+  min-height: 380px;
+}
+
+.scorer-sidebar {
+  border-right: 1px solid var(--border);
+  background: var(--surface2);
+}
+
+.scorer-sidebar-title {
+  padding: 14px 16px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: var(--text-muted);
+  letter-spacing: 0.1em; text-transform: uppercase;
+  border-bottom: 1px solid var(--border);
+}
+
+.scorer-item {
+  padding: 12px 16px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.scorer-item:hover { background: var(--surface3); }
+.scorer-item.active { background: rgba(255,107,53,0.06); }
+
+.scorer-item .s-dot {
+  width: 6px; height: 6px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.scorer-item .s-name {
+  font-size: 13px; color: var(--text-dim); font-weight: 500;
+}
+
+.scorer-item.active .s-name { color: var(--accent-orange); }
+
+.scorer-detail {
+  padding: 24px;
+  display: none;
+}
+
+.scorer-detail.active { display: block; }
+
+.scorer-detail h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px; margin-bottom: 6px;
+}
+
+.scorer-detail .sd-type {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 3px 10px; border-radius: 2px;
+  display: inline-block;
+  margin-bottom: 16px;
+  border: 1px solid;
+}
+
+.sd-type.type-judge { color: var(--accent-purple); background: rgba(168,85,247,0.08); border-color: rgba(168,85,247,0.2); }
+.sd-type.type-guideline { color: var(--amber); background: rgba(245,158,11,0.08); border-color: rgba(245,158,11,0.2); }
+
+.scorer-detail .sd-desc {
+  font-size: 14px; color: var(--text-dim); line-height: 1.7;
+  margin-bottom: 16px;
+}
+
+.sd-table {
+  width: 100%; border-collapse: collapse;
+  font-size: 12.5px; margin-bottom: 14px;
+}
+
+.sd-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+.sd-table td:first-child {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  width: 120px;
+}
+
+.sd-table td:last-child {
+  color: var(--text-dim);
+}
+
+.sd-table td code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-blue);
+  background: rgba(74,158,255,0.08);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+/* ── RETURN TYPE TOGGLE ── */
+.return-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3px;
+  margin-bottom: 4px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.rt-panel {
+  background: var(--surface);
+  padding: 22px;
+  cursor: pointer;
+  transition: background 0.2s;
+  position: relative;
+}
+
+.rt-panel:hover { background: var(--surface2); }
+.rt-panel.active { background: rgba(255,107,53,0.04); }
+
+.rt-panel.active::after {
+  content: '';
+  position: absolute; bottom: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--accent-orange);
+}
+
+.rt-num {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--text-muted);
+  margin-bottom: 10px;
+}
+
+.rt-name {
+  font-size: 15px; font-weight: 600;
+  color: var(--text); margin-bottom: 6px;
+}
+
+.rt-desc {
+  font-size: 12.5px; color: var(--text-muted); line-height: 1.5;
+}
+
+.rt-desc code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-blue);
+  background: rgba(74,158,255,0.08);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+/* ── PIPELINE STAGES ── */
+.pipeline-wrap {
+  display: flex; flex-direction: column;
+  gap: 2px; margin-bottom: 36px;
+}
+
+.pipe-stage {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: stretch;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.pipe-inner { padding: 16px 20px; }
+
+.pipe-name {
+  font-size: 14px; font-weight: 600; color: var(--text);
+  margin-bottom: 4px;
+}
+
+.pipe-detail {
+  font-size: 12.5px; color: var(--text-muted); line-height: 1.5;
+}
+
+.pipe-detail code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-blue);
+  background: rgba(74,158,255,0.08);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.pipe-api {
+  padding: 12px 16px;
+  background: var(--surface2);
+  border-left: 1px solid var(--border);
+  display: flex; align-items: center;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; color: var(--text-muted);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+/* ── RUBRIC DEMO ── */
+.rubric-demo {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 36px;
+}
+
+.rubric-header {
+  padding: 14px 20px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+}
+
+.rubric-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: var(--text-muted);
+  letter-spacing: 0.08em; text-transform: uppercase;
+}
+
+.rubric-row {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  display: grid;
+  grid-template-columns: 60px 1fr;
+  gap: 16px;
+  align-items: start;
+  transition: background 0.15s;
+}
+
+.rubric-row:hover { background: rgba(255,255,255,0.015); }
+.rubric-row:last-child { border-bottom: none; }
+
+.rubric-score {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 18px; font-weight: 500;
+  text-align: center;
+  padding-top: 2px;
+}
+
+.rubric-desc {
+  font-size: 13px; color: var(--text-dim); line-height: 1.6;
+}
+
+.rubric-desc strong { color: var(--text); }
+
+/* ── OUTCOME ── */
+.outcome {
+  margin-top: 60px;
+  padding: 28px 32px;
+  background: rgba(0,191,165,0.03);
+  border: 1px solid rgba(0,191,165,0.15);
+  border-radius: 10px;
+  display: flex; gap: 20px; align-items: flex-start;
+}
+
+.outcome-icon {
+  font-size: 22px; flex-shrink: 0; margin-top: 2px;
+}
+
+.outcome-text {
+  font-size: 14px; color: var(--text-dim); line-height: 1.75;
+}
+
+.outcome-text strong { color: var(--accent-teal); }
+.outcome-text code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: var(--accent-blue);
+  background: rgba(74,158,255,0.08);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 700px) {
+  .mod-hero, main { padding-left: 20px; padding-right: 20px; }
+  .progress-nav { padding: 0 20px; }
+  .card-grid { grid-template-columns: 1fr; }
+  .stack-layer { grid-template-columns: 1fr; }
+  .scorer-explorer { grid-template-columns: 1fr; }
+  .scorer-sidebar { display: flex; overflow-x: auto; border-right: none; border-bottom: 1px solid var(--border); }
+  .scorer-sidebar-title { display: none; }
+  .scorer-item { border-bottom: none; border-right: 1px solid var(--border); }
+  .return-toggle { grid-template-columns: 1fr; }
+  .pipe-stage { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════ HERO ═══ -->
+<header class="mod-hero">
+  <div class="hero-inner">
+    <div class="breadcrumb">
+      <span class="bc-tag">Databricks · MLflow 3 · GenAI</span>
+      <span class="bc-sep">/</span>
+      <span class="bc-current">Module 04 · Scorers &amp; Judges</span>
+    </div>
+    <div class="mod-eyebrow">Module 04 · Intermediate · ~3.5h</div>
+    <h1 class="mod-title">Built-in Judges,<br><em>Code-Based Scorers</em><br>&amp; Custom Judges</h1>
+    <p class="mod-desc">The full scorer taxonomy — from built-in LLM judges to deterministic code scorers to custom <code style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#4a9eff;background:rgba(74,158,255,0.08);padding:2px 7px;border-radius:3px;">make_judge()</code> — with Databricks labs for each. This is the evaluation engine powering every quality decision in your pipeline.</p>
+    <div class="mod-meta">
+      <div class="meta-chip"><span class="meta-val">1</span><span class="meta-lbl">Theory</span></div>
+      <div class="meta-chip"><span class="meta-val">4</span><span class="meta-lbl">Labs</span></div>
+      <div class="meta-chip"><span class="meta-val">3.5h</span><span class="meta-lbl">Duration</span></div>
+      <div class="meta-chip"><span class="meta-val">Intermediate</span><span class="meta-lbl">Level</span></div>
+    </div>
+  </div>
+</header>
+
+<!-- ═══════════════════════════════════════════ NAV ═══ -->
+<nav class="progress-nav">
+  <div class="nav-inner">
+    <a href="#topic-4-1" class="nav-item active">
+      <span class="nav-num">4.1</span>
+      <span class="nav-label">Scorer taxonomy</span>
+    </a>
+    <a href="#topic-4-2" class="nav-item">
+      <span class="nav-num">4.2</span>
+      <span class="nav-label">Lab: Built-in judges</span>
+    </a>
+    <a href="#topic-4-3" class="nav-item">
+      <span class="nav-num">4.3</span>
+      <span class="nav-label">Lab: Code-based scorers</span>
+    </a>
+    <a href="#topic-4-4" class="nav-item">
+      <span class="nav-num">4.4</span>
+      <span class="nav-label">Lab: Custom make_judge</span>
+    </a>
+    <a href="#topic-4-5" class="nav-item">
+      <span class="nav-num">4.5</span>
+      <span class="nav-label">Lab: Guidelines judge</span>
+    </a>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════ MAIN ═══ -->
+<main>
+
+<!-- ════════════════════════════ SECTION 4.1 — THEORY ════ -->
+<section class="section" id="topic-4-1">
+
+  <div class="section-header">
+    <span class="section-marker">4.1 · Theory</span>
+    <h2 class="section-title">Scorer Taxonomy: Judges vs. Code-Based vs. Guidelines</h2>
+    <span class="section-rule"></span>
+  </div>
+
+  <p class="prose">
+    In MLflow 3, a <strong>Scorer</strong> is the universal interface for evaluating LLM outputs. Every scorer receives some combination of inputs, outputs, expectations, and the execution trace — then returns a quality signal. But scorers split into fundamentally different types depending on <em>how</em> they produce that signal. Understanding this taxonomy is essential because it determines what you can evaluate, where the scorer can run, and what it costs.
+  </p>
+
+  <p class="prose">
+    At the top sits the <strong>Scorer interface</strong> — a common contract that <code>evaluate()</code> understands. Beneath it, two branches diverge based on how they compute their scores. <strong>LLM Judges</strong> use another language model to assess quality semantically — they excel at subjective, nuanced judgments like "Is this answer correct?" or "Is the response grounded in the retrieved context?" <strong>Code-Based Scorers</strong> are plain Python functions decorated with <code>@scorer</code> that execute deterministic logic — regex checks, length calculations, latency thresholds, JSON validation. No LLM call, no cost per evaluation, no variance. <strong>Guidelines</strong> are a specialised flavour of LLM judge optimised for binary pass/fail compliance checks against a flat list of rules.
+  </p>
+
+  <!-- ── INTERACTIVE: SCORER TAXONOMY TREE ── -->
+  <div class="taxonomy-tree">
+    <div class="taxonomy-header">
+      <span class="taxonomy-label">Interactive · Scorer taxonomy hierarchy</span>
+      <span class="taxonomy-badge">Click nodes for details</span>
+    </div>
+    <div class="taxonomy-body" style="position:relative;">
+      <svg id="taxonomy-svg" viewBox="0 0 800 420" style="max-width:800px;">
+        <defs>
+          <marker id="arw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M2 2L8 5L2 8" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </marker>
+        </defs>
+
+        <!-- Root: Scorer Interface -->
+        <g class="tax-node" data-tip="Common contract: receives (inputs, outputs, expectations, trace) → returns score" style="cursor:pointer">
+          <rect x="280" y="18" width="240" height="50" rx="10" fill="rgba(74,158,255,0.08)" stroke="rgba(74,158,255,0.3)" stroke-width="1.5"/>
+          <text x="400" y="38" text-anchor="middle" fill="#4a9eff" font-family="IBM Plex Mono,monospace" font-size="13" font-weight="500">Scorer</text>
+          <text x="400" y="56" text-anchor="middle" fill="#4a5878" font-family="Syne,sans-serif" font-size="11">Universal evaluation interface</text>
+        </g>
+
+        <!-- Branch lines -->
+        <line x1="340" y1="68" x2="200" y2="110" stroke="rgba(168,85,247,0.4)" stroke-width="1.5" marker-end="url(#arw)"/>
+        <line x1="460" y1="68" x2="600" y2="110" stroke="rgba(0,191,165,0.4)" stroke-width="1.5" marker-end="url(#arw)"/>
+
+        <!-- LLM Judges branch -->
+        <g class="tax-node" data-tip="Another LLM reads the output and assigns a score with chain-of-thought reasoning" style="cursor:pointer">
+          <rect x="80" y="112" width="240" height="50" rx="10" fill="rgba(168,85,247,0.08)" stroke="rgba(168,85,247,0.3)" stroke-width="1.5"/>
+          <text x="200" y="132" text-anchor="middle" fill="#a855f7" font-family="IBM Plex Mono,monospace" font-size="13" font-weight="500">LLM Judges</text>
+          <text x="200" y="150" text-anchor="middle" fill="#4a5878" font-family="Syne,sans-serif" font-size="11">Semantic evaluation</text>
+        </g>
+
+        <!-- Code-Based branch -->
+        <g class="tax-node" data-tip="Plain Python with @scorer — deterministic, zero cost, instant execution" style="cursor:pointer">
+          <rect x="480" y="112" width="240" height="50" rx="10" fill="rgba(0,191,165,0.08)" stroke="rgba(0,191,165,0.3)" stroke-width="1.5"/>
+          <text x="600" y="132" text-anchor="middle" fill="#00bfa5" font-family="IBM Plex Mono,monospace" font-size="13" font-weight="500">Code-Based Scorers</text>
+          <text x="600" y="150" text-anchor="middle" fill="#4a5878" font-family="Syne,sans-serif" font-size="11">Deterministic logic</text>
+        </g>
+
+        <!-- Sub-branches: LLM Judges -->
+        <line x1="130" y1="162" x2="100" y2="200" stroke="rgba(168,85,247,0.25)" stroke-width="1"/>
+        <line x1="200" y1="162" x2="200" y2="200" stroke="rgba(168,85,247,0.25)" stroke-width="1"/>
+        <line x1="270" y1="162" x2="300" y2="200" stroke="rgba(245,158,11,0.25)" stroke-width="1"/>
+
+        <g class="tax-node" data-tip="Correctness, RelevanceToQuery, RetrievalGroundedness, Safety — pre-built and ready" style="cursor:pointer">
+          <rect x="18" y="200" width="165" height="42" rx="7" fill="rgba(168,85,247,0.06)" stroke="rgba(168,85,247,0.2)" stroke-width="1"/>
+          <text x="100" y="226" text-anchor="middle" fill="#a855f7" font-family="IBM Plex Mono,monospace" font-size="11" font-weight="500">Built-in judges</text>
+        </g>
+
+        <g class="tax-node" data-tip="make_judge() — define custom rubrics and your own judge model endpoint" style="cursor:pointer">
+          <rect x="118" y="200" width="165" height="42" rx="7" fill="rgba(168,85,247,0.06)" stroke="rgba(168,85,247,0.2)" stroke-width="1"/>
+          <text x="200" y="226" text-anchor="middle" fill="#a855f7" font-family="IBM Plex Mono,monospace" font-size="11" font-weight="500">Custom make_judge()</text>
+        </g>
+
+        <g class="tax-node" data-tip="Binary pass/fail compliance rules — evaluated by an LLM, one verdict per rule" style="cursor:pointer">
+          <rect x="218" y="200" width="165" height="42" rx="7" fill="rgba(245,158,11,0.06)" stroke="rgba(245,158,11,0.2)" stroke-width="1"/>
+          <text x="300" y="226" text-anchor="middle" fill="#f59e0b" font-family="IBM Plex Mono,monospace" font-size="11" font-weight="500">Guidelines</text>
+        </g>
+
+        <!-- Sub-branches: Code-Based -->
+        <line x1="540" y1="162" x2="520" y2="200" stroke="rgba(0,191,165,0.25)" stroke-width="1"/>
+        <line x1="660" y1="162" x2="680" y2="200" stroke="rgba(0,191,165,0.25)" stroke-width="1"/>
+
+        <g class="tax-node" data-tip="Return int/bool/str/float directly — just the score value, no metadata" style="cursor:pointer">
+          <rect x="435" y="200" width="170" height="42" rx="7" fill="rgba(0,191,165,0.06)" stroke="rgba(0,191,165,0.2)" stroke-width="1"/>
+          <text x="520" y="226" text-anchor="middle" fill="#00bfa5" font-family="IBM Plex Mono,monospace" font-size="11" font-weight="500">Primitive return</text>
+        </g>
+
+        <g class="tax-node" data-tip="Return Feedback(value, rationale, source) — rich metadata for debugging" style="cursor:pointer">
+          <rect x="595" y="200" width="170" height="42" rx="7" fill="rgba(0,191,165,0.06)" stroke="rgba(0,191,165,0.2)" stroke-width="1"/>
+          <text x="680" y="226" text-anchor="middle" fill="#00bfa5" font-family="IBM Plex Mono,monospace" font-size="11" font-weight="500">Feedback return</text>
+        </g>
+
+        <!-- Environment constraints section -->
+        <rect x="30" y="275" width="740" height="1" fill="#1e2d45" opacity="0.5"/>
+        <text x="400" y="298" text-anchor="middle" fill="#4a5878" font-family="IBM Plex Mono,monospace" font-size="10" letter-spacing="0.08em">ENVIRONMENT CONSTRAINTS</text>
+
+        <!-- LLM judges env -->
+        <rect x="40" y="315" width="300" height="44" rx="7" fill="rgba(34,197,94,0.06)" stroke="rgba(34,197,94,0.2)" stroke-width="1"/>
+        <text x="190" y="333" text-anchor="middle" fill="#22c55e" font-family="IBM Plex Mono,monospace" font-size="11" font-weight="500">evaluate() + register().start()</text>
+        <text x="190" y="350" text-anchor="middle" fill="#4a5878" font-family="Syne,sans-serif" font-size="10">Dev, CI gate, &amp; production monitoring</text>
+
+        <!-- Code scorers env -->
+        <rect x="460" y="315" width="300" height="44" rx="7" fill="rgba(239,68,68,0.06)" stroke="rgba(239,68,68,0.2)" stroke-width="1"/>
+        <text x="610" y="333" text-anchor="middle" fill="#ef4444" font-family="IBM Plex Mono,monospace" font-size="11" font-weight="500">evaluate() only</text>
+        <text x="610" y="350" text-anchor="middle" fill="#4a5878" font-family="Syne,sans-serif" font-size="10">Dev &amp; CI gate — not production monitoring</text>
+
+        <!-- Dashed connection lines -->
+        <path d="M200 242 L200 265 L190 313" fill="none" stroke="rgba(34,197,94,0.3)" stroke-width="1" stroke-dasharray="4 3"/>
+        <path d="M600 242 L600 265 L610 313" fill="none" stroke="rgba(239,68,68,0.3)" stroke-width="1" stroke-dasharray="4 3"/>
+
+        <!-- Tooltip area -->
+        <rect id="tax-tip-bg" x="90" y="380" width="620" height="28" rx="6" fill="#111827" stroke="#1e2d45" stroke-width="0.5" opacity="0"/>
+        <text id="tax-tip-text" x="400" y="399" text-anchor="middle" fill="#8899bb" font-family="Syne,sans-serif" font-size="12" opacity="0"></text>
+      </svg>
+    </div>
+  </div>
+
+  <div class="warning">Code-based <code>@scorer</code> functions <strong>cannot</strong> be registered for production monitoring — only LLM judges (built-in, <code>make_judge()</code>, and Guidelines) support <code>.register().start()</code>. Your latency check and JSON format check run in dev and CI, but cannot run as continuous production monitors. Design your scorer suite with this boundary in mind from the start.</div>
+
+  <!-- ── WHEN TO USE EACH ── -->
+  <div class="section-header" style="margin-top:48px; margin-bottom:16px;">
+    <span class="section-marker" style="background:rgba(74,158,255,0.06); color:var(--accent-blue); border-color:rgba(74,158,255,0.2);">Decision</span>
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">When to use each scorer type</h3>
+  </div>
+
+  <p class="prose">
+    The decision rule is straightforward: if you can express it in Python without an LLM, use a code scorer. If the evaluation requires reading comprehension or semantic understanding, use an LLM judge. If you have a flat list of compliance rules that demand binary pass/fail verdicts, use Guidelines.
+  </p>
+
+  <div class="compare-wrap">
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>Dimension</th>
+          <th>LLM judges</th>
+          <th>Code-based (@scorer)</th>
+          <th>Guidelines</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>What it checks</td>
+          <td>Semantic quality — correctness, relevance, groundedness, tone</td>
+          <td>Deterministic properties — length, format, latency, regex matches</td>
+          <td>Compliance rules — policy adherence, format requirements</td>
+        </tr>
+        <tr>
+          <td>Cost per eval</td>
+          <td><span class="badge badge-partial">Token cost</span> LLM call per row</td>
+          <td><span class="badge badge-pass">Zero</span> Python execution only</td>
+          <td><span class="badge badge-partial">Token cost</span> LLM call per row</td>
+        </tr>
+        <tr>
+          <td>Variance</td>
+          <td>Non-deterministic — runs can yield slightly different scores</td>
+          <td>Zero variance — identical results every time</td>
+          <td>Low variance — binary pass/fail reduces noise</td>
+        </tr>
+        <tr>
+          <td>Production</td>
+          <td><span class="badge badge-pass">Supported</span></td>
+          <td><span class="badge badge-fail">Not supported</span></td>
+          <td><span class="badge badge-pass">Supported</span></td>
+        </tr>
+        <tr>
+          <td>Return type</td>
+          <td><code>Feedback</code> with rationale</td>
+          <td>Primitive or <code>Feedback</code></td>
+          <td><code>Feedback</code> with per-rule verdict</td>
+        </tr>
+        <tr>
+          <td>Best for</td>
+          <td>Quality assessment, hallucination detection, factual accuracy</td>
+          <td>SLA checks, format validation, business rule enforcement</td>
+          <td>Policy compliance, style rules, safety guardrails</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="insight">
+    <div class="insight-label">Cost architecture principle</div>
+    <p>Use code scorers as the <strong>first filter</strong> — they run at 100% coverage for zero cost. Only escalate to LLM judges for rows that pass the deterministic checks. In production, sample LLM judges at 10–50% of traffic. This tiered approach prevents the cost multiplication trap: 5 judges × 10,000 traces/day = 50,000 LLM calls just for evaluation.</p>
+  </div>
+
+  <!-- ── RETURN TYPES ── -->
+  <div class="section-header" style="margin-top:48px; margin-bottom:16px;">
+    <span class="section-marker" style="background:rgba(74,158,255,0.06); color:var(--accent-blue); border-color:rgba(74,158,255,0.2);">Returns</span>
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">Return types: primitives vs. Feedback objects</h3>
+  </div>
+
+  <p class="prose">
+    Scorers can return values in two forms. Understanding the difference matters because it determines how much debugging information you get when investigating low-scoring rows.
+  </p>
+
+  <!-- Interactive return type toggle -->
+  <div class="return-toggle" id="return-toggle">
+    <div class="rt-panel active" onclick="selectReturnType(0)">
+      <div class="rt-num">Return type 1</div>
+      <div class="rt-name">Primitive</div>
+      <div class="rt-desc">Returns <code>int</code>, <code>bool</code>, <code>str</code>, or <code>float</code> directly. Just the score, no metadata. Fast to write, sufficient for simple metrics.</div>
+    </div>
+    <div class="rt-panel" onclick="selectReturnType(1)">
+      <div class="rt-num">Return type 2</div>
+      <div class="rt-name">Feedback object</div>
+      <div class="rt-desc">Returns <code>Feedback(value, rationale, source)</code>. Bundles score with explanation and <code>AssessmentSource</code> recording who scored it.</div>
+    </div>
+  </div>
+
+  <div id="rt-details">
+    <div class="rt-detail" data-idx="0">
+      <div class="code-block"><span class="cm"># Primitive return — just the number</span>
+<span class="nm">@scorer</span>
+<span class="kw">def</span> <span class="fn">word_count</span>(outputs: str) -> int:
+    <span class="kw">return</span> <span class="fn">len</span>(outputs.<span class="fn">split</span>())
+
+<span class="cm"># Primitive return — boolean pass/fail</span>
+<span class="nm">@scorer</span>
+<span class="kw">def</span> <span class="fn">is_ascii</span>(outputs: str) -> bool:
+    <span class="kw">return</span> outputs.<span class="fn">isascii</span>()</div>
+      <p class="prose">The simplest approach. You get the value in the evaluation results table, but when a row scores poorly, there's no context about <em>why</em>. Suitable for quick development iteration or metrics where the value speaks for itself.</p>
+    </div>
+    <div class="rt-detail" data-idx="1" style="display:none;">
+      <div class="code-block"><span class="kw">from</span> mlflow.entities <span class="kw">import</span> Feedback, AssessmentSource
+
+<span class="nm">@scorer</span>
+<span class="kw">def</span> <span class="fn">has_citation</span>(outputs: str) -> Feedback:
+    found = <span class="st">"[docs]"</span> <span class="kw">in</span> outputs <span class="kw">or</span> <span class="st">"[ref]"</span> <span class="kw">in</span> outputs
+    <span class="kw">return</span> <span class="fn">Feedback</span>(
+        value=<span class="st">"yes"</span> <span class="kw">if</span> found <span class="kw">else</span> <span class="st">"no"</span>,
+        rationale=<span class="st">"Citation tag found"</span> <span class="kw">if</span> found
+                  <span class="kw">else</span> <span class="st">"No citation tag — agent should cite sources"</span>,
+        source=<span class="fn">AssessmentSource</span>(
+            source_type=<span class="st">"CODE"</span>,
+            source_id=<span class="st">"citation_checker_v1"</span>
+        )
+    )</div>
+      <p class="prose">The Feedback object powers the MLflow UI's detailed view. When you see a row scored "no" for citations, you immediately see <em>why</em> and <em>who scored it</em>. The <code>source_type</code> field — <code>CODE</code>, <code>LLM_JUDGE</code>, or <code>HUMAN</code> — lets the UI group and compare automated scores against human feedback. This is the format all built-in judges use internally.</p>
+    </div>
+  </div>
+
+  <!-- ── FEEDBACK ANATOMY ── -->
+  <div class="section-header" style="margin-top:40px; margin-bottom:16px;">
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">Feedback object anatomy</h3>
+  </div>
+
+  <p class="prose">
+    The <code>Feedback</code> object is the universal output format. Every built-in judge, every <code>make_judge()</code> custom judge, and every human label through the Review App or <code>log_feedback()</code> produces the same structure. This uniformity is what enables the MLflow UI to show automated scores and human labels side by side.
+  </p>
+
+  <div class="card-grid">
+    <div class="concept-card orange">
+      <div class="card-label">Field 1 · Required</div>
+      <div class="card-title">value</div>
+      <div class="card-body">The score itself. Can be an integer (1–5 rubric), boolean (pass/fail), string ("yes"/"no"), or float. Built-in judges use <code>"yes"</code>/<code>"no"</code> for binary and integers for rubric-based assessments.</div>
+    </div>
+    <div class="concept-card teal">
+      <div class="card-label">Field 2 · Recommended</div>
+      <div class="card-title">rationale</div>
+      <div class="card-body">A written explanation of why this score was assigned. For LLM judges: chain-of-thought reasoning. For code scorers: you write it — e.g., <code>"Latency was 3200ms, within 5000ms SLA"</code>.</div>
+    </div>
+    <div class="concept-card purple">
+      <div class="card-label">Field 3 · Recommended</div>
+      <div class="card-title">source</div>
+      <div class="card-body">An <code>AssessmentSource</code> with <code>source_type</code> (<code>"CODE"</code>, <code>"LLM_JUDGE"</code>, <code>"HUMAN"</code>) and <code>source_id</code> (e.g. <code>"latency_v1"</code>). Powers filtering and grouping in the UI.</div>
+    </div>
+  </div>
+
+  <div class="insight">
+    <div class="insight-label">Unified schema advantage</div>
+    <p>Because human feedback (Review App, <code>log_feedback()</code>), automated LLM judge scores, and code scorer results all produce the same <code>Feedback</code> shape, you can directly compare them. "The Correctness judge scored 4/5 but the human reviewer scored 2/5" — that gap is exactly what <strong>judge alignment</strong> (Module 7) measures and calibrates.</p>
+  </div>
+
+</section>
+
+<!-- ════════════════════════════ SECTION 4.2 — BUILT-IN JUDGES ════ -->
+<section class="section" id="topic-4-2">
+
+  <div class="section-header">
+    <span class="section-marker" style="background:rgba(168,85,247,0.06); color:var(--accent-purple); border-color:rgba(168,85,247,0.2);">4.2 · Hands-On Lab</span>
+    <h2 class="section-title">Lab: Built-in Judges — Run All on Tutorial Dataset</h2>
+    <span class="section-rule"></span>
+  </div>
+
+  <p class="prose">
+    MLflow 3 ships with five built-in judges that cover the most common quality dimensions. Each is pre-configured with a prompt template, rubric, and scoring logic — you instantiate them and pass them to <code>evaluate()</code>. This lab applies all five to the dataset you built in Module 2 and teaches you how to interpret the results.
+  </p>
+
+  <!-- ── INTERACTIVE: JUDGE EXPLORER ── -->
+  <div class="scorer-explorer" id="judge-explorer">
+    <div class="scorer-sidebar">
+      <div class="scorer-sidebar-title">Built-in judges</div>
+      <div class="scorer-item active" onclick="selectJudge(0)">
+        <span class="s-dot" style="background:var(--accent-teal)"></span>
+        <span class="s-name">Correctness</span>
+      </div>
+      <div class="scorer-item" onclick="selectJudge(1)">
+        <span class="s-dot" style="background:var(--accent-blue)"></span>
+        <span class="s-name">RelevanceToQuery</span>
+      </div>
+      <div class="scorer-item" onclick="selectJudge(2)">
+        <span class="s-dot" style="background:var(--accent-purple)"></span>
+        <span class="s-name">RetrievalGroundedness</span>
+      </div>
+      <div class="scorer-item" onclick="selectJudge(3)">
+        <span class="s-dot" style="background:var(--red)"></span>
+        <span class="s-name">Safety</span>
+      </div>
+      <div class="scorer-item" onclick="selectJudge(4)">
+        <span class="s-dot" style="background:var(--amber)"></span>
+        <span class="s-name">Guidelines</span>
+      </div>
+    </div>
+
+    <div>
+      <div class="scorer-detail active" data-judge="0">
+        <h3>Correctness</h3>
+        <span class="sd-type type-judge">LLM Judge · Rubric 1–5</span>
+        <p class="sd-desc">Evaluates whether the agent's response is factually accurate compared to the expected facts in your dataset. This is the primary quality metric for most Q&A and RAG applications.</p>
+        <table class="sd-table">
+          <tr><td>Requires</td><td><code>expectations.expected_facts</code> in your dataset</td></tr>
+          <tr><td>Returns</td><td>Score 1–5 with rationale explaining which facts were present, missing, or incorrect</td></tr>
+          <tr><td>Metric key</td><td><code>correctness/mean</code>, <code>correctness/variance</code></td></tr>
+          <tr><td>Production</td><td>Supported via <code>.register().start()</code></td></tr>
+          <tr><td>Best for</td><td>Q&A accuracy, factual verification, regression testing against known answers</td></tr>
+        </table>
+      </div>
+
+      <div class="scorer-detail" data-judge="1">
+        <h3>RelevanceToQuery</h3>
+        <span class="sd-type type-judge">LLM Judge · Rubric 1–5</span>
+        <p class="sd-desc">Assesses whether the response actually addresses the user's question. A response can be factually correct but completely irrelevant — this judge catches that failure mode.</p>
+        <table class="sd-table">
+          <tr><td>Requires</td><td><code>inputs</code> (the original question) — no expectations needed</td></tr>
+          <tr><td>Returns</td><td>Score 1–5 with rationale about how well the response addresses the query</td></tr>
+          <tr><td>Metric key</td><td><code>relevance_to_query/mean</code></td></tr>
+          <tr><td>Production</td><td>Supported via <code>.register().start()</code></td></tr>
+          <tr><td>Best for</td><td>Detecting off-topic responses, tangential answers, prompt injection bypasses</td></tr>
+        </table>
+      </div>
+
+      <div class="scorer-detail" data-judge="2">
+        <h3>RetrievalGroundedness</h3>
+        <span class="sd-type type-judge">LLM Judge · Rubric 1–5</span>
+        <p class="sd-desc">For RAG pipelines: checks whether the agent's response is grounded in the retrieved context or whether it hallucinated information not present in the documents. This is the hallucination detector.</p>
+        <table class="sd-table">
+          <tr><td>Requires</td><td>Trace with a <code>RETRIEVER</code> span containing retrieved documents</td></tr>
+          <tr><td>Returns</td><td>Score 1–5 with rationale identifying which claims are grounded vs. fabricated</td></tr>
+          <tr><td>Metric key</td><td><code>retrieval_groundedness/mean</code></td></tr>
+          <tr><td>Production</td><td>Supported via <code>.register().start()</code></td></tr>
+          <tr><td>Best for</td><td>Hallucination detection, RAG faithfulness, preventing confabulation</td></tr>
+        </table>
+      </div>
+
+      <div class="scorer-detail" data-judge="3">
+        <h3>Safety</h3>
+        <span class="sd-type type-judge">LLM Judge · Binary yes/no</span>
+        <p class="sd-desc">Checks whether the response contains harmful, toxic, or policy-violating content. Returns a binary "safe" or "unsafe" verdict. Typically run at 100% coverage with zero tolerance for failures.</p>
+        <table class="sd-table">
+          <tr><td>Requires</td><td><code>outputs</code> only — no expectations needed</td></tr>
+          <tr><td>Returns</td><td><code>"yes"</code> (safe) or <code>"no"</code> (unsafe) with rationale</td></tr>
+          <tr><td>Metric key</td><td><code>safety/ratio_pass</code> — should always be <code>1.0</code></td></tr>
+          <tr><td>Production</td><td>Supported — run at <code>sample_rate=1.0</code></td></tr>
+          <tr><td>Best for</td><td>Policy enforcement, harmful content detection, compliance requirements</td></tr>
+        </table>
+      </div>
+
+      <div class="scorer-detail" data-judge="4">
+        <h3>Guidelines</h3>
+        <span class="sd-type type-guideline">LLM Judge · Pass/fail per rule</span>
+        <p class="sd-desc">Evaluates the response against a flat list of compliance rules you define. Each rule gets an independent pass/fail verdict. The fastest path to enforcing tone, format, and policy constraints.</p>
+        <table class="sd-table">
+          <tr><td>Requires</td><td>A list of guideline strings at instantiation time</td></tr>
+          <tr><td>Returns</td><td>Per-rule <code>"yes"</code>/<code>"no"</code> with rationale per rule</td></tr>
+          <tr><td>Metric key</td><td><code>guidelines/ratio_pass</code> (across all rules)</td></tr>
+          <tr><td>Production</td><td>Supported via <code>.register().start()</code></td></tr>
+          <tr><td>Best for</td><td>Style rules, language requirements, topic restrictions, policy compliance</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <p class="prose">
+    The lab runs all five judges in a single <code>evaluate()</code> call on your UC-backed dataset from Module 2. You'll learn to interpret the results table — per-row scores, aggregate means, and the rationale for each judge — then identify the worst-scoring rows and diagnose root causes from the trace.
+  </p>
+
+  <div class="code-block"><span class="kw">from</span> mlflow.genai.scorers <span class="kw">import</span> (
+    Correctness, RelevanceToQuery, RetrievalGroundedness, Safety, Guidelines
+)
+<span class="kw">import</span> mlflow
+
+<span class="cm"># Load dataset from Module 2</span>
+dataset = mlflow.genai.datasets.<span class="fn">get_dataset</span>(<span class="st">"main.genai_eval.tutorial_eval_v1"</span>)
+
+<span class="cm"># Run ALL built-in judges in one call</span>
+results = mlflow.genai.<span class="fn">evaluate</span>(
+    data=dataset,
+    predict_fn=my_agent,
+    scorers=[
+        <span class="fn">Correctness</span>(),
+        <span class="fn">RelevanceToQuery</span>(),
+        <span class="fn">RetrievalGroundedness</span>(),
+        <span class="fn">Safety</span>(),
+        <span class="fn">Guidelines</span>(guidelines=[
+            <span class="st">"Response must be in English"</span>,
+            <span class="st">"Must not recommend deleting production tables"</span>,
+        ])
+    ],
+    model_id=<span class="st">"models:/my-agent/1"</span>
+)
+
+<span class="cm"># Inspect aggregate metrics</span>
+<span class="fn">print</span>(results.metrics)
+<span class="cm"># → {'correctness/mean': 4.1, 'safety/ratio_pass': 1.0, ...}</span>
+
+<span class="cm"># Compare two prompt versions in MLflow Experiments view</span>
+<span class="cm"># Run again with a new prompt → different run_id</span>
+<span class="cm"># Open Experiments UI → select both runs → Compare view</span></div>
+
+  <div class="insight">
+    <div class="insight-label">Root-cause diagnosis technique</div>
+    <p>When a row scores <code>correctness=2</code> but <code>retrieval_groundedness=5</code>, the retriever fetched the right documents but the LLM generated an inaccurate answer — a <strong>generation failure</strong>, fix the system prompt. When both are low, it's a <strong>retrieval failure</strong> — fix the vector search index or embeddings. The combination of judges is what enables root cause analysis.</p>
+  </div>
+
+</section>
+
+<!-- ════════════════════════════ SECTION 4.3 — CODE SCORERS ════ -->
+<section class="section" id="topic-4-3">
+
+  <div class="section-header">
+    <span class="section-marker" style="background:rgba(168,85,247,0.06); color:var(--accent-purple); border-color:rgba(168,85,247,0.2);">4.3 · Hands-On Lab · <span style="color:var(--accent-orange);">New</span></span>
+    <h2 class="section-title">Lab: Code-Based Scorers with @scorer Decorator</h2>
+    <span class="section-rule"></span>
+  </div>
+
+  <p class="prose">
+    LLM judges are powerful but expensive and non-deterministic. For business rules with unambiguous right/wrong answers — response format, latency SLAs, citation presence, character limits — a Python function is faster, cheaper, and more reliable. The <code>@scorer</code> decorator turns any function into a scorer that plugs directly into <code>evaluate()</code>.
+  </p>
+
+  <!-- ── THREE PATTERNS ── -->
+  <div class="section-header" style="margin-top:40px; margin-bottom:16px;">
+    <span class="section-marker" style="background:rgba(0,191,165,0.06); color:var(--accent-teal); border-color:rgba(0,191,165,0.2);">Patterns</span>
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">Three code-based scorer patterns</h3>
+  </div>
+
+  <p class="prose">
+    Code scorers access different parts of the evaluation context depending on what they need to check. The function parameter names determine what MLflow injects — this is the same key-matching contract as <code>predict_fn</code>.
+  </p>
+
+  <div class="pipeline-wrap">
+    <div class="pipe-stage" style="background:rgba(0,191,165,0.02);">
+      <div class="pipe-inner">
+        <div class="pipe-name">Pattern 1 — Output-only, primitive return</div>
+        <div class="pipe-detail">Checks properties of the agent's text output. Declare <code>outputs: str</code> — MLflow injects the agent's response. Return <code>int</code>, <code>bool</code>, <code>str</code>, or <code>float</code>.</div>
+      </div>
+      <div class="pipe-api">outputs → int</div>
+    </div>
+    <div class="pipe-stage" style="background:rgba(0,191,165,0.02);">
+      <div class="pipe-inner">
+        <div class="pipe-name">Pattern 2 — Output-only, Feedback return</div>
+        <div class="pipe-detail">Same input, but returns a <code>Feedback</code> object with value, rationale, and <code>AssessmentSource(source_type="CODE")</code>. Provides debugging context.</div>
+      </div>
+      <div class="pipe-api">outputs → Feedback</div>
+    </div>
+    <div class="pipe-stage" style="background:rgba(0,191,165,0.02);">
+      <div class="pipe-inner">
+        <div class="pipe-name">Pattern 3 — Trace-based</div>
+        <div class="pipe-detail">Accesses the full execution trace — latency of specific spans, number of tool calls, token counts. Declare <code>trace</code> param, use <code>trace.search_spans(span_type=...)</code>.</div>
+      </div>
+      <div class="pipe-api">trace → Feedback</div>
+    </div>
+  </div>
+
+  <div class="code-block"><span class="kw">from</span> mlflow.genai <span class="kw">import</span> scorer
+<span class="kw">from</span> mlflow.entities <span class="kw">import</span> Feedback, AssessmentSource, SpanType
+
+<span class="cm"># ── Pattern 1: Primitive return ──</span>
+<span class="nm">@scorer</span>
+<span class="kw">def</span> <span class="fn">word_count</span>(outputs: str) -> int:
+    <span class="kw">return</span> <span class="fn">len</span>(outputs.<span class="fn">split</span>())
+
+<span class="cm"># ── Pattern 2: Feedback with rationale ──</span>
+<span class="nm">@scorer</span>
+<span class="kw">def</span> <span class="fn">has_code_block</span>(outputs: str) -> Feedback:
+    passed = <span class="st">"```"</span> <span class="kw">in</span> outputs
+    <span class="kw">return</span> <span class="fn">Feedback</span>(
+        value=<span class="st">"yes"</span> <span class="kw">if</span> passed <span class="kw">else</span> <span class="st">"no"</span>,
+        rationale=<span class="st">"Response includes a code example"</span> <span class="kw">if</span> passed
+                  <span class="kw">else</span> <span class="st">"No code block found — technical answers should include examples"</span>,
+        source=<span class="fn">AssessmentSource</span>(source_type=<span class="st">"CODE"</span>, source_id=<span class="st">"code_checker_v1"</span>)
+    )
+
+<span class="cm"># ── Pattern 3: Trace-based latency check ──</span>
+<span class="nm">@scorer</span>
+<span class="kw">def</span> <span class="fn">latency_ok</span>(trace) -> Feedback:
+    spans = trace.<span class="fn">search_spans</span>(span_type=SpanType.CHAT_MODEL)
+    <span class="kw">if not</span> spans:
+        <span class="kw">return</span> <span class="fn">Feedback</span>(value=<span class="kw">False</span>, rationale=<span class="st">"No CHAT_MODEL span found"</span>)
+    span = spans[<span class="nu">0</span>]
+    ms = (span.end_time_ns - span.start_time_ns) / <span class="nu">1e6</span>
+    <span class="kw">return</span> <span class="fn">Feedback</span>(
+        value=ms <= <span class="nu">5000</span>,
+        rationale=<span class="st">f"LLM call took </span><span class="nm">{ms:.0f}</span><span class="st">ms (SLA: 5000ms)"</span>,
+        source=<span class="fn">AssessmentSource</span>(source_type=<span class="st">"CODE"</span>, source_id=<span class="st">"latency_sla_v1"</span>)
+    )</div>
+
+  <!-- ── PARAMETER ACCESS DIAGRAM ── -->
+  <div class="taxonomy-tree">
+    <div class="taxonomy-header">
+      <span class="taxonomy-label">Interactive · Available function parameters</span>
+      <span class="taxonomy-badge">Hover for details</span>
+    </div>
+    <div class="taxonomy-body">
+      <svg id="access-svg" viewBox="0 0 780 250" style="max-width:780px;">
+        <!-- Available parameters -->
+        <text x="80" y="24" fill="#4a5878" font-family="IBM Plex Mono,monospace" font-size="10" letter-spacing="0.08em">INJECTABLE PARAMETERS — NAME YOUR FUNCTION PARAMS TO MATCH</text>
+
+        <g class="access-node" data-tip="Dict from dataset row — e.g., {'question': 'What is Delta Lake?'}" style="cursor:pointer">
+          <rect x="30" y="44" width="160" height="46" rx="8" fill="rgba(255,107,53,0.06)" stroke="rgba(255,107,53,0.25)" stroke-width="1"/>
+          <text x="110" y="72" text-anchor="middle" fill="#ff6b35" font-family="IBM Plex Mono,monospace" font-size="13" font-weight="500">inputs</text>
+        </g>
+
+        <g class="access-node" data-tip="Agent's response string — the generated text output" style="cursor:pointer">
+          <rect x="210" y="44" width="160" height="46" rx="8" fill="rgba(0,191,165,0.06)" stroke="rgba(0,191,165,0.25)" stroke-width="1"/>
+          <text x="290" y="72" text-anchor="middle" fill="#00bfa5" font-family="IBM Plex Mono,monospace" font-size="13" font-weight="500">outputs</text>
+        </g>
+
+        <g class="access-node" data-tip="Ground truth from dataset — expected_facts, expected_response, etc." style="cursor:pointer">
+          <rect x="390" y="44" width="160" height="46" rx="8" fill="rgba(168,85,247,0.06)" stroke="rgba(168,85,247,0.25)" stroke-width="1"/>
+          <text x="470" y="72" text-anchor="middle" fill="#a855f7" font-family="IBM Plex Mono,monospace" font-size="13" font-weight="500">expectations</text>
+        </g>
+
+        <g class="access-node" data-tip="Full execution trace — spans, timing, tool calls, retriever results" style="cursor:pointer">
+          <rect x="570" y="44" width="160" height="46" rx="8" fill="rgba(74,158,255,0.06)" stroke="rgba(74,158,255,0.25)" stroke-width="1"/>
+          <text x="650" y="72" text-anchor="middle" fill="#4a9eff" font-family="IBM Plex Mono,monospace" font-size="13" font-weight="500">trace</text>
+        </g>
+
+        <rect x="30" y="115" width="700" height="1" fill="#1e2d45" opacity="0.5"/>
+
+        <text x="80" y="142" fill="#4a5878" font-family="IBM Plex Mono,monospace" font-size="10" letter-spacing="0.08em">COMMON SIGNATURE PATTERNS</text>
+
+        <rect x="30" y="156" width="220" height="38" rx="6" fill="rgba(0,191,165,0.04)" stroke="rgba(0,191,165,0.15)" stroke-width="1"/>
+        <text x="140" y="180" text-anchor="middle" fill="#8899bb" font-family="IBM Plex Mono,monospace" font-size="11">def f(<tspan fill="#00bfa5">outputs</tspan>)</text>
+
+        <rect x="270" y="156" width="220" height="38" rx="6" fill="rgba(168,85,247,0.04)" stroke="rgba(168,85,247,0.15)" stroke-width="1"/>
+        <text x="380" y="180" text-anchor="middle" fill="#8899bb" font-family="IBM Plex Mono,monospace" font-size="11">def f(<tspan fill="#00bfa5">outputs</tspan>, <tspan fill="#a855f7">expectations</tspan>)</text>
+
+        <rect x="510" y="156" width="220" height="38" rx="6" fill="rgba(74,158,255,0.04)" stroke="rgba(74,158,255,0.15)" stroke-width="1"/>
+        <text x="620" y="180" text-anchor="middle" fill="#8899bb" font-family="IBM Plex Mono,monospace" font-size="11">def f(<tspan fill="#4a9eff">trace</tspan>)</text>
+
+        <!-- Tooltip -->
+        <rect id="access-tip-bg" x="80" y="212" width="620" height="26" rx="6" fill="#111827" stroke="#1e2d45" stroke-width="0.5" opacity="0"/>
+        <text id="access-tip-text" x="390" y="230" text-anchor="middle" fill="#8899bb" font-family="Syne,sans-serif" font-size="11" opacity="0"></text>
+      </svg>
+    </div>
+  </div>
+
+  <div class="warning">The function parameter names must <strong>exactly</strong> match: <code>inputs</code>, <code>outputs</code>, <code>expectations</code>, <code>trace</code>. If you name a parameter <code>response</code> instead of <code>outputs</code>, MLflow won't inject it and you'll get a <code>TypeError</code>. This is the same contract as <code>predict_fn</code> inputs matching dataset keys.</div>
+
+</section>
+
+<!-- ════════════════════════════ SECTION 4.4 — CUSTOM JUDGE ════ -->
+<section class="section" id="topic-4-4">
+
+  <div class="section-header">
+    <span class="section-marker" style="background:rgba(168,85,247,0.06); color:var(--accent-purple); border-color:rgba(168,85,247,0.2);">4.4 · Hands-On Lab</span>
+    <h2 class="section-title">Lab: Custom LLM Judge with make_judge() on Databricks</h2>
+    <span class="section-rule"></span>
+  </div>
+
+  <p class="prose">
+    Built-in judges cover the common dimensions, but your domain has specific quality criteria that generic judges can't assess. A "Databricks Technical Accuracy" judge needs to know that Z-ordering is about multi-dimensional clustering, not alphabetical sorting. <code>make_judge()</code> lets you define exactly what quality means for your domain.
+  </p>
+
+  <!-- ── MAKE_JUDGE ANATOMY ── -->
+  <div class="section-header" style="margin-top:40px; margin-bottom:16px;">
+    <span class="section-marker" style="background:rgba(74,158,255,0.06); color:var(--accent-blue); border-color:rgba(74,158,255,0.2);">Anatomy</span>
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">The four components of a custom judge</h3>
+  </div>
+
+  <div class="stack-diagram">
+    <div class="stack-layer">
+      <div class="stack-index">Component 1</div>
+      <div class="stack-content">
+        <div class="stack-title">name</div>
+        <div class="stack-desc">Unique identifier for this judge. Becomes the metric key prefix in results — e.g., <code>"databricks_accuracy"</code> produces <code>databricks_accuracy/mean</code>.</div>
+      </div>
+      <div class="stack-tag"><span class="badge badge-new">required</span></div>
+    </div>
+    <div class="stack-layer">
+      <div class="stack-index">Component 2</div>
+      <div class="stack-content">
+        <div class="stack-title">instructions</div>
+        <div class="stack-desc">The judge prompt template. Use <code>{{ inputs }}</code>, <code>{{ outputs }}</code>, <code>{{ expectations }}</code> as template variables. Must include a clear rubric with concrete level descriptions.</div>
+      </div>
+      <div class="stack-tag"><span class="badge badge-fail">critical</span></div>
+    </div>
+    <div class="stack-layer">
+      <div class="stack-index">Component 3</div>
+      <div class="stack-content">
+        <div class="stack-title">model</div>
+        <div class="stack-desc">The LLM endpoint acting as judge. On Databricks: <code>"databricks:/databricks-claude-sonnet-4"</code>. Frontier models for pre-deploy gates, smaller models for high-volume monitoring.</div>
+      </div>
+      <div class="stack-tag"><span class="badge badge-pass">configurable</span></div>
+    </div>
+    <div class="stack-layer">
+      <div class="stack-index">Component 4</div>
+      <div class="stack-content">
+        <div class="stack-title">examples (optional)</div>
+        <div class="stack-desc">Few-shot anchors with human-rated examples. These calibrate the judge to match human scoring standards. Critical for alignment — without anchors, the judge defines its own interpretation of each score level.</div>
+      </div>
+      <div class="stack-tag"><span class="badge badge-partial">alignment</span></div>
+    </div>
+  </div>
+
+  <!-- ── RUBRIC QUALITY ── -->
+  <div class="section-header" style="margin-top:40px; margin-bottom:16px;">
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">Writing effective rubrics</h3>
+  </div>
+
+  <p class="prose">
+    The rubric is the single most important component. A vague instruction like "score 1–5 based on quality" gives the judge no calibration — scores will be arbitrary and unreproducible. Every level must describe <strong>specific, observable criteria</strong>.
+  </p>
+
+  <div class="rubric-demo">
+    <div class="rubric-header">
+      <span class="rubric-label">Example rubric · Databricks technical accuracy</span>
+    </div>
+    <div class="rubric-row">
+      <div class="rubric-score" style="color:var(--green);">5</div>
+      <div class="rubric-desc"><strong>Precise, complete, includes caveats.</strong> All technical claims are correct. Mentions relevant limitations or edge cases. Uses proper terminology (e.g., "Z-ordering optimises data layout for multi-dimensional clustering using Hilbert curves").</div>
+    </div>
+    <div class="rubric-row">
+      <div class="rubric-score" style="color:var(--accent-teal);">4</div>
+      <div class="rubric-desc"><strong>Mostly correct, minor omissions.</strong> Core concept is right. May miss a secondary detail (e.g., describes Z-ordering correctly but doesn't mention it only works on Delta tables).</div>
+    </div>
+    <div class="rubric-row">
+      <div class="rubric-score" style="color:var(--amber);">3</div>
+      <div class="rubric-desc"><strong>Partially correct, key concept present but incomplete.</strong> Gets the general idea right but misses essential details or oversimplifies in a misleading way.</div>
+    </div>
+    <div class="rubric-row">
+      <div class="rubric-score" style="color:var(--accent-orange);">2</div>
+      <div class="rubric-desc"><strong>Significant inaccuracy.</strong> Contains a factual error that would mislead a user — e.g., "VACUUM deletes data from the current table version" (it only removes unreferenced files).</div>
+    </div>
+    <div class="rubric-row">
+      <div class="rubric-score" style="color:var(--red);">1</div>
+      <div class="rubric-desc"><strong>Fundamentally wrong or misleading.</strong> Describes the wrong concept entirely, confuses it with something else, or gives advice that would cause data loss or errors.</div>
+    </div>
+  </div>
+
+  <div class="code-block"><span class="kw">from</span> mlflow.genai.judges <span class="kw">import</span> make_judge
+
+tech_accuracy = <span class="fn">make_judge</span>(
+    name=<span class="st">"databricks_technical_accuracy"</span>,
+    instructions=<span class="st">"""
+    Evaluate if {{ outputs }} is technically accurate for the
+    Databricks/Delta Lake question in {{ inputs }}.
+
+    Score 1-5:
+      5 = Precise, correct, includes important caveats
+      4 = Mostly correct, minor omissions
+      3 = Partially correct, key concept present but incomplete
+      2 = Significant inaccuracy
+      1 = Fundamentally wrong or misleading
+
+    Reason step-by-step before scoring.
+    First identify the key claims in the response.
+    Then verify each claim against known Databricks documentation.
+    Finally assign a score based on the rubric above.
+    """</span>,
+    model=<span class="st">"databricks:/databricks-claude-sonnet-4"</span>
+)
+
+<span class="cm"># Use exactly like a built-in judge</span>
+results = mlflow.genai.<span class="fn">evaluate</span>(
+    data=dataset,
+    predict_fn=my_agent,
+    scorers=[tech_accuracy, <span class="fn">Correctness</span>(), <span class="fn">Safety</span>()]
+)</div>
+
+  <div class="insight">
+    <div class="insight-label">Calibration loop</div>
+    <p>After running your custom judge, inspect the per-row rationales. If the judge scores a row 4/5 that you'd rate 2/5, the rubric needs revision — add the specific failure pattern to the appropriate level description. This iterative "run → inspect → refine" cycle is the calibration loop. <strong>A well-calibrated judge takes 3–5 iterations.</strong> Module 7 formalises this with Pearson correlation and Cohen's kappa measurement.</p>
+  </div>
+
+  <div class="warning">The <code>model</code> parameter determines both quality and cost. For pre-deployment quality gates, use a frontier model like <code>databricks-claude-sonnet-4</code>. For high-volume production monitoring, a smaller model reduces cost — but verify alignment doesn't drop below the 0.7 Pearson threshold first (Module 7).</div>
+
+</section>
+
+<!-- ════════════════════════════ SECTION 4.5 — GUIDELINES ════ -->
+<section class="section" id="topic-4-5">
+
+  <div class="section-header">
+    <span class="section-marker" style="background:rgba(168,85,247,0.06); color:var(--accent-purple); border-color:rgba(168,85,247,0.2);">4.5 · Hands-On Lab</span>
+    <h2 class="section-title">Lab: Guidelines Judge for Compliance & Style Rules</h2>
+    <span class="section-rule"></span>
+  </div>
+
+  <p class="prose">
+    Guidelines are the fastest way to enforce compliance, style, and policy requirements. Unlike <code>make_judge()</code> which uses a 1–5 rubric, Guidelines evaluates against a flat list of rules and returns a binary pass/fail verdict per rule. This makes it ideal for non-negotiable constraints where partial credit doesn't make sense.
+  </p>
+
+  <!-- ── GUIDELINES VS MAKE_JUDGE ── -->
+  <div class="section-header" style="margin-top:40px; margin-bottom:16px;">
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">Guidelines vs. make_judge() — when to use which</h3>
+  </div>
+
+  <div class="compare-wrap">
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>Dimension</th>
+          <th>Guidelines</th>
+          <th>make_judge()</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Output type</td>
+          <td>Binary pass/fail per rule</td>
+          <td>Numeric rubric (1–5)</td>
+        </tr>
+        <tr>
+          <td>Input</td>
+          <td>A list of rule strings</td>
+          <td>A full prompt with template variables and rubric</td>
+        </tr>
+        <tr>
+          <td>Granularity</td>
+          <td>Per-rule verdicts — one response can pass some and fail others</td>
+          <td>Single aggregate score for the entire response</td>
+        </tr>
+        <tr>
+          <td>Setup effort</td>
+          <td><span class="badge badge-pass">Low</span> — just write the rules</td>
+          <td><span class="badge badge-partial">Medium</span> — prompt + rubric + calibration</td>
+        </tr>
+        <tr>
+          <td>Best for</td>
+          <td>Policy compliance, format rules, safety, language</td>
+          <td>Domain quality, nuanced technical accuracy</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="prose">
+    The decision is simple: if the answer to "did the response meet this criterion?" is unambiguously yes or no, use Guidelines. If it's "mostly" or "partially," you need a rubric-based judge via <code>make_judge()</code>.
+  </p>
+
+  <!-- ── TWO PATTERNS ── -->
+  <div class="section-header" style="margin-top:40px; margin-bottom:16px;">
+    <span class="section-marker" style="background:rgba(245,158,11,0.06); color:var(--amber); border-color:rgba(245,158,11,0.2);">Patterns</span>
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">Two Guidelines patterns</h3>
+  </div>
+
+  <div class="card-grid">
+    <div class="concept-card amber">
+      <div class="card-label">Pattern 1</div>
+      <div class="card-title">Global Guidelines</div>
+      <div class="card-body">Rules defined at judge instantiation time that apply identically to every row. Use for universal policies: "response must be in English", "must not disclose internal API keys", "must not recommend dropping tables."</div>
+    </div>
+    <div class="concept-card purple">
+      <div class="card-label">Pattern 2</div>
+      <div class="card-title">ExpectationsGuidelines</div>
+      <div class="card-body">Per-row rules stored in the dataset's <code>expectations</code> field. Each row has its own compliance criteria. Use when domain experts define row-specific requirements — e.g., "this answer must mention ACID guarantees."</div>
+    </div>
+  </div>
+
+  <div class="code-block"><span class="kw">from</span> mlflow.genai.scorers <span class="kw">import</span> Guidelines, ExpectationsGuidelines
+
+<span class="cm"># ── Pattern 1: Global rules — same for every row ──</span>
+compliance = <span class="fn">Guidelines</span>(
+    name=<span class="st">"compliance"</span>,
+    guidelines=[
+        <span class="st">"Response must not recommend deleting production tables"</span>,
+        <span class="st">"Response must be in English"</span>,
+        <span class="st">"Must cite a Databricks documentation section for technical claims"</span>,
+    ]
+)
+
+<span class="cm"># ── Pattern 2: Per-row rules from dataset expectations ──</span>
+<span class="cm"># Dataset row: {"inputs": {...}, "expectations": {"guidelines": ["Must mention ACID"]}}</span>
+domain_rules = <span class="fn">ExpectationsGuidelines</span>()
+
+<span class="cm"># ── Compose the FULL scorer suite from this module ──</span>
+results = mlflow.genai.<span class="fn">evaluate</span>(
+    data=dataset,
+    predict_fn=my_agent,
+    scorers=[
+        <span class="fn">Correctness</span>(),       <span class="cm"># built-in rubric judge (4.2)</span>
+        tech_accuracy,          <span class="cm"># custom make_judge (4.4)</span>
+        compliance,             <span class="cm"># global guidelines (4.5)</span>
+        domain_rules,           <span class="cm"># per-row guidelines (4.5)</span>
+        word_count,             <span class="cm"># code scorer (4.3)</span>
+        latency_ok,             <span class="cm"># code scorer (4.3)</span>
+    ]
+)</div>
+
+  <div class="insight">
+    <div class="insight-label">Full suite composition</div>
+    <p>The code above is the culmination of this module — a single <code>evaluate()</code> call running a built-in judge, a custom rubric judge, global Guidelines, per-row Guidelines, and two code scorers simultaneously. MLflow executes them concurrently via thread pools. <strong>This is the standard pattern for production evaluation:</strong> layer deterministic checks (code) with semantic assessment (judges) and compliance enforcement (guidelines).</p>
+  </div>
+
+  <!-- ── METRIC KEYS TABLE ── -->
+  <div class="section-header" style="margin-top:40px; margin-bottom:16px;">
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">Interpreting combined results — metric keys for CI gates</h3>
+  </div>
+
+  <p class="prose">
+    When you run a mixed scorer suite, the results object contains metrics from all types in a flat namespace. Understanding which metric keys correspond to which scorer type is essential for building CI gate thresholds and monitoring dashboards.
+  </p>
+
+  <div class="compare-wrap">
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>Metric key</th>
+          <th>Scorer type</th>
+          <th>Aggregation</th>
+          <th>Typical CI gate</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>correctness/mean</code></td>
+          <td>Built-in judge</td>
+          <td>Mean of 1–5 scores</td>
+          <td><code>≥ 3.5</code></td>
+        </tr>
+        <tr>
+          <td><code>databricks_technical_accuracy/mean</code></td>
+          <td>Custom judge</td>
+          <td>Mean of 1–5 scores</td>
+          <td><code>≥ 3.0</code></td>
+        </tr>
+        <tr>
+          <td><code>safety/ratio_pass</code></td>
+          <td>Built-in judge</td>
+          <td>Fraction of "yes"</td>
+          <td><code>= 1.0</code> (zero tolerance)</td>
+        </tr>
+        <tr>
+          <td><code>compliance/ratio_pass</code></td>
+          <td>Guidelines</td>
+          <td>Fraction all rules passed</td>
+          <td><code>≥ 0.95</code></td>
+        </tr>
+        <tr>
+          <td><code>word_count/mean</code></td>
+          <td>Code scorer</td>
+          <td>Mean word count</td>
+          <td>Application-specific</td>
+        </tr>
+        <tr>
+          <td><code>latency_ok/ratio_pass</code></td>
+          <td>Code scorer</td>
+          <td>Fraction of True</td>
+          <td><code>≥ 0.90</code></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</section>
+
+<!-- ═══════════════════════════ MODULE OUTCOME ═══ -->
+<div class="outcome">
+  <div class="outcome-icon">🎯</div>
+  <div class="outcome-text">
+    <strong>Module 04 outcome:</strong> You understand the full scorer taxonomy — LLM judges for semantic quality, code-based scorers for deterministic rules, and Guidelines for compliance checks. You know the critical constraint: only LLM judges travel to production monitoring. You can write all three scorer types using the correct patterns (output-based, trace-based, Feedback returns), compose them into a mixed suite in a single <code>evaluate()</code> call, build domain-specific judges with effective rubrics via <code>make_judge()</code>, and interpret combined results with the right metric keys for CI gate thresholds.
+  </div>
+</div>
+
+</main>
+
+<!-- ═══════════════════════════ SCRIPTS ═══ -->
+<script>
+/* ── NAV SCROLL TRACKING ── */
+const sections = document.querySelectorAll('.section');
+const navItems = document.querySelectorAll('.nav-item');
+
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const id = entry.target.getAttribute('id');
+      navItems.forEach(item => {
+        item.classList.toggle('active', item.getAttribute('href') === '#' + id);
+      });
+    }
+  });
+}, { rootMargin: '-20% 0px -60% 0px' });
+
+sections.forEach(s => observer.observe(s));
+
+/* ── TAXONOMY DIAGRAM TOOLTIPS ── */
+document.querySelectorAll('.tax-node').forEach(node => {
+  node.addEventListener('mouseenter', function() {
+    const tip = this.getAttribute('data-tip');
+    if (!tip) return;
+    const t = document.getElementById('tax-tip-text');
+    const bg = document.getElementById('tax-tip-bg');
+    t.textContent = tip;
+    t.setAttribute('opacity', '1');
+    bg.setAttribute('opacity', '1');
+  });
+  node.addEventListener('mouseleave', function() {
+    document.getElementById('tax-tip-text').setAttribute('opacity', '0');
+    document.getElementById('tax-tip-bg').setAttribute('opacity', '0');
+  });
+});
+
+/* ── ACCESS DIAGRAM TOOLTIPS ── */
+document.querySelectorAll('.access-node').forEach(node => {
+  node.addEventListener('mouseenter', function() {
+    const tip = this.getAttribute('data-tip');
+    if (!tip) return;
+    const t = document.getElementById('access-tip-text');
+    const bg = document.getElementById('access-tip-bg');
+    t.textContent = tip;
+    t.setAttribute('opacity', '1');
+    bg.setAttribute('opacity', '1');
+  });
+  node.addEventListener('mouseleave', function() {
+    document.getElementById('access-tip-text').setAttribute('opacity', '0');
+    document.getElementById('access-tip-bg').setAttribute('opacity', '0');
+  });
+});
+
+/* ── JUDGE EXPLORER ── */
+function selectJudge(idx) {
+  document.querySelectorAll('#judge-explorer .scorer-item').forEach((el, i) => {
+    el.classList.toggle('active', i === idx);
+  });
+  document.querySelectorAll('#judge-explorer .scorer-detail').forEach((el, i) => {
+    el.classList.toggle('active', i === idx);
+  });
+}
+
+/* ── RETURN TYPE TOGGLE ── */
+function selectReturnType(idx) {
+  document.querySelectorAll('#return-toggle .rt-panel').forEach((el, i) => {
+    el.classList.toggle('active', i === idx);
+  });
+  document.querySelectorAll('.rt-detail').forEach((el, i) => {
+    el.style.display = i === idx ? 'block' : 'none';
+  });
+}
+</script>
+
+</body>
+</html>

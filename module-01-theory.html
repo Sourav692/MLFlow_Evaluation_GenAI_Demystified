@@ -1,0 +1,1349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 01 — Foundations of GenAI Evaluation</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=Syne:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #05080f;
+  --surface: #0b0f1a;
+  --surface2: #111827;
+  --surface3: #1a2235;
+  --border: #1e2d45;
+  --border2: #243550;
+  --accent-orange: #ff6b35;
+  --accent-teal: #00bfa5;
+  --accent-blue: #4a9eff;
+  --accent-purple: #a855f7;
+  --accent-yellow: #fbbf24;
+  --text: #e8edf5;
+  --text-dim: #8899bb;
+  --text-muted: #4a5878;
+  --green: #22c55e;
+  --amber: #f59e0b;
+  --red: #ef4444;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Syne', sans-serif;
+  font-weight: 400;
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+
+/* ── MODULE HEADER ── */
+.mod-hero {
+  position: relative;
+  padding: 64px 48px 52px;
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.mod-hero::before {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 60% 80% at 10% 50%, rgba(255,107,53,0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 50% at 90% 20%, rgba(0,191,165,0.05) 0%, transparent 55%);
+  pointer-events: none;
+}
+
+.hero-inner { max-width: 960px; margin: 0 auto; position: relative; }
+
+.breadcrumb {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 28px;
+}
+
+.bc-tag {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; font-weight: 500;
+  letter-spacing: 0.15em; text-transform: uppercase;
+  color: var(--accent-teal);
+  padding: 4px 12px;
+  border: 1px solid rgba(0,191,165,0.25);
+  border-radius: 2px;
+  background: rgba(0,191,165,0.06);
+}
+
+.bc-sep { color: var(--text-muted); font-size: 12px; }
+
+.bc-current {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: var(--text-muted);
+  letter-spacing: 0.1em; text-transform: uppercase;
+}
+
+.mod-eyebrow {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-orange);
+  margin-bottom: 14px;
+}
+
+.mod-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(34px, 4.5vw, 56px);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  margin-bottom: 16px;
+}
+
+.mod-title em { font-style: italic; color: var(--accent-orange); }
+
+.mod-desc {
+  font-size: 16px; color: var(--text-dim);
+  max-width: 620px; line-height: 1.75;
+  margin-bottom: 36px;
+}
+
+.mod-meta {
+  display: flex; gap: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  width: fit-content;
+}
+
+.meta-chip {
+  padding: 10px 20px;
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: 2px;
+}
+.meta-chip:last-child { border-right: none; }
+
+.meta-val {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 16px; font-weight: 500;
+  color: var(--accent-teal);
+}
+
+.meta-lbl {
+  font-size: 10px; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.1em;
+}
+
+/* ── PROGRESS NAV ── */
+.progress-nav {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 48px;
+  position: sticky; top: 0;
+  z-index: 100;
+}
+
+.nav-inner {
+  max-width: 960px; margin: 0 auto;
+  display: flex; gap: 0; align-items: stretch;
+  overflow-x: auto;
+}
+
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 20px;
+  border-right: 1px solid var(--border);
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.nav-item:hover { background: var(--surface2); }
+.nav-item.active { background: rgba(255,107,53,0.06); }
+
+.nav-item:last-child { border-right: none; }
+
+.nav-num {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: var(--text-muted);
+  letter-spacing: 0.1em;
+}
+
+.nav-label {
+  font-size: 12px; color: var(--text-dim);
+  font-weight: 500;
+}
+
+.nav-item.active .nav-label { color: var(--accent-orange); }
+.nav-item.active .nav-num { color: var(--accent-orange); }
+
+/* ── MAIN ── */
+main {
+  max-width: 960px; margin: 0 auto;
+  padding: 56px 48px 100px;
+}
+
+/* ── SECTION ── */
+.section {
+  margin-bottom: 80px;
+  scroll-margin-top: 60px;
+}
+
+.section-header {
+  display: flex; align-items: center; gap: 16px;
+  margin-bottom: 36px;
+}
+
+.section-marker {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: var(--accent-orange);
+  letter-spacing: 0.15em; text-transform: uppercase;
+  padding: 4px 12px;
+  border: 1px solid rgba(255,107,53,0.25);
+  border-radius: 2px;
+  background: rgba(255,107,53,0.06);
+  white-space: nowrap;
+}
+
+.section-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 28px; line-height: 1.2;
+}
+
+.section-rule { flex: 1; height: 1px; background: var(--border); }
+
+/* ── CONCEPT PROSE ── */
+.prose {
+  font-size: 15px; color: var(--text-dim);
+  line-height: 1.8; max-width: 720px;
+  margin-bottom: 28px;
+}
+
+.prose strong { color: var(--text); font-weight: 600; }
+
+.prose code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12.5px;
+  color: var(--accent-blue);
+  background: rgba(74,158,255,0.08);
+  padding: 2px 7px;
+  border-radius: 3px;
+}
+
+/* ── KEY INSIGHT BOX ── */
+.insight {
+  padding: 20px 24px;
+  background: rgba(0,191,165,0.04);
+  border: 1px solid rgba(0,191,165,0.15);
+  border-left: 3px solid var(--accent-teal);
+  border-radius: 0 8px 8px 0;
+  margin-bottom: 28px;
+}
+
+.insight-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--accent-teal);
+  margin-bottom: 8px;
+}
+
+.insight p {
+  font-size: 14px; color: var(--text-dim); line-height: 1.7;
+}
+
+.insight p strong { color: var(--accent-teal); }
+
+/* ── WARNING BOX ── */
+.warning {
+  padding: 16px 20px;
+  background: rgba(245,158,11,0.04);
+  border: 1px solid rgba(245,158,11,0.15);
+  border-left: 3px solid var(--amber);
+  border-radius: 0 8px 8px 0;
+  margin-bottom: 28px;
+  font-size: 13.5px; color: var(--text-dim); line-height: 1.6;
+}
+
+.warning::before {
+  content: 'Note  ';
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--amber);
+}
+
+/* ── CONCEPT CARDS GRID ── */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+  margin-bottom: 36px;
+}
+
+.concept-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 22px;
+  transition: border-color 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+.concept-card::before {
+  content: '';
+  position: absolute; left: 0; top: 0; bottom: 0;
+  width: 3px;
+}
+
+.concept-card.teal::before { background: var(--accent-teal); }
+.concept-card.orange::before { background: var(--accent-orange); }
+.concept-card.purple::before { background: var(--accent-purple); }
+.concept-card.blue::before { background: var(--accent-blue); }
+.concept-card.amber::before { background: var(--amber); }
+.concept-card.red::before { background: var(--red); }
+.concept-card.green::before { background: var(--green); }
+
+.concept-card:hover { border-color: var(--border2); }
+
+.card-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.concept-card.teal .card-label { color: var(--accent-teal); }
+.concept-card.orange .card-label { color: var(--accent-orange); }
+.concept-card.purple .card-label { color: var(--accent-purple); }
+.concept-card.blue .card-label { color: var(--accent-blue); }
+.concept-card.amber .card-label { color: var(--amber); }
+.concept-card.red .card-label { color: var(--red); }
+.concept-card.green .card-label { color: var(--green); }
+
+.card-title {
+  font-size: 15px; font-weight: 600;
+  color: var(--text); margin-bottom: 8px;
+  line-height: 1.3;
+}
+
+.card-body {
+  font-size: 13px; color: var(--text-muted);
+  line-height: 1.6;
+}
+
+/* ── COMPARISON TABLE ── */
+.compare-wrap { overflow-x: auto; margin-bottom: 36px; }
+
+.compare-table {
+  width: 100%; border-collapse: collapse;
+  font-size: 13.5px;
+}
+
+.compare-table thead tr {
+  border-bottom: 1px solid var(--border2);
+}
+
+.compare-table th {
+  padding: 12px 16px; text-align: left;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--text-muted);
+  font-weight: 500;
+}
+
+.compare-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-dim);
+  vertical-align: top;
+  line-height: 1.55;
+}
+
+.compare-table tr:last-child td { border-bottom: none; }
+
+.compare-table tr:hover td { background: rgba(255,255,255,0.012); }
+
+.compare-table td:first-child {
+  font-weight: 500; color: var(--text);
+  white-space: nowrap;
+}
+
+.badge {
+  display: inline-block;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; padding: 2px 8px;
+  border-radius: 2px; font-weight: 500;
+  letter-spacing: 0.04em;
+  border: 1px solid;
+}
+
+.badge-fail { color: var(--red); background: rgba(239,68,68,0.08); border-color: rgba(239,68,68,0.2); }
+.badge-pass { color: var(--green); background: rgba(34,197,94,0.08); border-color: rgba(34,197,94,0.2); }
+.badge-partial { color: var(--amber); background: rgba(245,158,11,0.08); border-color: rgba(245,158,11,0.2); }
+
+/* ── PARADIGM DIAGRAM ── */
+.paradigm-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 2px;
+  margin-bottom: 36px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.paradigm-cell {
+  background: var(--surface);
+  padding: 24px 20px;
+  position: relative;
+}
+
+.paradigm-cell:not(:last-child) {
+  border-right: 1px solid var(--border);
+}
+
+.paradigm-arrow {
+  position: absolute; right: -13px; top: 50%;
+  transform: translateY(-50%);
+  width: 24px; height: 24px;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; color: var(--text-muted);
+  z-index: 2;
+}
+
+.paradigm-num {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--text-muted);
+  margin-bottom: 10px;
+}
+
+.paradigm-name {
+  font-size: 15px; font-weight: 600;
+  color: var(--text); margin-bottom: 8px;
+}
+
+.paradigm-desc {
+  font-size: 12.5px; color: var(--text-muted);
+  line-height: 1.6; margin-bottom: 14px;
+}
+
+.paradigm-pros { display: flex; flex-direction: column; gap: 5px; }
+
+.pro-item, .con-item {
+  display: flex; gap: 8px;
+  font-size: 12px; line-height: 1.5;
+}
+
+.pro-item { color: var(--green); }
+.con-item { color: var(--red); }
+
+.pro-item::before { content: '+'; flex-shrink: 0; }
+.con-item::before { content: '−'; flex-shrink: 0; }
+
+.pro-item span, .con-item span { color: var(--text-muted); }
+
+/* ── METRIC FAILURE DEMO ── */
+.metric-demo {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 36px;
+}
+
+.demo-header {
+  padding: 14px 20px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; color: var(--text-muted);
+  letter-spacing: 0.08em; text-transform: uppercase;
+}
+
+.demo-row {
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--border);
+  display: grid;
+  grid-template-columns: 120px 1fr auto;
+  gap: 16px;
+  align-items: start;
+}
+
+.demo-row:last-child { border-bottom: none; }
+
+.demo-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; color: var(--text-muted);
+  letter-spacing: 0.06em; text-transform: uppercase;
+  padding-top: 2px;
+}
+
+.demo-text {
+  font-size: 13.5px; color: var(--text-dim);
+  line-height: 1.6;
+}
+
+.demo-verdict {
+  display: flex; flex-direction: column;
+  align-items: flex-end; gap: 4px;
+}
+
+.verdict-score {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px; font-weight: 500;
+}
+
+.verdict-note {
+  font-size: 11px; color: var(--text-muted);
+  text-align: right;
+}
+
+.score-high { color: var(--green); }
+.score-low { color: var(--red); }
+.score-mid { color: var(--amber); }
+
+/* ── TRIANGLE DIAGRAM ── */
+.triangle-wrap {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 36px;
+}
+
+.triangle-node {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 22px 20px;
+  text-align: center;
+}
+
+.triangle-icon {
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  margin: 0 auto 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 16px; font-weight: 500;
+}
+
+.icon-quality { background: rgba(0,191,165,0.12); color: var(--accent-teal); }
+.icon-cost { background: rgba(245,158,11,0.12); color: var(--amber); }
+.icon-scale { background: rgba(74,158,255,0.12); color: var(--accent-blue); }
+
+.triangle-name {
+  font-size: 15px; font-weight: 600; color: var(--text);
+  margin-bottom: 8px;
+}
+
+.triangle-desc {
+  font-size: 12.5px; color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.triangle-tension {
+  margin-top: 20px;
+  padding: 16px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  grid-column: 1 / -1;
+  font-size: 13.5px; color: var(--text-dim);
+  line-height: 1.7;
+  text-align: center;
+}
+
+.triangle-tension strong { color: var(--accent-orange); }
+
+/* ── FIVE DIMENSIONS ── */
+.dimensions-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  margin-bottom: 36px;
+}
+
+.dim-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 18px 14px;
+  text-align: center;
+}
+
+.dim-indicator {
+  height: 3px;
+  border-radius: 2px;
+  margin-bottom: 12px;
+}
+
+.dim-name {
+  font-size: 13px; font-weight: 600; color: var(--text);
+  margin-bottom: 8px;
+}
+
+.dim-def {
+  font-size: 11.5px; color: var(--text-muted);
+  line-height: 1.5;
+}
+
+/* ── STACK ARCHITECTURE ── */
+.stack-diagram {
+  display: flex; flex-direction: column;
+  gap: 3px;
+  margin-bottom: 36px;
+}
+
+.stack-layer {
+  display: grid;
+  grid-template-columns: 120px 1fr auto;
+  align-items: center;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  transition: border-color 0.15s;
+}
+
+.stack-layer:hover { border-color: var(--border2); }
+
+.stack-index {
+  padding: 16px 14px;
+  background: var(--surface2);
+  border-right: 1px solid var(--border);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--text-muted);
+  text-align: center;
+}
+
+.stack-content {
+  padding: 14px 20px;
+}
+
+.stack-title {
+  font-size: 14px; font-weight: 600; color: var(--text);
+  margin-bottom: 4px;
+}
+
+.stack-desc {
+  font-size: 12px; color: var(--text-muted); line-height: 1.5;
+}
+
+.stack-tag {
+  padding: 14px 18px;
+  background: var(--surface2);
+  border-left: 1px solid var(--border);
+}
+
+/* ── AGENT LAYERS ── */
+.agent-stack {
+  display: flex; flex-direction: column;
+  gap: 2px; margin-bottom: 36px;
+}
+
+.agent-layer {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: stretch;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.agent-layer-inner {
+  padding: 16px 20px;
+}
+
+.agent-layer-name {
+  font-size: 14px; font-weight: 600; color: var(--text);
+  margin-bottom: 4px;
+}
+
+.agent-layer-detail {
+  font-size: 12.5px; color: var(--text-muted); line-height: 1.5;
+}
+
+.agent-layer-judge {
+  padding: 12px 16px;
+  background: var(--surface2);
+  border-left: 1px solid var(--border);
+  display: flex; align-items: center;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; color: var(--text-muted);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.layer-retrieval { background: rgba(74,158,255,0.03); }
+.layer-reasoning { background: rgba(168,85,247,0.03); }
+.layer-generation { background: rgba(0,191,165,0.03); }
+
+/* ── OUTCOME BLOCK ── */
+.outcome {
+  margin-top: 60px;
+  padding: 28px 32px;
+  background: rgba(0,191,165,0.03);
+  border: 1px solid rgba(0,191,165,0.15);
+  border-radius: 10px;
+  display: flex; gap: 20px; align-items: flex-start;
+}
+
+.outcome-icon {
+  font-size: 22px; flex-shrink: 0; margin-top: 2px;
+}
+
+.outcome-text {
+  font-size: 14px; color: var(--text-dim); line-height: 1.75;
+}
+
+.outcome-text strong { color: var(--accent-teal); }
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 700px) {
+  .mod-hero, main { padding-left: 20px; padding-right: 20px; }
+  .progress-nav { padding: 0 20px; }
+  .paradigm-row, .dimensions-grid, .triangle-wrap { grid-template-columns: 1fr; }
+  .demo-row { grid-template-columns: 1fr; }
+  .stack-layer { grid-template-columns: 1fr; }
+  .agent-layer { grid-template-columns: 1fr; }
+  .card-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── HERO ── -->
+<header class="mod-hero">
+  <div class="hero-inner">
+    <div class="breadcrumb">
+      <span class="bc-tag">Databricks · MLflow 3 · GenAI</span>
+      <span class="bc-sep">/</span>
+      <span class="bc-current">Module 01 · Foundations</span>
+    </div>
+    <div class="mod-eyebrow">Module 01 · Beginner · ~2.5h</div>
+    <h1 class="mod-title">Foundations &amp; <em>Environment Setup</em></h1>
+    <p class="mod-desc">Why evaluating language models is fundamentally different from classical software testing — and a map of the full MLflow 3 GenAI evaluation stack you'll build expertise in throughout this course.</p>
+    <div class="mod-meta">
+      <div class="meta-chip"><span class="meta-val">2</span><span class="meta-lbl">Theory topics</span></div>
+      <div class="meta-chip"><span class="meta-val">1</span><span class="meta-lbl">Lab</span></div>
+      <div class="meta-chip"><span class="meta-val">2.5h</span><span class="meta-lbl">Duration</span></div>
+      <div class="meta-chip"><span class="meta-val">Beginner</span><span class="meta-lbl">Level</span></div>
+    </div>
+  </div>
+</header>
+
+<!-- ── NAV ── -->
+<nav class="progress-nav">
+  <div class="nav-inner">
+    <a href="#topic-1-1" class="nav-item active">
+      <span class="nav-num">1.1</span>
+      <span class="nav-label">Why LLM eval is different</span>
+    </a>
+    <a href="#topic-1-2" class="nav-item">
+      <span class="nav-num">1.2</span>
+      <span class="nav-label">MLflow 3 stack map</span>
+    </a>
+    <a href="#topic-1-3" class="nav-item">
+      <span class="nav-num">1.3</span>
+      <span class="nav-label">Lab: environment setup</span>
+    </a>
+  </div>
+</nav>
+
+<!-- ── MAIN ── -->
+<main>
+
+<!-- ════════════════════════════════════════════ SECTION 1.1 -->
+<section class="section" id="topic-1-1">
+
+  <div class="section-header">
+    <span class="section-marker">1.1 · Theory</span>
+    <h2 class="section-title">Why Evaluating LLMs and Agents is Fundamentally Different</h2>
+    <span class="section-rule"></span>
+  </div>
+
+  <p class="prose">
+    Traditional software testing works on a simple premise: a function given the same input must always return the same output. You write a test, it passes or fails, and that result holds forever. Language models break every assumption this premise rests on.
+  </p>
+
+  <!-- ── PROBLEM 1: NON-DETERMINISM ── -->
+  <div class="section-header" style="margin-top:40px; margin-bottom:16px;">
+    <span class="section-marker" style="background:rgba(74,158,255,0.06); color:var(--accent-blue); border-color:rgba(74,158,255,0.2);">Problem 1</span>
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">The non-determinism problem</h3>
+  </div>
+
+  <p class="prose">
+    Every time you call an LLM with the same prompt, temperature sampling means you get a different token sequence. The same exact question can produce a brilliant answer, a mediocre one, or a hallucinated one — on three consecutive calls. This makes unit testing not just hard but conceptually wrong: a test that passes once tells you nothing about what the model will return in production.
+  </p>
+
+  <div class="insight">
+    <div class="insight-label">Key insight</div>
+    <p>You cannot test an LLM — you can only <strong>measure it statistically</strong>. Evaluation requires running many examples and looking at distributions of scores, not individual pass/fail results.</p>
+  </div>
+
+  <!-- ── PROBLEM 2: METRIC FAILURE ── -->
+  <div class="section-header" style="margin-top:40px; margin-bottom:16px;">
+    <span class="section-marker" style="background:rgba(74,158,255,0.06); color:var(--accent-blue); border-color:rgba(74,158,255,0.2);">Problem 2</span>
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">Classical metrics completely fail</h3>
+  </div>
+
+  <p class="prose">
+    For decades, NLP relied on <strong>BLEU</strong>, <strong>ROUGE</strong>, and <strong>exact-match</strong> metrics. These work by counting word overlaps between a model's output and a "reference" answer. They were designed for tasks like translation and summarisation where the reference is fixed. They are actively harmful for open-ended generation evaluation.
+  </p>
+
+  <div class="metric-demo">
+    <div class="demo-header">Metric failure demo — Q: "What does the VACUUM command do in Delta Lake?"</div>
+    <div class="demo-row">
+      <div class="demo-label">Reference</div>
+      <div class="demo-text">"VACUUM removes old data files no longer referenced by Delta table versions, freeing storage."</div>
+      <div class="demo-verdict">
+        <span class="verdict-score" style="color:var(--text-muted);">ground truth</span>
+      </div>
+    </div>
+    <div class="demo-row">
+      <div class="demo-label">Answer A</div>
+      <div class="demo-text">"VACUUM removes old versions, files, and data tables from the Delta directory and cleans referenced records." <em style="color:var(--red); font-size:12px;">(factually wrong — claims it removes referenced data)</em></div>
+      <div class="demo-verdict">
+        <span class="verdict-score score-high">BLEU 0.71</span>
+        <span class="verdict-note">High word overlap<br>— rated <strong style="color:var(--green)">good</strong></span>
+      </div>
+    </div>
+    <div class="demo-row">
+      <div class="demo-label">Answer B</div>
+      <div class="demo-text">"It cleans up stale files that Delta no longer tracks, reclaiming disk space without affecting current data." <em style="color:var(--green); font-size:12px;">(semantically correct)</em></div>
+      <div class="demo-verdict">
+        <span class="verdict-score score-low">BLEU 0.14</span>
+        <span class="verdict-note">Low word overlap<br>— rated <strong style="color:var(--red)">bad</strong></span>
+      </div>
+    </div>
+  </div>
+
+  <p class="prose">
+    BLEU rewards copying the reference's vocabulary, not getting the answer right. It will systematically rate a wrong answer higher than a correct one that uses different words — exactly the inverse of what you need.
+  </p>
+
+  <!-- ── PROBLEM 3: NO SINGLE RIGHT ANSWER ── -->
+  <div class="section-header" style="margin-top:40px; margin-bottom:16px;">
+    <span class="section-marker" style="background:rgba(74,158,255,0.06); color:var(--accent-blue); border-color:rgba(74,158,255,0.2);">Problem 3</span>
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">Correctness is a spectrum, not binary</h3>
+  </div>
+
+  <p class="prose">
+    For most real-world LLM tasks, there is no single correct answer — there is a continuous spectrum from completely wrong through partially correct to expert-level. A binary pass/fail test cannot capture "mostly right with a minor omission." Evaluation must work on a scoring rubric.
+  </p>
+
+  <div class="compare-wrap">
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>Score</th>
+          <th>Answer quality</th>
+          <th>Binary test verdict</th>
+          <th>Reality</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="badge badge-fail">1 / 5</span></td>
+          <td>Fundamentally wrong — describes the wrong concept entirely</td>
+          <td><span class="badge badge-fail">FAIL</span></td>
+          <td>Correctly rejected</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-partial">2–3 / 5</span></td>
+          <td>Partially correct — right concept, missing key details or edge cases</td>
+          <td><span class="badge badge-fail">FAIL</span></td>
+          <td>Useful output, incorrectly rejected</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-pass">4 / 5</span></td>
+          <td>Mostly correct — complete answer, minor caveats missing</td>
+          <td><span class="badge badge-fail">FAIL</span></td>
+          <td>Good answer, incorrectly rejected</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-pass">5 / 5</span></td>
+          <td>Expert-level — precise, complete, includes important nuance</td>
+          <td><span class="badge badge-pass">PASS</span></td>
+          <td>Correctly accepted</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="warning">A binary test only distinguishes "exactly right" from everything else. For open-ended generation, this means 75% of genuinely useful outputs get incorrectly rejected.</div>
+
+  <!-- ── PROBLEM 4: AGENTS ── -->
+  <div class="section-header" style="margin-top:40px; margin-bottom:16px;">
+    <span class="section-marker" style="background:rgba(74,158,255,0.06); color:var(--accent-blue); border-color:rgba(74,158,255,0.2);">Problem 4</span>
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">Agents add three independent failure layers</h3>
+  </div>
+
+  <p class="prose">
+    A standalone LLM is hard enough to evaluate. An agent — one that retrieves documents, calls tools, and reasons across multiple steps — adds entirely new failure modes. Each layer can fail independently, and a correct final answer can mask failures at earlier stages.
+  </p>
+
+  <div class="agent-stack">
+    <div class="agent-layer layer-retrieval">
+      <div class="agent-layer-inner">
+        <div class="agent-layer-name">Layer 1 — Retrieval</div>
+        <div class="agent-layer-detail">Vector search, document fetch, context assembly. Failure: wrong documents fetched, relevant documents missed (recall failure), or too many irrelevant documents included (precision failure).</div>
+      </div>
+      <div class="agent-layer-judge">RetrievalRelevance scorer</div>
+    </div>
+    <div class="agent-layer layer-reasoning">
+      <div class="agent-layer-inner">
+        <div class="agent-layer-name">Layer 2 — Reasoning &amp; tool use</div>
+        <div class="agent-layer-detail">Decide which tools to call, in what order, with what parameters. Failure: redundant tool calls, wrong tool selected, wrong arguments, infinite retry loops without new information.</div>
+      </div>
+      <div class="agent-layer-judge">ToolCallEfficiency scorer</div>
+    </div>
+    <div class="agent-layer layer-generation">
+      <div class="agent-layer-inner">
+        <div class="agent-layer-name">Layer 3 — Generation</div>
+        <div class="agent-layer-detail">Synthesise the final answer from retrieved context. Failure: hallucination (claims not in context), ignoring relevant retrieved facts, tone or format violations.</div>
+      </div>
+      <div class="agent-layer-judge">Groundedness + Correctness</div>
+    </div>
+  </div>
+
+  <div class="insight">
+    <div class="insight-label">Critical consequence</div>
+    <p>An agent can produce a correct final answer via a completely broken pipeline — retrieving wrong docs, making 8 redundant tool calls, and then guessing the right answer from training data. A single end-to-end quality score would show green while the system is fundamentally broken. <strong>You need layer-specific scorers.</strong></p>
+  </div>
+
+  <!-- ── THE EVALUATION TRIANGLE ── -->
+  <div class="section-header" style="margin-top:40px; margin-bottom:16px;">
+    <span class="section-marker" style="background:rgba(74,158,255,0.06); color:var(--accent-blue); border-color:rgba(74,158,255,0.2);">Problem 5</span>
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">The evaluation triangle — you can't optimise all three axes</h3>
+  </div>
+
+  <p class="prose">
+    Every evaluation decision is a tradeoff between three competing objectives. No single approach wins on all three simultaneously — which is why mature evaluation systems use all three paradigms in combination.
+  </p>
+
+  <div class="triangle-wrap">
+    <div class="triangle-node">
+      <div class="triangle-icon icon-quality">Q</div>
+      <div class="triangle-name">Quality</div>
+      <div class="triangle-desc">How accurately the evaluation reflects true model quality, including nuance, context, and domain knowledge.</div>
+    </div>
+    <div class="triangle-node">
+      <div class="triangle-icon icon-cost">$</div>
+      <div class="triangle-name">Cost</div>
+      <div class="triangle-desc">Monetary and latency cost per evaluation call. LLM judges cost tokens; human review costs expert time.</div>
+    </div>
+    <div class="triangle-node">
+      <div class="triangle-icon icon-scale">∞</div>
+      <div class="triangle-name">Scale</div>
+      <div class="triangle-desc">Volume of traces that can be evaluated. Production systems may generate 10,000+ requests per day.</div>
+    </div>
+    <div class="triangle-tension">
+      <strong>Human review:</strong> highest quality, very high cost, very low scale.&nbsp;&nbsp;
+      <strong>LLM judges:</strong> good quality, moderate cost, high scale.&nbsp;&nbsp;
+      <strong>Code heuristics:</strong> deterministic quality, near-zero cost, 100% scale.<br>
+      MLflow's answer: <strong>use all three in a tiered pipeline.</strong>
+    </div>
+  </div>
+
+  <!-- ── THREE PARADIGMS ── -->
+  <div class="section-header" style="margin-top:40px; margin-bottom:16px;">
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">The three evaluation paradigms</h3>
+  </div>
+
+  <p class="prose">
+    No single paradigm solves all five problems above. MLflow 3 is designed around all three working together — you define scorers once and they run at every stage.
+  </p>
+
+  <div class="paradigm-row">
+    <div class="paradigm-cell">
+      <div class="paradigm-arrow">→</div>
+      <div class="paradigm-num">Paradigm 1</div>
+      <div class="paradigm-name">Code heuristics</div>
+      <div class="paradigm-desc">Deterministic functions that check measurable properties of outputs or traces.</div>
+      <div class="paradigm-pros">
+        <div class="pro-item"><span>Near-zero cost, 100% coverage</span></div>
+        <div class="pro-item"><span>Perfectly reproducible</span></div>
+        <div class="pro-item"><span>No LLM bias or variance</span></div>
+        <div class="con-item"><span>Can't assess semantic quality</span></div>
+        <div class="con-item"><span>Can't understand context</span></div>
+      </div>
+    </div>
+    <div class="paradigm-cell">
+      <div class="paradigm-arrow">→</div>
+      <div class="paradigm-num">Paradigm 2</div>
+      <div class="paradigm-name">LLM judges</div>
+      <div class="paradigm-desc">A second LLM reads the output and assigns a score with reasoning.</div>
+      <div class="paradigm-pros">
+        <div class="pro-item"><span>Handles open-ended tasks</span></div>
+        <div class="pro-item"><span>Scalable vs. human review</span></div>
+        <div class="pro-item"><span>Provides written rationale</span></div>
+        <div class="con-item"><span>Costs tokens per evaluation</span></div>
+        <div class="con-item"><span>Can have positional bias</span></div>
+      </div>
+    </div>
+    <div class="paradigm-cell">
+      <div class="paradigm-num">Paradigm 3</div>
+      <div class="paradigm-name">Human review</div>
+      <div class="paradigm-desc">Domain experts label traces in the Review App, providing ground truth feedback.</div>
+      <div class="paradigm-pros">
+        <div class="pro-item"><span>Highest quality signal</span></div>
+        <div class="pro-item"><span>Catches novel edge cases</span></div>
+        <div class="pro-item"><span>Calibrates LLM judges</span></div>
+        <div class="con-item"><span>Very high cost and latency</span></div>
+        <div class="con-item"><span>Doesn't scale to production</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── WHAT GOOD LOOKS LIKE ── -->
+  <div class="section-header" style="margin-top:40px; margin-bottom:16px;">
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">What "good" looks like — the five quality dimensions</h3>
+  </div>
+
+  <p class="prose">
+    Rather than a single "quality" score, production evaluation decomposes quality into five independently measurable dimensions. Each maps to a specific MLflow scorer.
+  </p>
+
+  <div class="dimensions-grid">
+    <div class="dim-card">
+      <div class="dim-indicator" style="background: var(--accent-teal);"></div>
+      <div class="dim-name">Correctness</div>
+      <div class="dim-def">Is the factual content accurate? Does it match expected facts?</div>
+    </div>
+    <div class="dim-card">
+      <div class="dim-indicator" style="background: var(--accent-blue);"></div>
+      <div class="dim-name">Relevance</div>
+      <div class="dim-def">Does the response actually address what the user asked?</div>
+    </div>
+    <div class="dim-card">
+      <div class="dim-indicator" style="background: var(--accent-purple);"></div>
+      <div class="dim-name">Groundedness</div>
+      <div class="dim-def">In RAG: does the answer stay within retrieved context?</div>
+    </div>
+    <div class="dim-card">
+      <div class="dim-indicator" style="background: var(--red);"></div>
+      <div class="dim-name">Safety</div>
+      <div class="dim-def">Is the response free of harmful, toxic, or policy-violating content?</div>
+    </div>
+    <div class="dim-card">
+      <div class="dim-indicator" style="background: var(--amber);"></div>
+      <div class="dim-name">Efficiency</div>
+      <div class="dim-def">For agents: did it reach the answer without redundant steps?</div>
+    </div>
+  </div>
+
+  <div class="insight">
+    <div class="insight-label">Why decompose?</div>
+    <p>A single "quality" score hides root causes. If your agent has a Safety problem, you fix the system prompt. If it has a Groundedness problem, you fix the retrieval or context window. If it has an Efficiency problem, you reduce tool calls. <strong>Each dimension points to a different fix.</strong></p>
+  </div>
+
+</section>
+
+<!-- ════════════════════════════════════════════ SECTION 1.2 -->
+<section class="section" id="topic-1-2">
+
+  <div class="section-header">
+    <span class="section-marker">1.2 · Theory</span>
+    <h2 class="section-title">MLflow 3 GenAI Stack — The Full Map</h2>
+    <span class="section-rule"></span>
+  </div>
+
+  <p class="prose">
+    MLflow 3 introduces a dedicated <code>mlflow.genai</code> module built specifically around the evaluation problems described above. Rather than a single evaluation function, it's a connected system of objects that persist across your entire model lifecycle — from first prototype through production monitoring.
+  </p>
+
+  <!-- ── CORE OBJECTS ── -->
+  <div class="section-header" style="margin-top:40px; margin-bottom:16px;">
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">Core objects</h3>
+  </div>
+
+  <p class="prose">Five first-class objects form the backbone of the system. Everything else is built on top of these.</p>
+
+  <div class="card-grid">
+    <div class="concept-card purple">
+      <div class="card-label">Object 1</div>
+      <div class="card-title">Experiment</div>
+      <div class="card-body">The top-level container for all work on one application. All runs, traces, datasets, and scorers for a given agent live under a single experiment. Created with <code>mlflow.set_experiment()</code>.</div>
+    </div>
+    <div class="concept-card teal">
+      <div class="card-label">Object 2</div>
+      <div class="card-title">Run</div>
+      <div class="card-body">One execution of <code>mlflow.genai.evaluate()</code>. Stores the dataset used, the model version tested, all per-row scores, aggregate metrics, and links to every trace generated. Your unit of "one evaluation attempt."</div>
+    </div>
+    <div class="concept-card blue">
+      <div class="card-label">Object 3</div>
+      <div class="card-title">Trace</div>
+      <div class="card-body">One execution of your agent — a hierarchical tree of spans capturing every LLM call, tool call, retrieval step, and their inputs/outputs. Generated automatically via <code>mlflow.openai.autolog()</code> or <code>@mlflow.trace</code>.</div>
+    </div>
+    <div class="concept-card orange">
+      <div class="card-label">Object 4</div>
+      <div class="card-title">Logged model</div>
+      <div class="card-body">A versioned snapshot of your agent code registered in Unity Catalog. The <code>model_id</code> parameter in <code>evaluate()</code> links evaluation runs to specific model versions — this is how you get lineage.</div>
+    </div>
+    <div class="concept-card amber">
+      <div class="card-label">Object 5</div>
+      <div class="card-title">Scorers</div>
+      <div class="card-body">The evaluation functions — code-based <code>@scorer</code> decorators, built-in LLM judges, and custom <code>make_judge()</code> judges. Defined once and shared across dev, CI gate, and production monitoring without modification.</div>
+    </div>
+  </div>
+
+  <!-- ── EVALUATION PIPELINE ── -->
+  <div class="section-header" style="margin-top:40px; margin-bottom:16px;">
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">The evaluation pipeline</h3>
+  </div>
+
+  <p class="prose">Every call to <code>mlflow.genai.evaluate()</code> follows the same five-stage pipeline. Understanding this flow is essential — it determines how you structure your datasets, how your agent gets called, and how scores end up on traces.</p>
+
+  <div class="stack-diagram">
+    <div class="stack-layer">
+      <div class="stack-index">Stage 1</div>
+      <div class="stack-content">
+        <div class="stack-title">Evaluation dataset</div>
+        <div class="stack-desc">Rows of <code>inputs</code> + optional <code>expectations</code>. Can be a list, Pandas/Spark DataFrame, or UC-backed <code>EvaluationDataset</code>. MLflow iterates over rows and calls <code>predict_fn</code> for each one.</div>
+      </div>
+      <div class="stack-tag"><span class="badge badge-pass">UC Delta table</span></div>
+    </div>
+    <div class="stack-layer">
+      <div class="stack-index">Stage 2</div>
+      <div class="stack-content">
+        <div class="stack-title">predict_fn → Trace</div>
+        <div class="stack-desc">Your agent function (or a deployed endpoint via <code>to_predict_fn()</code>). MLflow unpacks each row's <code>inputs</code> dict as keyword arguments, calls your function, and captures one trace per row. The trace is the unit all scorers operate on.</div>
+      </div>
+      <div class="stack-tag"><span class="badge" style="color:var(--accent-purple); background:rgba(168,85,247,0.08); border-color:rgba(168,85,247,0.2);">@mlflow.trace</span></div>
+    </div>
+    <div class="stack-layer">
+      <div class="stack-index">Stage 3</div>
+      <div class="stack-content">
+        <div class="stack-title">Scorers run in parallel</div>
+        <div class="stack-desc">All scorers in your <code>scorers=[...]</code> list run concurrently against each trace using thread pools. MLflow controls parallelism via <code>MLFLOW_GENAI_EVAL_MAX_WORKERS</code> and <code>MLFLOW_GENAI_EVAL_MAX_SCORER_WORKERS</code>.</div>
+      </div>
+      <div class="stack-tag"><span class="badge" style="color:var(--accent-orange); background:rgba(255,107,53,0.08); border-color:rgba(255,107,53,0.2);">concurrent</span></div>
+    </div>
+    <div class="stack-layer">
+      <div class="stack-index">Stage 4</div>
+      <div class="stack-content">
+        <div class="stack-title">Feedback objects attached to traces</div>
+        <div class="stack-desc">Each scorer returns a <code>Feedback</code> object containing a <code>value</code> (score), <code>rationale</code> (written justification), and <code>source</code> (who scored: CODE / LLM_JUDGE / HUMAN). These attach to the trace as assessments, visible in the MLflow UI.</div>
+      </div>
+      <div class="stack-tag"><span class="badge badge-pass">per-row</span></div>
+    </div>
+    <div class="stack-layer">
+      <div class="stack-index">Stage 5</div>
+      <div class="stack-content">
+        <div class="stack-title">Aggregate run metrics</div>
+        <div class="stack-desc">MLflow aggregates per-row scores into run-level metrics: <code>correctness/mean</code>, <code>safety/ratio_pass</code>, etc. These are the values you threshold against in your CI gate. The run also carries a <code>model_id</code> link to the agent version being tested.</div>
+      </div>
+      <div class="stack-tag"><span class="badge" style="color:var(--accent-teal); background:rgba(0,191,165,0.08); border-color:rgba(0,191,165,0.2);">run metrics</span></div>
+    </div>
+  </div>
+
+  <!-- ── SCORER LIFECYCLE ── -->
+  <div class="section-header" style="margin-top:40px; margin-bottom:16px;">
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">How a scorer travels: dev → CI gate → production monitoring</h3>
+  </div>
+
+  <p class="prose">
+    The central architectural principle of MLflow 3 is that <strong>the same scorer definition runs in all three environments</strong>. You write a <code>Correctness()</code> judge once in a notebook. That exact same object becomes the CI gate threshold check in your Databricks Workflow. And then <code>Correctness().register(name="prod_v1").start()</code> turns it into continuous background monitoring against live production traces.
+  </p>
+
+  <div class="compare-wrap">
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>Environment</th>
+          <th>How the scorer runs</th>
+          <th>What it operates on</th>
+          <th>Scorer types supported</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Development</td>
+          <td><code>mlflow.genai.evaluate(scorers=[...])</code></td>
+          <td>UC eval dataset — curated, synthetic, or from traces</td>
+          <td><span class="badge badge-pass">All types</span> code + LLM + Guidelines</td>
+        </tr>
+        <tr>
+          <td>CI gate</td>
+          <td><code>evaluate()</code> + threshold check + <code>dbutils.notebook.exit()</code></td>
+          <td>Same UC dataset against the deployed endpoint via <code>to_predict_fn()</code></td>
+          <td><span class="badge badge-pass">All types</span> code + LLM + Guidelines</td>
+        </tr>
+        <tr>
+          <td>Production monitoring</td>
+          <td><code>scorer.register(name).start(sampling_config)</code></td>
+          <td>Live production traces sampled at configured rate</td>
+          <td><span class="badge badge-partial">LLM judges only</span> code scorers not supported</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="warning">Code-based <code>@scorer</code> functions are not supported in production monitoring — only LLM judges (built-in, <code>make_judge()</code>, and Guidelines). This means your latency check and JSON format check run in dev and CI, but cannot be registered for continuous monitoring.</div>
+
+  <!-- ── DATABRICKS ADDITIONS ── -->
+  <div class="section-header" style="margin-top:40px; margin-bottom:16px;">
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">Databricks additions over OSS MLflow</h3>
+  </div>
+
+  <p class="prose">
+    The <code>mlflow.genai</code> module is open-source and runs anywhere. Databricks adds four production infrastructure components that are exclusive to the managed platform.
+  </p>
+
+  <div class="card-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
+    <div class="concept-card amber">
+      <div class="card-label">Databricks exclusive</div>
+      <div class="card-title">Unity Catalog</div>
+      <div class="card-body">Eval datasets stored as versioned Delta tables. Every dataset, model, endpoint, inference table, and evaluation run has lineage tracked end-to-end in one governance layer.</div>
+    </div>
+    <div class="concept-card orange">
+      <div class="card-label">Databricks exclusive</div>
+      <div class="card-title">AI Gateway</div>
+      <div class="card-body">A proxy that sits in front of all LLM endpoints. Enforces PII blocking, toxicity filtering, topic restrictions, rate limiting, and cost tracking synchronously before requests reach your agent.</div>
+    </div>
+    <div class="concept-card blue">
+      <div class="card-label">Databricks exclusive</div>
+      <div class="card-title">Inference Tables</div>
+      <div class="card-body">Auto-captured Delta tables in UC storing every production request/response plus the full MLflow trace JSON per call. The source of truth for production evaluation datasets and monitoring.</div>
+    </div>
+    <div class="concept-card teal">
+      <div class="card-label">Databricks exclusive</div>
+      <div class="card-title">Review App</div>
+      <div class="card-body">A no-code UI where domain experts browse traces and attach human feedback. Labels flow into the same <code>Feedback</code> schema as automated scorers, enabling direct comparison between human and automated quality signals.</div>
+    </div>
+  </div>
+
+  <!-- ── MLflow 2 vs 3 ── -->
+  <div class="section-header" style="margin-top:40px; margin-bottom:16px;">
+    <h3 style="font-family:'Playfair Display',serif; font-size:20px;">MLflow 3 vs MLflow 2 — what changed</h3>
+  </div>
+
+  <p class="prose">MLflow 3 is not a minor update — it's a redesign of how evaluation fits into the model lifecycle. The core shift: evaluation moves from a one-off measurement tool into a continuous quality system.</p>
+
+  <div class="compare-wrap">
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>Capability</th>
+          <th>MLflow 2</th>
+          <th>MLflow 3</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Evaluation API</td>
+          <td><code>mlflow.evaluate()</code> — generic, model-type agnostic</td>
+          <td><code>mlflow.genai.evaluate()</code> — GenAI-specific with predict_fn, scorers</td>
+        </tr>
+        <tr>
+          <td>Evaluation datasets</td>
+          <td>Plain DataFrames, no persistence</td>
+          <td>UC-backed <code>EvaluationDataset</code> — versioned, governed, shared</td>
+        </tr>
+        <tr>
+          <td>Custom scorers</td>
+          <td><code>EvaluationMetric</code> class — verbose, complex</td>
+          <td><code>@scorer</code> decorator — simple, supports trace access, Feedback objects</td>
+        </tr>
+        <tr>
+          <td>Production monitoring</td>
+          <td>Not available</td>
+          <td><code>.register().start(sampling_config)</code> — continuous, sampled</td>
+        </tr>
+        <tr>
+          <td>Human feedback</td>
+          <td>Not available</td>
+          <td><code>mlflow.log_feedback()</code> + Review App — same schema as automated scores</td>
+        </tr>
+        <tr>
+          <td>Tracing</td>
+          <td>Basic span logging</td>
+          <td>Full OpenTelemetry-compatible trace tree, searchable, with autolog for 10+ frameworks</td>
+        </tr>
+        <tr>
+          <td>Model versioning tie-in</td>
+          <td>Manual tracking</td>
+          <td><code>model_id</code> in <code>evaluate()</code> — automatic lineage from eval run → model version</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</section>
+
+<!-- ════════════════════════════════════════════ LAB STUB 1.3 -->
+<section class="section" id="topic-1-3">
+
+  <div class="section-header">
+    <span class="section-marker" style="background:rgba(168,85,247,0.06); color:var(--accent-purple); border-color:rgba(168,85,247,0.2);">1.3 · Hands-On Lab</span>
+    <h2 class="section-title">Databricks Workspace Setup from Scratch</h2>
+    <span class="section-rule"></span>
+  </div>
+
+  <p class="prose">
+    The lab for topic 1.3 walks you through configuring your full Databricks environment — installing packages, creating a Unity Catalog schema, setting up your MLflow experiment, and verifying Foundation Model API access — so every subsequent lab runs without friction. Lab content is in the companion notebook.
+  </p>
+
+  <div class="card-grid">
+    <div class="concept-card teal">
+      <div class="card-label">Step 1</div>
+      <div class="card-title">Install &amp; restart</div>
+      <div class="card-body"><code>%pip install "mlflow[databricks]&gt;=3.1" databricks-openai</code> followed by <code>dbutils.library.restartPython()</code>. Must be the first cell in every lab notebook.</div>
+    </div>
+    <div class="concept-card orange">
+      <div class="card-label">Step 2</div>
+      <div class="card-title">Create UC schema</div>
+      <div class="card-body">Create <code>main.genai_eval</code> schema in Unity Catalog. All datasets, inference tables, and evaluation results from this course land here.</div>
+    </div>
+    <div class="concept-card blue">
+      <div class="card-label">Step 3</div>
+      <div class="card-title">Set experiment</div>
+      <div class="card-body"><code>mlflow.set_experiment("/Users/you/genai-eval-tutorial")</code>. All runs throughout the course attach to this experiment for side-by-side comparison.</div>
+    </div>
+    <div class="concept-card purple">
+      <div class="card-label">Step 4</div>
+      <div class="card-title">Sanity check trace</div>
+      <div class="card-body">Enable <code>mlflow.openai.autolog()</code>, call <code>databricks-claude-sonnet-4</code> via <code>DatabricksOpenAI()</code>, and verify the trace appears in the MLflow UI before proceeding.</div>
+    </div>
+  </div>
+
+</section>
+
+<!-- ── MODULE OUTCOME ── -->
+<div class="outcome">
+  <div class="outcome-icon">🎯</div>
+  <div class="outcome-text">
+    <strong>Module 01 outcome:</strong> You understand the five fundamental problems that make LLM and agent evaluation different from classical software testing — non-determinism, metric failure, spectrum correctness, multi-layer agent failures, and the quality/cost/scale tradeoff. You can describe the full MLflow 3 GenAI evaluation stack, its five core objects, the evaluation pipeline, and how the same scorer travels from development through CI gate to production monitoring. You understand what Databricks adds to the OSS core and why each addition matters for enterprise deployment. And you have a working Databricks environment ready for all subsequent labs.
+  </div>
+</div>
+
+</main>
+
+<script>
+const sections = document.querySelectorAll('.section');
+const navItems = document.querySelectorAll('.nav-item');
+
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const id = entry.target.getAttribute('id');
+      navItems.forEach(item => {
+        item.classList.toggle('active', item.getAttribute('href') === '#' + id);
+      });
+    }
+  });
+}, { rootMargin: '-20% 0px -60% 0px' });
+
+sections.forEach(s => observer.observe(s));
+</script>
+
+</body>
+</html>
