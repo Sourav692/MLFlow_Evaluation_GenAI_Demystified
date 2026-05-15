@@ -831,9 +831,146 @@ main {
   .span-sidebar { border-right: none; border-bottom: 1px solid var(--border); }
   .card-grid { grid-template-columns: 1fr; }
 }
+
+/* ── SCROLL PROGRESS BAR ── */
+.scroll-progress {
+  position: fixed; top: 0; left: 0;
+  height: 3px; width: 0%;
+  background: linear-gradient(90deg, var(--accent-orange) 0%, var(--accent-teal) 100%);
+  z-index: 200;
+  transition: width 0.1s ease;
+  box-shadow: 0 0 10px rgba(255,107,53,0.45);
+}
+
+/* ── NAV VISITED STATE ── */
+.nav-item.visited:not(.active) .nav-num { color: var(--accent-teal); }
+.nav-item.visited:not(.active) .nav-label { color: var(--text); }
+.nav-item.visited:not(.active)::after {
+  content: '\2713';
+  margin-left: 6px;
+  color: var(--accent-teal);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+/* ── MODULE PROGRESS METER ── */
+.module-meter {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 12px 48px 0;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.meter-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.meter-track {
+  flex: 1;
+  height: 4px;
+  background: var(--surface2);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.meter-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--accent-orange), var(--accent-teal));
+  transition: width 0.15s ease;
+}
+.meter-pct {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-teal);
+  font-weight: 500;
+  min-width: 38px;
+  text-align: right;
+}
+
+/* ── PREV / NEXT MODULE NAV ── */
+.module-nav {
+  margin-top: 80px;
+  padding-top: 40px;
+  border-top: 1px solid var(--border);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+.mod-nav-link {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 26px 30px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  text-decoration: none;
+  color: var(--text);
+  transition: all 0.22s ease;
+  position: relative;
+  overflow: hidden;
+}
+.mod-nav-link::before {
+  content: '';
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 3px;
+  background: var(--accent-orange);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.mod-nav-link.prev::before { left: 0; }
+.mod-nav-link.next::before { right: 0; background: var(--accent-teal); }
+.mod-nav-link:hover {
+  background: var(--surface2);
+  border-color: var(--border2);
+  transform: translateY(-2px);
+}
+.mod-nav-link:hover::before { opacity: 1; }
+.mod-nav-link.next { text-align: right; align-items: flex-end; }
+.mod-nav-dir {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.mod-nav-link.next .mod-nav-dir { flex-direction: row-reverse; }
+.mod-nav-link.prev:hover .mod-nav-dir { color: var(--accent-orange); }
+.mod-nav-link.next:hover .mod-nav-dir { color: var(--accent-teal); }
+.mod-nav-arrow { transition: transform 0.2s ease; font-size: 14px; }
+.mod-nav-link.prev:hover .mod-nav-arrow { transform: translateX(-3px); }
+.mod-nav-link.next:hover .mod-nav-arrow { transform: translateX(3px); }
+.mod-nav-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+.mod-nav-title em { font-style: italic; color: var(--accent-orange); }
+.mod-nav-link.next .mod-nav-title em { color: var(--accent-teal); }
+.mod-nav-link.prev:only-child { grid-column: 1; }
+.mod-nav-link.next:only-child { grid-column: 2; }
+@media (max-width: 720px) {
+  .module-nav { grid-template-columns: 1fr; }
+  .mod-nav-link.next { text-align: left; align-items: flex-start; }
+  .mod-nav-link.next .mod-nav-dir { flex-direction: row; }
+  .mod-nav-link.prev:only-child,
+  .mod-nav-link.next:only-child { grid-column: 1; }
+}
+
 </style>
 </head>
 <body>
+<div class="scroll-progress"></div>
 
 <!-- ── HERO ── -->
 <header class="mod-hero">
@@ -854,6 +991,14 @@ main {
     </div>
   </div>
 </header>
+
+<!-- ── MODULE PROGRESS METER ── -->
+<div class="module-meter" aria-label="Reading progress">
+  <span class="meter-label">Module progress</span>
+  <div class="meter-track"><div class="meter-fill"></div></div>
+  <span class="meter-pct">0%</span>
+</div>
+
 
 <!-- ── NAV ── -->
 <nav class="progress-nav">
@@ -1553,33 +1698,66 @@ results = mlflow.genai.<span class="fn">evaluate</span>(
   </div>
 </div>
 
+
+<!-- ── PREV / NEXT MODULE NAV ── -->
+<nav class="module-nav" aria-label="Module navigation">
+  <a href="module-04-theory.html" class="mod-nav-link prev">
+    <span class="mod-nav-dir"><span class="mod-nav-arrow">←</span> Previous · Module 04 of 08</span>
+    <span class="mod-nav-title">Judges &amp; <em>Scorers</em></span>
+  </a>
+  <a href="module-06-theory.html" class="mod-nav-link next">
+    <span class="mod-nav-dir">Module 06 of 08 · Up next <span class="mod-nav-arrow">→</span></span>
+    <span class="mod-nav-title">AI Gateway &amp; <em>Production</em></span>
+  </a>
+</nav>
+
 </main>
 
 <script>
-var sections = document.querySelectorAll('.section');
-var navItems = document.querySelectorAll('.nav-item');
+const sections = document.querySelectorAll('.section');
+const navItems = document.querySelectorAll('.nav-item');
 
-var observer = new IntersectionObserver(function(entries) {
-  entries.forEach(function(entry) {
+// Active-section tracking
+const activeObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
     if (entry.isIntersecting) {
-      var id = entry.target.getAttribute('id');
-      navItems.forEach(function(item) {
+      const id = entry.target.getAttribute('id');
+      navItems.forEach(item => {
         item.classList.toggle('active', item.getAttribute('href') === '#' + id);
       });
     }
   });
 }, { rootMargin: '-20% 0px -60% 0px' });
+sections.forEach(s => activeObserver.observe(s));
 
-sections.forEach(function(s) { observer.observe(s); });
+// Visited tracking (sticks once seen)
+const visitedObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const id = entry.target.getAttribute('id');
+      const item = document.querySelector('.nav-item[href="#' + id + '"]');
+      if (item) item.classList.add('visited');
+    }
+  });
+}, { rootMargin: '0px 0px -50% 0px' });
+sections.forEach(s => visitedObserver.observe(s));
 
-function selectSpan(idx) {
-  document.querySelectorAll('#span-explorer .span-item').forEach(function(el, i) {
-    el.classList.toggle('active', i === idx);
-  });
-  document.querySelectorAll('#span-explorer .span-detail').forEach(function(el, i) {
-    el.classList.toggle('active', i === idx);
-  });
+// Scroll progress bar + module % meter
+const progressBar = document.querySelector('.scroll-progress');
+const meterFill = document.querySelector('.meter-fill');
+const meterPct = document.querySelector('.meter-pct');
+function updateProgress() {
+  const h = document.documentElement;
+  const scrolled = h.scrollTop;
+  const max = h.scrollHeight - h.clientHeight;
+  const pct = max > 0 ? Math.min(100, Math.max(0, (scrolled / max) * 100)) : 0;
+  if (progressBar) progressBar.style.width = pct + '%';
+  if (meterFill) meterFill.style.width = pct + '%';
+  if (meterPct) meterPct.style.textContent = Math.round(pct) + '%';
 }
+window.addEventListener('scroll', updateProgress, { passive: true });
+window.addEventListener('resize', updateProgress);
+updateProgress();
 </script>
 
 </body>

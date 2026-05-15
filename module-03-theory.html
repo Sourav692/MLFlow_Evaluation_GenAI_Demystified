@@ -944,9 +944,146 @@ main {
   .stack-layer { grid-template-columns: 1fr; }
   .demo-row { grid-template-columns: 1fr; }
 }
+
+/* ── SCROLL PROGRESS BAR ── */
+.scroll-progress {
+  position: fixed; top: 0; left: 0;
+  height: 3px; width: 0%;
+  background: linear-gradient(90deg, var(--accent-orange) 0%, var(--accent-teal) 100%);
+  z-index: 200;
+  transition: width 0.1s ease;
+  box-shadow: 0 0 10px rgba(255,107,53,0.45);
+}
+
+/* ── NAV VISITED STATE ── */
+.nav-item.visited:not(.active) .nav-num { color: var(--accent-teal); }
+.nav-item.visited:not(.active) .nav-label { color: var(--text); }
+.nav-item.visited:not(.active)::after {
+  content: '\2713';
+  margin-left: 6px;
+  color: var(--accent-teal);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+/* ── MODULE PROGRESS METER ── */
+.module-meter {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 12px 48px 0;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.meter-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.meter-track {
+  flex: 1;
+  height: 4px;
+  background: var(--surface2);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.meter-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--accent-orange), var(--accent-teal));
+  transition: width 0.15s ease;
+}
+.meter-pct {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-teal);
+  font-weight: 500;
+  min-width: 38px;
+  text-align: right;
+}
+
+/* ── PREV / NEXT MODULE NAV ── */
+.module-nav {
+  margin-top: 80px;
+  padding-top: 40px;
+  border-top: 1px solid var(--border);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+.mod-nav-link {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 26px 30px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  text-decoration: none;
+  color: var(--text);
+  transition: all 0.22s ease;
+  position: relative;
+  overflow: hidden;
+}
+.mod-nav-link::before {
+  content: '';
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 3px;
+  background: var(--accent-orange);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.mod-nav-link.prev::before { left: 0; }
+.mod-nav-link.next::before { right: 0; background: var(--accent-teal); }
+.mod-nav-link:hover {
+  background: var(--surface2);
+  border-color: var(--border2);
+  transform: translateY(-2px);
+}
+.mod-nav-link:hover::before { opacity: 1; }
+.mod-nav-link.next { text-align: right; align-items: flex-end; }
+.mod-nav-dir {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.mod-nav-link.next .mod-nav-dir { flex-direction: row-reverse; }
+.mod-nav-link.prev:hover .mod-nav-dir { color: var(--accent-orange); }
+.mod-nav-link.next:hover .mod-nav-dir { color: var(--accent-teal); }
+.mod-nav-arrow { transition: transform 0.2s ease; font-size: 14px; }
+.mod-nav-link.prev:hover .mod-nav-arrow { transform: translateX(-3px); }
+.mod-nav-link.next:hover .mod-nav-arrow { transform: translateX(3px); }
+.mod-nav-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+.mod-nav-title em { font-style: italic; color: var(--accent-orange); }
+.mod-nav-link.next .mod-nav-title em { color: var(--accent-teal); }
+.mod-nav-link.prev:only-child { grid-column: 1; }
+.mod-nav-link.next:only-child { grid-column: 2; }
+@media (max-width: 720px) {
+  .module-nav { grid-template-columns: 1fr; }
+  .mod-nav-link.next { text-align: left; align-items: flex-start; }
+  .mod-nav-link.next .mod-nav-dir { flex-direction: row; }
+  .mod-nav-link.prev:only-child,
+  .mod-nav-link.next:only-child { grid-column: 1; }
+}
+
 </style>
 </head>
 <body>
+<div class="scroll-progress"></div>
 
 <!-- ── HERO ── -->
 <header class="mod-hero">
@@ -967,6 +1104,14 @@ main {
     </div>
   </div>
 </header>
+
+<!-- ── MODULE PROGRESS METER ── -->
+<div class="module-meter" aria-label="Reading progress">
+  <span class="meter-label">Module progress</span>
+  <div class="meter-track"><div class="meter-fill"></div></div>
+  <span class="meter-pct">0%</span>
+</div>
+
 
 <!-- ── NAV ── -->
 <nav class="progress-nav">
@@ -1829,15 +1974,28 @@ results = mlflow.genai.<span class="fn">evaluate</span>(
   </div>
 </div>
 
+
+<!-- ── PREV / NEXT MODULE NAV ── -->
+<nav class="module-nav" aria-label="Module navigation">
+  <a href="module-02-theory.html" class="mod-nav-link prev">
+    <span class="mod-nav-dir"><span class="mod-nav-arrow">←</span> Previous · Module 02 of 08</span>
+    <span class="mod-nav-title">Evaluation <em>Datasets</em></span>
+  </a>
+  <a href="module-04-theory.html" class="mod-nav-link next">
+    <span class="mod-nav-dir">Module 04 of 08 · Up next <span class="mod-nav-arrow">→</span></span>
+    <span class="mod-nav-title">Judges &amp; <em>Scorers</em></span>
+  </a>
+</nav>
+
 </main>
 
 <!-- ════════════════════════════════════════════ SCRIPTS ════════════════════════════════════════════ -->
 <script>
-/* ── NAV SCROLL OBSERVER ── */
 const sections = document.querySelectorAll('.section');
 const navItems = document.querySelectorAll('.nav-item');
 
-const navObs = new IntersectionObserver((entries) => {
+// Active-section tracking
+const activeObserver = new IntersectionObserver((entries) => {
   entries.forEach(entry => {
     if (entry.isIntersecting) {
       const id = entry.target.getAttribute('id');
@@ -1847,169 +2005,36 @@ const navObs = new IntersectionObserver((entries) => {
     }
   });
 }, { rootMargin: '-20% 0px -60% 0px' });
+sections.forEach(s => activeObserver.observe(s));
 
-sections.forEach(s => navObs.observe(s));
-
-
-/* ── PIPELINE STEPPER ── */
-(function() {
-  const panels = document.querySelectorAll('#pipeline-body .stepper-panel');
-  const dotsC = document.getElementById('pipeline-dots');
-  const prevBtn = document.getElementById('pipe-prev');
-  const nextBtn = document.getElementById('pipe-next');
-  const counter = document.getElementById('pipe-count');
-  let cur = 0;
-
-  // Create dots
-  panels.forEach((_, i) => {
-    const d = document.createElement('div');
-    d.className = 'stepper-dot' + (i === 0 ? ' active' : '');
-    d.onclick = () => goTo(i);
-    dotsC.appendChild(d);
-  });
-
-  function goTo(n) {
-    panels[cur].classList.remove('active');
-    dotsC.children[cur].classList.remove('active');
-    cur = n;
-    panels[cur].classList.add('active');
-    dotsC.children[cur].classList.add('active');
-    prevBtn.disabled = cur === 0;
-    nextBtn.disabled = cur === panels.length - 1;
-    counter.textContent = 'Step ' + (cur + 1) + ' of ' + panels.length;
-  }
-
-  prevBtn.onclick = () => { if (cur > 0) goTo(cur - 1); };
-  nextBtn.onclick = () => { if (cur < panels.length - 1) goTo(cur + 1); };
-})();
-
-
-/* ── SYNC / ASYNC TIMELINE ── */
-const syncData = {
-  rows: [
-    { label: 'Row 1', blocks: [
-      { type: 'work', left: 0, width: 8, text: 'Call' },
-      { type: 'wait', left: 8, width: 25, text: 'Wait I/O' },
-      { type: 'work', left: 33, width: 5, text: '' },
-      { type: 'score', left: 38, width: 12, text: 'Score' },
-    ]},
-    { label: 'Row 2', blocks: [
-      { type: 'work', left: 0, width: 8, text: 'Call' },
-      { type: 'wait', left: 8, width: 30, text: 'Wait I/O' },
-      { type: 'work', left: 38, width: 5, text: '' },
-      { type: 'score', left: 43, width: 12, text: 'Score' },
-    ]},
-    { label: 'Row 3', blocks: [
-      { type: 'work', left: 0, width: 8, text: 'Call' },
-      { type: 'wait', left: 8, width: 22, text: 'Wait I/O' },
-      { type: 'work', left: 30, width: 5, text: '' },
-      { type: 'score', left: 35, width: 12, text: 'Score' },
-    ]},
-    { label: 'Row 4', blocks: [
-      { type: 'work', left: 0, width: 8, text: 'Call' },
-      { type: 'wait', left: 8, width: 28, text: 'Wait I/O' },
-      { type: 'work', left: 36, width: 5, text: '' },
-      { type: 'score', left: 41, width: 12, text: 'Score' },
-    ]},
-  ],
-  note: 'Threads run in parallel, each blocked during I/O wait',
-  time: '~12.0s (4 threads)'
-};
-
-const asyncData = {
-  rows: [
-    { label: 'Event loop', blocks: [
-      { type: 'work', left: 0, width: 4, text: 'R1' },
-      { type: 'work', left: 4, width: 4, text: 'R2' },
-      { type: 'work', left: 8, width: 4, text: 'R3' },
-      { type: 'work', left: 12, width: 4, text: 'R4' },
-      { type: 'work', left: 28, width: 3, text: 'R1' },
-      { type: 'work', left: 31, width: 3, text: 'R3' },
-      { type: 'work', left: 34, width: 3, text: 'R4' },
-      { type: 'work', left: 37, width: 3, text: 'R2' },
-    ]},
-    { label: 'I/O (R1)', blocks: [
-      { type: 'wait', left: 4, width: 24, text: '' },
-    ]},
-    { label: 'I/O (R2)', blocks: [
-      { type: 'wait', left: 8, width: 29, text: '' },
-    ]},
-    { label: 'I/O (R3)', blocks: [
-      { type: 'wait', left: 12, width: 19, text: '' },
-    ]},
-    { label: 'Scoring', blocks: [
-      { type: 'score', left: 40, width: 12, text: 'All 4 rows' },
-    ]},
-  ],
-  note: '1 thread, no blocking — all waits overlap',
-  time: '~4.5s (overlapped)'
-};
-
-function showTimeline(mode) {
-  const btns = document.querySelectorAll('.tgl-btn');
-  btns.forEach(b => b.classList.toggle('active', b.textContent.toLowerCase() === mode));
-
-  const data = mode === 'sync' ? syncData : asyncData;
-  const canvas = document.getElementById('tl-canvas');
-  const timeEl = document.getElementById('tl-time');
-
-  canvas.innerHTML = '';
-  data.rows.forEach(row => {
-    const rowEl = document.createElement('div');
-    rowEl.className = 'tl-row';
-    rowEl.innerHTML = '<div class="tl-label">' + row.label + '</div><div class="tl-track"></div>';
-    const track = rowEl.querySelector('.tl-track');
-    row.blocks.forEach((b, i) => {
-      const block = document.createElement('div');
-      block.className = 'tl-block tl-' + b.type;
-      block.style.left = b.left + '%';
-      block.style.width = '0%';
-      block.textContent = b.text;
-      track.appendChild(block);
-      // Animate in
-      setTimeout(() => { block.style.width = b.width + '%'; }, 80 + i * 60);
-    });
-    canvas.appendChild(rowEl);
-  });
-
-  // Note row
-  const noteEl = document.createElement('div');
-  noteEl.style.cssText = 'margin-top:8px;font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--text-muted);text-align:center;';
-  noteEl.textContent = data.note;
-  canvas.appendChild(noteEl);
-
-  timeEl.textContent = data.time;
-}
-
-// Init
-showTimeline('sync');
-
-
-/* ── CONVERSATION REPLAY ── */
-function replayConvo() {
-  const msgs = document.querySelectorAll('#convo-body .convo-msg');
-  const judges = document.getElementById('convo-judges');
-  msgs.forEach(m => m.classList.remove('visible'));
-  judges.classList.remove('visible');
-
-  msgs.forEach((m, i) => {
-    setTimeout(() => m.classList.add('visible'), 400 + i * 500);
-  });
-
-  setTimeout(() => judges.classList.add('visible'), 400 + msgs.length * 500 + 300);
-}
-
-// Auto-play on scroll into view
-const convoObs = new IntersectionObserver((entries) => {
+// Visited tracking (sticks once seen)
+const visitedObserver = new IntersectionObserver((entries) => {
   entries.forEach(entry => {
     if (entry.isIntersecting) {
-      replayConvo();
-      convoObs.unobserve(entry.target);
+      const id = entry.target.getAttribute('id');
+      const item = document.querySelector('.nav-item[href="#' + id + '"]');
+      if (item) item.classList.add('visited');
     }
   });
-}, { threshold: 0.3 });
+}, { rootMargin: '0px 0px -50% 0px' });
+sections.forEach(s => visitedObserver.observe(s));
 
-convoObs.observe(document.getElementById('convo-demo'));
+// Scroll progress bar + module % meter
+const progressBar = document.querySelector('.scroll-progress');
+const meterFill = document.querySelector('.meter-fill');
+const meterPct = document.querySelector('.meter-pct');
+function updateProgress() {
+  const h = document.documentElement;
+  const scrolled = h.scrollTop;
+  const max = h.scrollHeight - h.clientHeight;
+  const pct = max > 0 ? Math.min(100, Math.max(0, (scrolled / max) * 100)) : 0;
+  if (progressBar) progressBar.style.width = pct + '%';
+  if (meterFill) meterFill.style.width = pct + '%';
+  if (meterPct) meterPct.style.textContent = Math.round(pct) + '%';
+}
+window.addEventListener('scroll', updateProgress, { passive: true });
+window.addEventListener('resize', updateProgress);
+updateProgress();
 </script>
 
 </body>
